@@ -17,10 +17,12 @@ _ASR = all speed restrictions_.
 
 from openpyxl import load_workbook
 import pandas as pd
-from pandas import DataFrame
-import re
+import re  # built-in
 import roman
 import numpy as np
+import csv  # built-in
+from datetime import datetime
+import zoneinfo
 from natsort import index_realsorted
 
 
@@ -48,7 +50,7 @@ def import_worksheets(excel_file_location):
     current_sr_file_openpyxl = []
     for excel_worksheet in excel_workbook.worksheets:
         current_sr_file_openpyxl.append(excel_worksheet)
-    print('All worksheets imported from' + excel_file_location + ' to current_sr_file_openpyxl!')
+    print('All worksheets imported from ' + excel_file_location + ' to current_sr_file_openpyxl!')
     return current_sr_file_openpyxl
 
 
@@ -67,40 +69,51 @@ def should_be_imported(import_all, is_it_temporary):
     return import_all is True or is_it_temporary is False
 
 
+def convert_openpyxl_cells_to_values(row):
+    """
+    Receives _cells_ of an Excel file's row imported via `openpyxl`.
+    Returns the same row but with just _each cell's values_.
+    """
+    for idx_02, cell in enumerate(row):
+        row[idx_02] = cell.value
+
+
 class SpeedRestriction:
     """
     Stores all data of a speed restriction.
     """
+
     def __init__(self,
-                 country_iso,
-                 country_uic,
-                 company_name,
-                 company_uic,
-                 line,
-                 station_from_name,
-                 station_from_uic,
-                 station_to_name,
-                 station_to_uic,
-                 on_station,
-                 sr_applied_to,
-                 track_open_line,
-                 location_old,
-                 track_station,
-                 switch_station,
-                 in_timetable,
-                 location_from,
-                 location_to,
-                 length,
-                 speed,
-                 length_time,
-                 internal_id,
-                 time_from,
-                 cause,
-                 time_to,
-                 comment):
+                 country_iso=None,
+                 country_uic=None,
+                 company_short_name=None,
+                 company_uic=None,
+                 line=None,
+                 station_from_name=None,
+                 station_from_uic=None,
+                 station_to_name=None,
+                 station_to_uic=None,
+                 on_station=None,
+                 track_switch_source_text=None,
+                 applied_to=None,
+                 number_of_open_line_tracks=None,
+                 track_open_line=None,
+                 track_station=None,
+                 switch_station=None,
+                 in_timetable=None,
+                 location_from=None,
+                 location_to=None,
+                 length=None,
+                 speed=None,
+                 length_time=None,
+                 internal_id=None,
+                 time_from=None,
+                 cause=None,
+                 time_to=None,
+                 comment=None):
         self.country_iso = country_iso
         self.country_uic = country_uic
-        self.company_name = company_name
+        self.company_short_name = company_short_name
         self.company_uic = company_uic
         self.line = line
         self.station_from_name = station_from_name
@@ -108,9 +121,10 @@ class SpeedRestriction:
         self.station_to_name = station_to_name
         self.station_to_uic = station_to_uic
         self.on_station = on_station
-        self.sr_applied_to = sr_applied_to
+        self.track_switch_source_text = track_switch_source_text
+        self.applied_to = applied_to
+        self.number_of_open_line_tracks = number_of_open_line_tracks
         self.track_open_line = track_open_line
-        self.location_old = location_old
         self.track_station = track_station
         self.switch_station = switch_station
         self.in_timetable = in_timetable
@@ -125,9 +139,38 @@ class SpeedRestriction:
         self.time_to = time_to
         self.comment = comment
 
+    def __iter__(self):
+        return iter([self.country_iso,
+                     self.country_uic,
+                     self.company_short_name,
+                     self.company_uic,
+                     self.line,
+                     self.station_from_name,
+                     self.station_from_uic,
+                     self.station_to_name,
+                     self.station_to_uic,
+                     self.on_station,
+                     self.track_switch_source_text,
+                     self.applied_to,
+                     self.number_of_open_line_tracks,
+                     self.track_open_line,
+                     self.track_station,
+                     self.switch_station,
+                     self.in_timetable,
+                     self.location_from,
+                     self.location_to,
+                     self.length,
+                     self.speed,
+                     self.length_time,
+                     self.internal_id,
+                     self.time_from,
+                     self.cause,
+                     self.time_to,
+                     self.comment])
+
 
 def add_data(row,
-             pre_df_db,
+             sr_database,
              in_timetable,
              country_uic_database,
              company_uic_database,
@@ -144,224 +187,176 @@ def add_data(row,
 
     Appends the _processed row_ to the _database._
     """
-    convert_cells_to_values(row)
 
-    country_iso = 'HU'
-    row[0:0] = [country_iso]
-
-    country_uic = lookup_data(country_uic_database, country_iso, 'Numerical code')
-    row[1:1] = [country_uic]
-
-    company_short_name = 'MÁV'
-    row[2:2] = [company_short_name]
-
-    company_uic = lookup_data(company_uic_database, company_short_name, 'code')
-    row[3:3] = [company_uic]
-
-    row[5] = re.sub(r'(?<=\w)- (?=\w)', '-', str(row[5]))
-
-    try:
-        row[6:6] = re.search(r'(?<=HU).*',
-                             lookup_data(station_database, row[5], 'PLC kód'))[0]
-    except TypeError:
-        row[6:6] = 'TypeError'
-
-    on_station = not row[7]
-    station_to_uic = track_station = switch_station = None
-    if on_station is False:
-        row[7] = re.sub(r'(?<=\w)- (?=\w)', '-', str(row[7]))
+    def lookup_data(what, where, in_which_column):
+        """
+        Receives a _text,_ a _database,_ and a _column name_ to look for.
+        Returns the _text_ in the same row's searched column where the input text was _found._
+        Raises an error if searched data could not be found.
+        """
         try:
-            station_to_uic = re.search(r'(?<=HU).*',
-                                       lookup_data(station_database, row[7], 'PLC kód'))[0]
+            return str(where.at[what, in_which_column])
+        except KeyError:
+            print('Error: ' + what + ' could not be converted to ' + in_which_column + '!')
+            return 'KeyError'
+
+    def remove_space_after_hyphen(data):
+        return re.sub(r'(?<=\w)- (?=\w)', '-', str(data))
+
+    def station_name_search(regex, text):
+        try:
+            return re.search(regex, text)[0]
         except TypeError:
-            station_to_uic = 'TypeError'
-        sr_applied_to = 'track'
-        if row[8] == 'bal vágány':
-            row[8] = 'left'
-        elif row[8] == 'jobb vágány':
-            row[8] = 'right'
-        elif row[8] is None:
-            row[8] = 'single'
+            return 'TypeError'
+
+    def extract_number(data):
+        """
+        Receives a text.
+
+        Initializes *regex search expressions* for arabic and roman numbers with several combinations
+        that could be found in the database.
+
+        Searches for an _arabic number._
+        If found, returns it.
+        If not found, searches for a _roman number._
+
+        If found, converts it to an _arabic number_ via `roman` and returns it.
+        If this doesn't succeed, returns an `InvalidRomanNumeralError`.
+        If not found, searches for an _arabic number with letters._
+
+        If found, returns it.
+        If not found, returns a `TypeError`.
+        """
+        text = str(data)
+
+        arabic_number_regex = r'((?:^)|(?<= |\.|\())' \
+                              r'\d+' \
+                              r'(?=\D)'
+        find_roman_number_regex = r'((?:^)|(?<= |\.|\())' \
+                                  r'((M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3}))' \
+                                  r'|(M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3}))\/[a-z]' \
+                                  r'|(M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3}))[a-z])' \
+                                  r'(?=\.| )'
+        get_roman_number_regex = r'M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})'
+        letter_and_arabic_number_regex = r'((?:^)|(?<= |\.|\())\w\d+(?=\D)'
+
+        # TODO: InvalidRomanNumeralError:
+        #  "Chinoin" vontató vágány és a kapcsolódó
+        #  VII/a. sz. vágány
+        #  XIVa.vg.
+        #  B II/a. vágány
+
+        # TODO: TypeError:
+        #  "T" vágány
+        #  AUDI kihúzóvágány
+        #  Duna vontatóvágány
+        #  "Amerikai" kihúzó vágány
+        #  "Újkezelő" vágány
+        #  Józsefvárosi összekötő vágány
+        #  "Házi" csonka vágány
+        #  Homlokrakodó csonka vágány
+        #  MOL kihúzó
+        #  Fűtőház vágány
+
+        try:
+            if re.search(arabic_number_regex, text, re.MULTILINE) is not None:
+                return re.search(arabic_number_regex, text, re.MULTILINE)[0]
+            else:
+                if re.search(find_roman_number_regex, text, re.MULTILINE) is not None:
+                    if re.search(find_roman_number_regex, text, re.MULTILINE)[0] != '':
+                        roman_number = re.search(find_roman_number_regex, text, re.MULTILINE)[0]
+                        return roman.fromRoman(roman_number)
+                    else:
+                        return re.search(letter_and_arabic_number_regex, text, re.MULTILINE)[0]
+                else:
+                    return re.search(letter_and_arabic_number_regex, text, re.MULTILINE)[0]
+        except TypeError:
+            return 'TypeError'
+        except roman.InvalidRomanNumeralError:
+            return 'InvalidRomanNumeralError'
+
+    def convert_date_to_iso(text):
+        try:
+            return \
+                datetime.strptime(text, '%Y.%m.%d %H:%M')\
+                .replace(tzinfo=zoneinfo.ZoneInfo(key='Europe/Budapest'))\
+                .isoformat()
+        except TypeError:
+            return 'TypeError'
+        except ValueError:
+            return 'ValueError'
+
+    current_sr = SpeedRestriction()
+
+    current_sr.country_iso = 'HU'
+    current_sr.country_uic = lookup_data(what=current_sr.country_iso,
+                                         where=country_uic_database,
+                                         in_which_column='Numerical code')
+    current_sr.company_short_name = 'MÁV'
+    current_sr.company_uic = lookup_data(what=current_sr.company_short_name,
+                                         where=company_uic_database,
+                                         in_which_column='code')
+
+    current_sr.line = row[0]
+    current_sr.station_from_name = remove_space_after_hyphen(row[1])
+    current_sr.station_from_uic = station_name_search(r'(?<=HU).*',
+                                                      lookup_data(what=current_sr.station_from_name,
+                                                                  where=station_database,
+                                                                  in_which_column='PLC kód'))
+
+    current_sr.on_station = not row[2]  # true if cell is empty
+    if current_sr.on_station:
+        current_sr.track_switch_source_text = row[4]
+        if str(row[4]).find('kitérő') != -1:
+            current_sr.applied_to = 'switch'
+            current_sr.switch_station = extract_number(row[4])
         else:
-            row[8] = 'error'
-
-        # TODO: save number of tracks to separate column
-
+            current_sr.applied_to = 'track'
+            current_sr.track_station = extract_number(row[4])
     else:
-        row[8] = None
-        if str(row[9]).find('kitérő') != -1:
-            sr_applied_to = 'switch'
-            switch_station = extract_number(str(row[9]))
+        current_sr.station_to_name = remove_space_after_hyphen(row[2])
+        current_sr.station_to_uic = station_name_search(r'(?<=HU).*',
+                                                        lookup_data(what=current_sr.station_to_name,
+                                                                    where=station_database,
+                                                                    in_which_column='PLC kód'))
+        current_sr.applied_to = 'track'
+        if row[3] is None:
+            current_sr.number_of_open_line_tracks = 1
+        elif row[3] == 'bal vágány':
+            current_sr.number_of_open_line_tracks = 2
+            current_sr.track_open_line = 'left'
+        elif row[3] == 'jobb vágány':
+            current_sr.number_of_open_line_tracks = 2
+            current_sr.track_open_line = 'right'
         else:
-            sr_applied_to = 'track'
-            track_station = extract_number(str(row[9]))
+            current_sr.number_of_open_line_tracks = current_sr.track_open_line = 'UnknownError'
 
     # TODO: save roman numerals as well
     # TODO: track's UIC code
     # TODO: SR's direction
     # TODO: SR's permanence
 
-    row[8:8] = [station_to_uic]
-    row[9:9] = [on_station]
-    row[10:10] = [sr_applied_to]
+    current_sr.in_timetable = in_timetable
+    current_sr.location_from = row[5]
+    current_sr.location_to = row[6]
 
-    row[13:13] = [track_station]
-    row[14:14] = [switch_station]
-    row[15:15] = [in_timetable]
+    current_sr.internal_id = row[10]
+    current_sr.time_from = convert_date_to_iso(row[11])
+    current_sr.cause = row[12]
+    current_sr.time_to = convert_date_to_iso(row[13]) if row[13] else None
+    current_sr.comment = row[14]
 
     # TODO: megszüntetés (tervezett) dátuma
 
-    pre_df_db.append(row)
-    print('All rows added to pre_df_db!')
-
-
-def convert_cells_to_values(row):
-    """
-    Receives _cells_ of an Excel file's row imported via `openpyxl`.
-    Returns the same row but with just _each cell's values_.
-    """
-    for idx_02, cell in enumerate(row):
-        row[idx_02] = cell.value
-
-
-def lookup_data(database, old_data, column_name):
-    """
-    Receives a _text,_ a _database,_ and a _column name_ to look for.
-    Returns the _text_ in the same row's searched column where the input text was _found._
-    Raises an error if searched data could not be found.
-    """
-    try:
-        return str(database.at[old_data, column_name])
-    except KeyError:
-        print('Error: ' + old_data + ' could not be converted to ' + column_name + '!')
-        return None
-
-
-def extract_number(text):
-    """
-    Receives a text.
-
-    Initializes *regex search expressions* for arabic and roman numbers with several combinations
-    that could be found in the database.
-
-    Searches for an _arabic number._
-    If found, returns it.
-    If not found, searches for a _roman number._
-
-    If found, converts it to an _arabic number_ via `roman` and returns it.
-    If this doesn't succeed, returns an `InvalidRomanNumeralError`.
-    If not found, searches for an _arabic number with letters._
-
-    If found, returns it.
-    If not found, returns a `TypeError`.
-    """
-    arabic_number_regex = r'((?:^)|(?<= |\.|\())' \
-                          r'\d+' \
-                          r'(?=\D)'
-    find_roman_number_regex = r'((?:^)|(?<= |\.|\())' \
-                              r'((M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3}))' \
-                              r'|(M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3}))\/[a-z]' \
-                              r'|(M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3}))[a-z])' \
-                              r'(?=\.| )'
-    get_roman_number_regex = r'M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})'
-    letter_and_arabic_number_regex = r'((?:^)|(?<= |\.|\())\w\d+(?=\D)'
-
-    # TODO: InvalidRomanNumeralError:
-    #  "Chinoin" vontató vágány és a kapcsolódó
-    #  VII/a. sz. vágány
-    #  XIVa.vg.
-    #  B II/a. vágány
-
-    # TODO: TypeError:
-    #  "T" vágány
-    #  AUDI kihúzóvágány
-    #  Duna vontatóvágány
-    #  "Amerikai" kihúzó vágány
-    #  "Újkezelő" vágány
-    #  Józsefvárosi összekötő vágány
-    #  "Házi" csonka vágány
-    #  Homlokrakodó csonka vágány
-    #  MOL kihúzó
-    #  Fűtőház vágány
-
-    try:
-        if re.search(arabic_number_regex, text, re.MULTILINE) is not None:
-            return re.search(arabic_number_regex, text, re.MULTILINE)[0]
-        else:
-            if re.search(find_roman_number_regex, text, re.MULTILINE) is not None:
-                if re.search(find_roman_number_regex, text, re.MULTILINE)[0] != '':
-                    roman_number = re.search(find_roman_number_regex, text, re.MULTILINE)[0]
-                    return roman.fromRoman(roman_number)
-                else:
-                    return re.search(letter_and_arabic_number_regex, text, re.MULTILINE)[0]
-            else:
-                return re.search(letter_and_arabic_number_regex, text, re.MULTILINE)[0]
-    except TypeError:
-        return 'TypeError'
-    except roman.InvalidRomanNumeralError:
-        return 'InvalidRomanNumeralError'
-
-
-def create_dataframe(database):
-    """
-    Creates a `DataFrame` from a list database.
-    """
-    print('database will now be converted to a DataFrame!')
-    return DataFrame(database)
-
-
-def rename_columns(full_df):
-    """
-    Renames columns in a `DataFrame` to match updated content.
-    """
-    full_df.columns = ['country_ISO',
-                       'country_UIC',
-                       'company_name',
-                       'company_UIC',
-                       'line',
-                       'station_from_name',
-                       'station_from_uic',
-                       'station_to_name',
-                       'station_to_uic',
-                       'on_station',
-                       'sr_applied_to',
-                       'track_open-line',
-                       'place_old',
-                       'track_station',
-                       'switch_station',
-                       'in_timetable',
-                       'location_from',
-                       'location_to',
-                       'length',
-                       'speed',
-                       'length_time',
-                       'id',
-                       'time_from',
-                       'cause',
-                       'time_to',
-                       'comment']
-    print('full_df\'s columns renamed!')
-
-
-def drop_columns(full_df):
-    """
-    Drops unnecessary columns from a `DataFrame`.
-    """
-    full_df.drop(columns=['length',
-                          'length_time'])
-    print('Unnecessary columns dropped from full_df!')
+    sr_database.append(current_sr)
 
 
 def edit_full_df(full_df):
     """
-    Calls `rename_columns` and `drop_columns`.
-
     Removes leftover rows from the Excel import.
 
     Sorts the database.
     """
-    rename_columns(full_df)
-    drop_columns(full_df)
     full_df.query("line != 'Vonal'", inplace=True)
     full_df.query("location_from != 'Hossz (m):'", inplace=True)
     full_df['line'] = full_df['line'].astype(str)
@@ -372,14 +367,6 @@ def edit_full_df(full_df):
                                     full_df['location_from']))),
                         inplace=True)
     print('full_df edited!')
-
-
-def save_file(full_df, save_path):
-    """
-    Saves the input `DataFrame` in .csv to the input path.
-    """
-    full_df.to_csv(save_path, index=False)
-    print('full_df saved to ' + save_path + '!')
 
 
 def main():
@@ -396,7 +383,7 @@ def main():
     tsr_excel_file_location = 'data/SR_lists/MÁV_220202_TSR.xlsx'
     asr_excel_file_location = 'data/SR_lists/MÁV_220202_ASR.xlsx'
     sr_file_locations = [tsr_excel_file_location, asr_excel_file_location]
-    pre_df_db = []
+    sr_database = []
     print('Variables initialized!')
 
     country_uic_database = import_csv('data/UIC_lists/country_UIC_list.csv', 1)
@@ -405,29 +392,28 @@ def main():
 
     for i, file_location in enumerate(sr_file_locations):
         current_sr_file_openpyxl = import_worksheets(file_location)
-        if i == 0:    # handle duplicated SRs
+        if i == 0:  # handle duplicated SRs
             import_all = True
         else:
             import_all = False
         for excel_worksheet in current_sr_file_openpyxl:
-            for row in excel_worksheet.iter_rows(min_row=2):    # get rows after the header
-                row = list(row)     # convert from tuples
+            for row in excel_worksheet.iter_rows(min_row=2):
+                row = list(row)  # convert from tuples
                 is_it_temporary = check_permanence(row[0])
                 if should_be_imported(import_all, is_it_temporary):
+                    convert_openpyxl_cells_to_values(row)
                     add_data(row,
-                             pre_df_db,
+                             sr_database,
                              is_it_temporary,
                              country_uic_database,
                              company_uic_database,
                              station_database)
-                    del pre_df_db[-1]   # delete footer row
 
-    full_df = create_dataframe(pre_df_db)
-    edit_full_df(full_df)
-    print('full_df done!')
-
-    save_path = 'export/_all_220202_ASR.csv'
-    save_file(full_df, save_path)
+    with open('export/_all_220202_ASR_02.csv', mode='w+') as file:
+        writer = csv.writer(file)
+        for sr in sr_database:
+            writer.writerow(list(sr))
+    print('sr_list saved to file!')
 
     print('All done!')
 
