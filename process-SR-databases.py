@@ -1,11 +1,6 @@
 """
 A program for **making** MÁV's internal, really **dirty database** of speed restrictions **computer-processable.**
 
-Figyelem:
-a) A programhoz kevesebb lassújelet tartalmazó pickle dumpokat mellékeltem a jobb tesztelhetőség érdekében.
-b) Kérlek, ignoráld a to-do kommenteket minden .py fájlban –
-azokat csak a program jövőbeni használata miatt jegyeztem fel.
-
 Abbreviations:
 _SR = speed restriction_,
 _TSR = temporary speed restriction_,
@@ -18,9 +13,6 @@ _main database of SRs_ in .csv format at _export/_database_ASR.csv_ (optional);
 a helper _database of stations_ in .csv format, incl. their names and UIC codes at _data/station_lists/stations_HU.csv_;
 a helper _database of UIC member railway companies_ in .csv format, incl. their names and UIC codes at _data/UIC_lists/company_UIC_list.csv_;
 a helper _database of UIC member countries_ in .csv format, incl. their names, ISO and UIC codes at _data/UIC_lists/country_UIC_list.csv_.
-
-Doesn't need any external modules.
-*This is needed in order not to use any external modules while keeping all openpyxl data elements preserved.
 """
 
 from datetime import datetime  # built-in
