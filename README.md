@@ -7,6 +7,20 @@ A program for
 2. **storing** that data in a **mySQL-database**
 3. **visualizing** it on a **map.**
 
+
+## 📋 Features
+...
+
+
+## 📦 Dependencies
+
+* Python 3.?+
+    * See [requirements.txt](requirements.txt) for the Python packages needed. 
+* mySQL ?+
+
+
+## 📚 Reference
+
 Used abbreviations:
 * _SR = speed restriction_
 * _TSR = temporary speed restriction_
@@ -16,5 +30,5 @@ Used abbreviations:
 
 ## 📜 License
 
-This whole project is licensed under the _GNU General Public License v3.0_.
-See the [license](COPYING) file for its full text.
+The whole project is licensed under the _GNU General Public License v3.0_.
+See the [license](COPYING) file for the full text.

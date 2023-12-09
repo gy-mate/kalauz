@@ -11,7 +11,7 @@ Needs:
 # TODO: add needs
 """
 
-import logging
+import logger
 from datetime import datetime
 import shutil
 
