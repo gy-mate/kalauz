@@ -5,6 +5,7 @@ from lxml import etree
 # noinspection PyProtectedMember
 from lxml.etree import _Element
 from requests import HTTPError
+# the comment in the line below can be removed when mypy library stubs are created for the module imported
 from varname import nameof  # type: ignore
 import zipfile
 
@@ -106,13 +107,7 @@ class CountryCodesUpdater(HelperTableUpdater, ABC):
             name_FR,
             name_DE
         )
-        VALUES (
-            %s,
-            %s,
-            %s,
-            %s,
-            %s
-        )
+        VALUES (%s, %s, %s, %s, %s)
         '''
         for country in self.data.findall(self.path, namespaces=self.namespace):
             values = self.extract_info(country)
