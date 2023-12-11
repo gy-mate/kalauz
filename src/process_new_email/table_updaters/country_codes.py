@@ -90,7 +90,7 @@ class CountryCodesUpdater(HelperTableUpdater, ABC):
         create_table = '''
         CREATE TABLE countries (
             ISO_code VARCHAR(2),
-            UIC_code INT,
+            UIC_code INT(2),
             name_EN VARCHAR(255),
             name_FR VARCHAR(255),
             name_DE VARCHAR(255)
