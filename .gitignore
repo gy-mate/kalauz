@@ -21,3 +21,4 @@
 /.idea/vcs.xml
 /.idea/workspace.xml
 /src/process_new_email/table_updaters/kalauz.log
+/src/process_new_email/kalauz.log
