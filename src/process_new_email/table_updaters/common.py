@@ -6,7 +6,7 @@ from io import BytesIO
 import mysql.connector
 import requests
 
-from logger import LoggerMixin
+from src.logger import LoggerMixin
 
 
 class HelperTableUpdater(LoggerMixin, ABC):

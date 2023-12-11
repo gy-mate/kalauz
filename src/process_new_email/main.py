@@ -1,4 +1,4 @@
-from process_new_email.table_updaters.country_codes import CountryCodesUpdater
+from src.process_new_email.table_updaters.country_codes import CountryCodesUpdater
 
 
 def update_country_codes(uic_root_url: str) -> None:

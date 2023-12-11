@@ -13,5 +13,5 @@ class LoggerMixin:
         self.logger.addHandler(
             logging.StreamHandler()
         )
-        
-        self.logger.info(f"Logger initialized!")
+
+        self.logger.info("Logger initialized!")

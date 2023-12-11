@@ -1,4 +1,3 @@
-import logger
 from ast import literal_eval
 import csv
 from datetime import datetime

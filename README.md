@@ -3,13 +3,19 @@
 ## 📖 About
 
 A program for
-1. **making** MÁV's and GySEV's internal, **dirty "databases"** of speed restrictions **computer-processable**
+1. **making** MÁV's and GySEV's internal, dirty **"databases"** of speed restrictions **computer-processable**
 2. **storing** that data in a **mySQL-database**
-3. **visualizing** it on a **map.**
+3. **visualizing** the data on a **map.**
 
 
 ## 📋 Features
 ...
+
+
+## 📥 Installation
+```bash
+make install
+```
 
 
 ## 📦 Dependencies

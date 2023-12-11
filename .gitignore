@@ -1,5 +1,4 @@
 /.env
-/kalauz.log
 /.idea/codeStyles/codeStyleConfig.xml
 /.idea/dataSources/94374f96-5d37-44b8-a483-cf8a66dd9ed6/storage_v2/_src_/schema/information_schema.FNRwLQ.meta
 /.idea/dataSources/94374f96-5d37-44b8-a483-cf8a66dd9ed6/storage_v2/_src_/schema/kalauz.MAUgvA.meta
@@ -21,3 +20,4 @@
 /.idea/sqldialects.xml
 /.idea/vcs.xml
 /.idea/workspace.xml
+/src/process_new_email/table_updaters/kalauz.log

@@ -8,7 +8,7 @@ from requests import HTTPError
 from varname import nameof  # type: ignore
 import zipfile
 
-from process_new_email.table_updaters.common import HelperTableUpdater
+from src.process_new_email.table_updaters.common import HelperTableUpdater
 
 
 class CountryCodesUpdater(HelperTableUpdater, ABC):
