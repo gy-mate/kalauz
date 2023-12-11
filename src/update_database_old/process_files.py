@@ -1,5 +1,4 @@
 import csv
-import logging
 from openpyxl import load_workbook
 import re
 import roman
