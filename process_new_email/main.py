@@ -7,17 +7,17 @@ def update_country_codes(uic_root_url: str) -> None:
         f'{uic_root_url}320'
     )
     
-    country_codes_updater.data_to_process = country_codes_updater.download_data(
-        country_codes_updater.data_url
-    )
-    country_codes_updater.xsd_to_process = country_codes_updater.download_data(
-        country_codes_updater.xsd_url
-    )
-    
     country_codes_updater.process_data()
+    country_codes_updater.store_data()
 
 
 def main():
+    # table_name = 'countries'
+    # check_table_query = \
+    #     f"SELECT COUNT(*) FROM information_schema.tables WHERE table_name = '{table_name}'"
+    #
+    # self.cursor.execute(check_table_query)
+    # table_exists = self.cursor.fetchone()[0] == 1
     update_country_codes('https://uic.org/spip.php?action=telecharger&arg=')
 
 
