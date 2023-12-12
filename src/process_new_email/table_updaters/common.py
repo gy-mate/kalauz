@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import os
+from typing import Final
 
 from dotenv import load_dotenv
 from io import BytesIO
@@ -13,19 +14,18 @@ class HelperTableUpdater(LoggerMixin, ABC):
 
     def __init__(self, data_url: str):
         super().__init__()
-        
         load_dotenv()
         
-        self.data_url = data_url
-        self.data_to_process: BytesIO = self.download_data(data_url)
+        self.DATA_URL: Final = data_url
+        self.DATA_TO_PROCESS: Final[BytesIO] = self.download_data(data_url)
         
-        self.connection_to_database = mysql.connector.connect(
+        self.CONNECTION_TO_DATABASE: Final = mysql.connector.connect(
             host="localhost",
             user="root",
             password=os.getenv("DATABASE_PASSWORD"),
             database="kalauz"
         )
-        self.cursor = self.connection_to_database.cursor()
+        self.CURSOR: Final = self.CONNECTION_TO_DATABASE.cursor()
     
     def download_data(self, url: str) -> BytesIO:
         response = requests.get(
