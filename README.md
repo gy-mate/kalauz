@@ -31,7 +31,7 @@ make install
 * [Python](https://www.python.org/downloads/) `3.9+`
 * [mySQL](https://dev.mysql.com/downloads/mysql/) `5.6+`
   * Store your database password in a `DATABASE_PASSWORD` variable 
-    in a .env file in the root directory of the repository.
+    in a .env file in the root of the repository.
 
 
 ## 📚 Reference
