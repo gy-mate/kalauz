@@ -1,7 +1,11 @@
+from dotenv import load_dotenv
+
 from src.process_new_email.table_updaters.country_codes import CountryCodesUpdater
 
 
 def main():
+    load_dotenv()
+    
     update_country_codes('https://uic.org/spip.php?action=telecharger&arg=')
     
     
