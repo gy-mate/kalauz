@@ -31,7 +31,7 @@ make install
 * [Python](https://www.python.org/downloads/) `3.9+`
 * [mySQL](https://dev.mysql.com/downloads/mysql/) `5.6+`
   * Store your database password in a `DATABASE_PASSWORD` variable 
-    in a .env file in the root of the repository.
+    in a `.env` file in the root of the repository.
 
 
 ## 📚 Reference
@@ -46,7 +46,7 @@ Abbreviations used:
 ## 📜 License
 
 This project is licensed under the _GNU General Public License v3.0_.
-See the [license](COPYING) file for its full text.
+See the [license](copying.txt) file (or the _License_ tab on GitHub) for its full text.
 
 
 ## 🏦 Funding
