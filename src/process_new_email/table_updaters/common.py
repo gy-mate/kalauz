@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
+from io import BytesIO
 import os
 from typing import Final
 
-from io import BytesIO
 import mysql.connector
 import requests
 
