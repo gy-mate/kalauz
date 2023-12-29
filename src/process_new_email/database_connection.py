@@ -9,12 +9,12 @@ from mysql.connector.pooling import PooledMySQLConnection
 class DatabaseServer:
     def __init__(self, database_name: str) -> None:
         self.logger = logging.getLogger(__name__)
-        
+
         self.connection = self._connect_to_server()
         self.cursor = self.connection.cursor()
 
         self._connect_to_database(database_name)
-        
+
         self.logger.info(f"{self.__class__.__name__} initialized!")
 
     def _connect_to_server(

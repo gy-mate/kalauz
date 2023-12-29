@@ -15,7 +15,7 @@ class HelperTableUpdater(ABC):
         self._DATA_URL: Final = data_url
         self._DATA_TO_PROCESS: Final[BytesIO] = self.download_data(data_url)
 
-        self.DATABASE: Final = database_connection
+        self.database: Final = database_connection
 
     def download_data(self, url: str) -> BytesIO:
         response = requests.get(

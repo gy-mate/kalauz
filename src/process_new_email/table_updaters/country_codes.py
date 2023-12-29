@@ -16,20 +16,20 @@ import zipfile
 from src.process_new_email.table_updaters.common import HelperTableUpdater
 
 
-def _uic_code_not_assigned(values: list) -> bool:
+def _uic_code_not_assigned(values: list[str]) -> bool:
     return values[1] is None
 
 
-def _correct_swapped_strings(values: list) -> None:
+def _correct_swapped_country_names(values: list[str]) -> None:
     if values[2] and values[3] and values[4]:
-        values[2], values[3], values[4] = swap_strings_at_comma(values[2:5])
+        values[2], values[3], values[4] = _swap_strings_at_comma(values[2:5])
 
 
-def swap_strings_at_comma(strings: list[str]) -> list[str]:
+def _swap_strings_at_comma(strings: list[str]) -> list[str]:
     swapped_strings = []
     for s in strings:
-        parts = s.split(', ')
-        swapped_strings.append(' '.join(parts[::-1]))
+        parts = s.split(", ")
+        swapped_strings.append(" ".join(parts[::-1]))
     return swapped_strings
 
 
@@ -51,7 +51,7 @@ class CountryCodesUpdater(HelperTableUpdater, ABC):
             self._XSD: Final[etree.XMLSchema] = self._process_xsd()
         except (HTTPError, IndexError) as exception:
             self.logger.warning(exception)
-        
+
         self.logger.info(f"{self.__class__.__name__} initialized!")
 
     def _process_xsd(self) -> etree.XMLSchema:
@@ -105,14 +105,13 @@ class CountryCodesUpdater(HelperTableUpdater, ABC):
             name_EN varchar(255),
             name_FR varchar(255),
             name_DE varchar(255),
-            primary key (UIC_code),
-            unique key (ISO_code)
+            primary key (UIC_code)
         )
         """
-        self.DATABASE.cursor.execute(query)
-        self.DATABASE.connection.commit()
+        self.database.cursor.execute(query)
+        self.database.connection.commit()
         self.logger.info("Table `countries` sucessfully created (if needed)!")
-    
+
     def _add_data(self) -> None:
         query = """
         insert ignore into countries (
@@ -126,17 +125,17 @@ class CountryCodesUpdater(HelperTableUpdater, ABC):
         """
         for country in self.data.findall(self._TAG_ROW, namespaces=self.namespace):
             values = list(self._extract_info(country))
-            
+
             if _uic_code_not_assigned(values):
                 continue
-            _correct_swapped_strings(values)
-            
-            self.DATABASE.cursor.execute(query, values)
-        self.DATABASE.connection.commit()
+            _correct_swapped_country_names(values)
+
+            self.database.cursor.execute(query, values)
+        self.database.connection.commit()
         self.logger.info(
             f"Successfully added new data downloaded from {self._DATA_URL} to table `countries`!"
         )
-    
+
     def _extract_info(self, country: _Element) -> tuple:
         iso_code, name_en = self._extract_critical_info(country)
         name_de, name_fr, uic_code = self._extract_extra_info(country)

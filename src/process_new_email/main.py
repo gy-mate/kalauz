@@ -9,12 +9,10 @@ from src.process_new_email.table_updaters.country_codes import CountryCodesUpdat
 def main() -> None:
     logging.basicConfig(
         encoding="utf-8",
-        handlers=[logging.StreamHandler(),
-                  logging.FileHandler("kalauz.log")],
+        handlers=[logging.StreamHandler(), logging.FileHandler("kalauz.log")],
         format="%(asctime)s – %(levelname)s @ %(name)s @ %(funcName)s: %(message)s",
         level=logging.DEBUG,
     )
-    
     load_dotenv()
 
     database_connection = DatabaseServer("kalauz")
