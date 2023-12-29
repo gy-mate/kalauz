@@ -46,7 +46,7 @@ Abbreviations used:
 ## 📜 License
 
 This project is licensed under the _GNU General Public License v3.0_.
-See the [license](copying.txt) file (or the _License_ tab on GitHub) for its full text.
+See the [license](copying.txt) file (or the _GPL-3.0 license_ tab on GitHub) for its full text.
 
 
 ## 🏦 Funding
