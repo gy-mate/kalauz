@@ -1,10 +1,13 @@
 # 🛤️ kalauz
 
+<a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
+
+
 ## 📖 About
 
 A program for...
 * **processing** rail network operator companies' internal, dirty **spreadsheets** of speed restrictions
-* **storing** that data in a mySQL **database**
+* **storing** that data in a MySQL **database**
 * **visualizing** the speed restrictions on a **map.**
 
 
@@ -13,7 +16,7 @@ A program for...
 * Processes the following companies' spreadsheets of SRs in the following formats:
   * [MÁV Magyar Államvasutak Zrt.](https://www.mavcsoport.hu/mav/bemutatkozas) ([.pdf](data/01_import/MÁV_2022-08-08_ASR.pdf))
   * [GySEV Zrt.](https://www2.gysev.hu/palyavasuti-uzletag) ([.xlsx](data/01_import/GYSEV_2022-05-13_ASR.xlsx))
-* Stores them in a mySQL database with the following schema:
+* Stores them in a MySQL database with the following schema:
   
   <!--- replace the .png extension below with .svg when https://youtrack.jetbrains.com/issue/DBE-17864/ is fixed -->
   <img src="database_schema.png" alt="Database schema for SRs" height="200"/>
@@ -29,7 +32,7 @@ make install
 ## 📦 Dependencies
 
 * [Python](https://www.python.org/downloads/) `3.9+`
-* [mySQL](https://dev.mysql.com/downloads/mysql/) `5.6+`
+* [MySQL](https://dev.mysql.com/downloads/mysql/) `5.6+`
   * Store your database password in a `DATABASE_PASSWORD` variable 
     in a `.env` file in the root of the repository.
 
