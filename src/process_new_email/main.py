@@ -3,6 +3,7 @@ import logging
 from dotenv import load_dotenv
 
 from src.process_new_email.database_connection import DatabaseServer
+from src.process_new_email.table_updaters.companies import CompaniesUpdater
 from src.process_new_email.table_updaters.country_codes import CountryCodesUpdater
 
 
@@ -15,10 +16,13 @@ def main() -> None:
     )
     load_dotenv()
 
-    database_connection = DatabaseServer("kalauz")
+    database_connection = DatabaseServer(database_name="kalauz")
 
     update_country_codes(
         database_connection, "https://uic.org/spip.php?action=telecharger&arg="
+    )
+    update_companies(
+        database_connection, "https://uic.org/spip.php?action=telecharger&arg=3023"
     )
 
 
@@ -31,6 +35,15 @@ def update_country_codes(database_connection, uic_root_url: str) -> None:
     country_codes_updater.store_data()
 
     country_codes_updater.logger.info("Table `country_codes` sucessfully updated!")
+
+
+def update_companies(database_connection, uic_root_url: str) -> None:
+    companies_updater = CompaniesUpdater(database_connection, uic_root_url)
+
+    companies_updater.process_data()
+    companies_updater.store_data()
+
+    companies_updater.logger.info("Table `companies` sucessfully updated!")
 
 
 if __name__ == "__main__":
