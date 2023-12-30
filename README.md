@@ -18,7 +18,7 @@ A program for...
   * [GySEV Zrt.](https://www2.gysev.hu/palyavasuti-uzletag) ([.xlsx](data/01_import/GYSEV_2022-05-13_ASR.xlsx))
 * Stores them in a MySQL database with the following schema:
   
-  <!--- replace the .png extension below with .svg when https://youtrack.jetbrains.com/issue/DBE-17864/ is fixed -->
+  <!--- TODO: replace the .png extension below with .svg when https://youtrack.jetbrains.com/issue/DBE-17864/ is fixed -->
   <img src="database_schema.png" alt="Database schema for SRs" height="200"/>
 
 
@@ -35,6 +35,10 @@ make install
 * [MySQL](https://dev.mysql.com/downloads/mysql/) `5.6+`
   * Store your database password in a `DATABASE_PASSWORD` variable 
     in a `.env` file in the root of the repository.
+
+### 🛠️ For development
+
+* [mypy](https://github.com/python/mypy)
 
 
 ## 📚 Reference
