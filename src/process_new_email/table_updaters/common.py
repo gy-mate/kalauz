@@ -5,21 +5,21 @@ from typing import Final
 
 import requests
 
-from src.process_new_email.database_connection import DatabaseServer
+from src.process_new_email.database_connection import Database
 
 
 class HelperTableUpdater(ABC):
-    def __init__(self, database_connection: DatabaseServer, data_url: str) -> None:
+    def __init__(self, database: Database, data_url: str) -> None:
         self.logger = logging.getLogger(__name__)
 
-        self._DATA_URL: Final = data_url
-        self._DATA_TO_PROCESS: Final[BytesIO] = self.download_data(data_url)
+        self.DATA_URL: Final = data_url
+        self._data_to_process: Final[BytesIO] = self.download_data(data_url)
 
-        self.database: Final = database_connection
+        self.database: Final = database
 
     def download_data(self, url: str) -> BytesIO:
         response = requests.get(
-            url,
+            url=url,
             headers={
                 "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
                 "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1.2 Safari/605.1.15"
