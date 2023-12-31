@@ -1,56 +1,71 @@
 import logging
 import os
+from typing import Final
 
-import mysql.connector
-from mysql.connector import CMySQLConnection, MySQLConnection
-from mysql.connector.pooling import PooledMySQLConnection
-from sqlalchemy import Engine, create_engine, URL
+from sqlalchemy import Connection, Engine, create_engine, URL, text
 
 
-class DatabaseServer:
+def _create_database_if_not_exists(connection: Connection, database_name: str):
+    connection.execute(text(f"create database if not exists {database_name}"))
+
+
+class Database:
     def __init__(self, database_name: str) -> None:
         self.logger = logging.getLogger(__name__)
 
-        self.database_engine = self._connect_to_database_server()
+        self._DRIVERNAME: Final = "mysql+mysqlconnector"
+        self._HOST: Final = "localhost"
+        self._PORT: Final = 3306
+        self._USERNAME: Final = "root"
+        self._PASSWORD: Final = self._get_password()
+
+        self.engine = self._connect_to_database_server()
 
         self._connect_to_database(database_name)
 
         self.logger.info(f"{self.__class__.__name__} initialized!")
 
-    def _connect_to_database_server(
-        self,
-    ) -> Engine:
-        database_url = URL.create(
-            drivername="mysql+mysql-connector-python",
-            host="localhost",
-            port=3306,
-            username="root",
-            password=os.getenv("DATABASE_PASSWORD"),
-        )
+    def _get_password(self) -> str:
         try:
+            database_password = os.getenv("DATABASE_PASSWORD")
+            if not database_password:
+                raise ValueError("No password provided for the database server!")
+        except ValueError as error:
+            self.logger.critical(error)
+            raise
+        return database_password
+
+    def _connect_to_database_server(self) -> Engine:
+        try:
+            database_url = URL.create(
+                drivername=self._DRIVERNAME,
+                host=self._HOST,
+                port=self._PORT,
+                username=self._USERNAME,
+                password=self._PASSWORD,
+            )
             return create_engine(database_url)
         finally:
             self.logger.info("Successfully connected to the database server!")
 
     def _connect_to_database(self, database_name: str) -> None:
-        self.cursor.execute("show databases")
-        existing_databases = [database[0] for database in self.cursor.fetchall()]
-
-        if database_name not in existing_databases:
-            self._create_database(database_name)
-        self.database_engine.close()
+        with self.engine.begin() as connection:
+            _create_database_if_not_exists(connection, database_name)
 
         self._connect_to_created_database(database_name)
 
-    def _create_database(self, database_name: str) -> None:
-        self.cursor.execute("create database " + database_name)
-        self.database_engine.commit()
-
     def _connect_to_created_database(self, database_name: str) -> None:
-        self.database_engine = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password=os.getenv("DATABASE_PASSWORD"),
-            database=database_name,
-        )
-        self.cursor = self.database_engine.cursor()
+        try:
+            database_url = URL.create(
+                drivername=self._DRIVERNAME,
+                host=self._HOST,
+                port=self._PORT,
+                username=self._USERNAME,
+                password=self._PASSWORD,
+                database=database_name,
+            )
+            self.engine = create_engine(database_url)
+        finally:
+            self.logger.info(
+                f"Successfully connected to the {database_name} table of the database server!"
+            )
