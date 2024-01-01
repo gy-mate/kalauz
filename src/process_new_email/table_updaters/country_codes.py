@@ -141,6 +141,7 @@ class CountryCodesUpdater(HelperTableUpdater, ABC):
             name_EN varchar(255),
             name_FR varchar(255),
             name_DE varchar(255),
+            
             primary key (UIC_code)
         )
         """
@@ -159,18 +160,17 @@ class CountryCodesUpdater(HelperTableUpdater, ABC):
                     name_FR,
                     name_DE
                 )
-                values (:ISO_code, :UIC_code, :name_EN, :name_FR, :name_DE)
+                values (
+                    :ISO_code,
+                    :UIC_code,
+                    :name_EN,
+                    :name_FR,
+                    :name_DE
+                )
                 """
-
                 connection.execute(
                     text(query),
-                    {
-                        "ISO_code": row.ISO_code,
-                        "UIC_code": row.UIC_code,
-                        "name_EN": row.name_EN,
-                        "name_FR": row.name_FR,
-                        "name_DE": row.name_DE,
-                    },
+                    row.to_dict(),
                 )
 
         self.logger.info(
