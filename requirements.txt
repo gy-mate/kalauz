@@ -2,6 +2,7 @@
 black~=23.12.1
 lxml-stubs~=0.4.0
 pandas-stubs~=2.1.4.231227
+types-requests~=2.31.0.20231231
 
 lxml~=5.0.0
 mysql-connector-python~=8.2.0
