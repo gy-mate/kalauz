@@ -2,11 +2,7 @@ import logging
 import os
 from typing import Final
 
-from sqlalchemy import Connection, Engine, create_engine, URL, text
-
-
-def _create_database_if_not_exists(connection: Connection, database_name: str):
-    connection.execute(text(f"create database if not exists {database_name}"))
+from sqlalchemy import Engine, create_engine, URL, text
 
 
 class Database:
@@ -20,8 +16,7 @@ class Database:
         self._PASSWORD: Final = self._get_password()
 
         self.engine = self._connect_to_database_server()
-
-        self._connect_to_database(database_name)
+        self.engine = self._connect_to_database(database_name)
 
         self.logger.info(f"{self.__class__.__name__} initialized!")
 
@@ -29,7 +24,7 @@ class Database:
         try:
             database_password = os.getenv("DATABASE_PASSWORD")
             if not database_password:
-                raise ValueError("No password provided for the database server!")
+                raise ValueError("No password found in the .env file for the database server!")
         except ValueError as error:
             self.logger.critical(error)
             raise
@@ -48,13 +43,13 @@ class Database:
         finally:
             self.logger.info("Successfully connected to the database server!")
 
-    def _connect_to_database(self, database_name: str) -> None:
+    def _connect_to_database(self, database_name: str) -> Engine:
         with self.engine.begin() as connection:
-            _create_database_if_not_exists(connection, database_name)
+            connection.execute(text(f"create database if not exists {database_name}"))
 
-        self._connect_to_created_database(database_name)
+        return self._connect_to_created_database(database_name)
 
-    def _connect_to_created_database(self, database_name: str) -> None:
+    def _connect_to_created_database(self, database_name: str) -> Engine:
         try:
             database_url = URL.create(
                 drivername=self._DRIVERNAME,
@@ -64,8 +59,8 @@ class Database:
                 password=self._PASSWORD,
                 database=database_name,
             )
-            self.engine = create_engine(database_url)
+            return create_engine(database_url)
         finally:
             self.logger.info(
-                f"Successfully connected to the {database_name} table of the database server!"
+                f"Successfully connected to the {database_name} database of the server!"
             )

@@ -3,17 +3,19 @@ from io import BytesIO
 import logging
 from typing import Final
 
+import pandas as pd
 import requests
 
 from src.process_new_email.database_connection import Database
 
 
 class HelperTableUpdater(ABC):
-    def __init__(self, database: Database, data_url: str) -> None:
+    def __init__(self, database: Database) -> None:
         self.logger = logging.getLogger(__name__)
 
-        self.DATA_URL: Final = data_url
-        self._data_to_process: Final[BytesIO] = self.download_data(data_url)
+        self.DATA_URL: str = NotImplemented
+        self.TABLE_NAME: str = NotImplemented
+        self._data_to_process: BytesIO = NotImplemented
 
         self.database: Final = database
 
@@ -33,6 +35,25 @@ class HelperTableUpdater(ABC):
     def process_data(self) -> None:
         pass
 
+    @abstractmethod
+    def store_data(self) -> None:
+        pass
+    
+    
+class UICTableUpdater(HelperTableUpdater, ABC):
+    def __init__(self, database: Database) -> None:
+        super().__init__(database)
+        
+        self.DATA_BASE_URL: Final = "https://uic.org/spip.php?action=telecharger&arg="
+        
+        self.data: pd.DataFrame = NotImplemented
+
+        self.logger.info(f"{self.__class__.__name__} initialized!")
+
+    @abstractmethod
+    def process_data(self) -> None:
+        pass
+    
     @abstractmethod
     def store_data(self) -> None:
         pass

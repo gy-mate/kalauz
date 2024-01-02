@@ -1,18 +1,23 @@
 from abc import ABC
 from datetime import datetime
+from io import BytesIO
 import re
+from typing import final
 
 import pandas as pd
 from sqlalchemy import text
 
-from src.process_new_email.table_updaters.common import HelperTableUpdater
+from src.process_new_email.table_updaters.common import UICTableUpdater
 
 
-class CompaniesUpdater(HelperTableUpdater, ABC):
-    def __init__(self, database, data_url) -> None:
-        super().__init__(database, data_url)
-
-        self.data: pd.DataFrame = pd.DataFrame()
+@final
+class CompaniesUpdater(UICTableUpdater, ABC):
+    def __init__(self, database) -> None:
+        super().__init__(database)
+        
+        self.DATA_URL = f"{self.DATA_BASE_URL}3023"
+        
+        self._data_to_process: BytesIO = super().download_data(self.DATA_URL)
 
         self.logger.info(f"{self.__class__.__name__} initialized!")
 
@@ -86,23 +91,25 @@ class CompaniesUpdater(HelperTableUpdater, ABC):
         with self.database.engine.begin() as connection:
             query = """
             create table if not exists companies (
-                UIC_code int(4),
+                UIC_code int(4) not null,
                 short_name varchar(255),
-                name varchar(255),
-                country_ISO_code varchar(2),
+                name varchar(255) not null,
+                country_ISO_code varchar(2) not null,
                 allocation_date date,
                 modified_date date,
                 begin_of_validity date,
                 end_of_validity date,
-                freight boolean,
-                passenger boolean,
-                infrastructure boolean,
-                holding boolean,
-                integrated boolean,
-                other boolean,
+                freight boolean not null,
+                passenger boolean not null,
+                infrastructure boolean not null,
+                holding boolean not null,
+                integrated boolean not null,
+                other boolean not null,
                 URL varchar(255),
                 
-                primary key (UIC_code)
+                index (UIC_code),
+                primary key (UIC_code),
+                foreign key (country_ISO_code) references countries(ISO_code)
             )
             """
 

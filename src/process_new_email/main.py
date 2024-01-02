@@ -3,6 +3,7 @@ import logging
 from dotenv import load_dotenv
 
 from src.process_new_email.database_connection import Database
+from src.process_new_email.table_updaters.common import HelperTableUpdater
 
 from src.process_new_email.table_updaters.companies import CompaniesUpdater
 from src.process_new_email.table_updaters.country_codes import CountryCodesUpdater
@@ -20,38 +21,24 @@ def main() -> None:
     )
     load_dotenv()
 
-    database_connection = Database(database_name="kalauz")
+    database = Database("kalauz")
+    # TODO: remove comments below when https://github.com/python/mypy/issues/10160 or https://github.com/python/mypy/issues/9756 is fixed
+    updaters_to_run: list[HelperTableUpdater] = [  # type: ignore
+        CountryCodesUpdater,  # type: ignore
+        CompaniesUpdater,  # type: ignore
+    ]
 
-    update_country_codes(
-        database_connection,
-        "https://uic.org/spip.php?action=telecharger&arg=",
-    )
-    update_companies(
-        database_connection,
-        "https://uic.org/spip.php?action=telecharger&arg=3023",
-    )
+    for updater in updaters_to_run:
+        # TODO: remove the line below when https://youtrack.jetbrains.com/issue/PY-52210/ is fixed
+        # noinspection PyCallingNonCallable
+        
+        # TODO: report false positive bug to mypy developers
+        updater = updater(database)  # type: ignore
+        
+        updater.process_data()
+        updater.store_data()
 
-
-def update_country_codes(database_connection, uic_root_url: str) -> None:
-    country_codes_updater = CountryCodesUpdater(
-        database_connection,
-        f"{uic_root_url}322",
-        f"{uic_root_url}320",
-    )
-
-    country_codes_updater.process_data()
-    country_codes_updater.store_data()
-
-    country_codes_updater.logger.info("Table `country_codes` sucessfully updated!")
-
-
-def update_companies(database_connection, uic_root_url: str) -> None:
-    companies_updater = CompaniesUpdater(database_connection, uic_root_url)
-
-    companies_updater.process_data()
-    companies_updater.store_data()
-
-    companies_updater.logger.info("Table `companies` sucessfully updated!")
+        updater.logger.info(f"Table `{updater.TABLE_NAME}` sucessfully updated!")
 
 
 if __name__ == "__main__":

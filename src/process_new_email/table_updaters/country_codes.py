@@ -7,13 +7,12 @@ from lxml import etree
 # TODO: find workaround of using a protected member below
 # noinspection PyProtectedMember
 from lxml.etree import _Element
-from pandas import DataFrame
 import pandas as pd
 from requests import HTTPError
 from sqlalchemy import text
 import zipfile
 
-from src.process_new_email.table_updaters.common import HelperTableUpdater
+from src.process_new_email.table_updaters.common import UICTableUpdater
 
 
 def _uic_code_not_assigned(values: tuple[str, str, str]) -> bool:
@@ -25,21 +24,23 @@ def _swap_name(name: str) -> str:
 
 
 @final
-class CountryCodesUpdater(HelperTableUpdater, ABC):
-    def __init__(self, database, data_url, xsd_url: str) -> None:
-        super().__init__(database, data_url)
+class CountryCodesUpdater(UICTableUpdater, ABC):
+    def __init__(self, database) -> None:
+        super().__init__(database)
 
-        self._data_to_validate: _Element = _Element()
-        self.data: DataFrame = pd.DataFrame()
-        self.namespace: dict = {}
+        self._data_to_validate: _Element = NotImplemented
+        self.namespace: dict = NotImplemented
 
+        self.DATA_URL = f"{self.DATA_BASE_URL}322"
         self._TAG_ROW: Final = "ns1:Country"
         self._PATH_ROW: Final = f".//{self._TAG_ROW}"
         self._TAG_BEGINNING_COLUMN: Final = f"{self._TAG_ROW}_"
+        self.XSD_URL: Final = f"{self.DATA_BASE_URL}320"
 
-        self.XSD_URL: Final = xsd_url
+        self._data_to_process: BytesIO = super().download_data(self.DATA_URL)
+
         try:
-            self.xsd_to_process: Final[BytesIO] = super().download_data(xsd_url)
+            self.xsd_to_process: Final[BytesIO] = super().download_data(self.XSD_URL)
             self._xsd: Final[etree.XMLSchema] = self._process_xsd()
         except (HTTPError, IndexError) as exception:
             self.logger.warning(exception)
@@ -136,12 +137,13 @@ class CountryCodesUpdater(HelperTableUpdater, ABC):
     def _create_table_if_not_exists(self) -> None:
         query = """
         create table if not exists countries (
-            ISO_code varchar(2),
-            UIC_code int(2),
-            name_EN varchar(255),
+            ISO_code varchar(2) not null,
+            UIC_code int(2) not null,
+            name_EN varchar(255) not null,
             name_FR varchar(255),
             name_DE varchar(255),
             
+            index (ISO_code),
             primary key (UIC_code)
         )
         """
