@@ -21,9 +21,9 @@ A program for...
   <!--- TODO: report images below not rendering correctly in the Preview panel to JetBrains developers --->
   <!--- TODO: replace the .png extension below with .svg when https://youtrack.jetbrains.com/issue/DBE-17864/ is fixed -->
   <picture>
-    <source media="(prefers-color-scheme: light)" srcset="database_schema_light.png" />
-    <source media="(prefers-color-scheme: dark)" srcset="database_schema_dark.png" />
-    <img src="database_schema_light.png" alt="Database schema for SRs" />
+    <source media="(prefers-color-scheme: light)" srcset="database_schema_light.png" height="600"/>
+    <source media="(prefers-color-scheme: dark)" srcset="database_schema_dark.png" height="600"/>
+    <img src="database_schema_light.png" alt="Database schema for SRs" height="600"/>
   </picture>
 
 
