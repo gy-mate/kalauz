@@ -17,12 +17,13 @@ A program for...
   * [MÁV Magyar Államvasutak Zrt.](https://www.mavcsoport.hu/mav/bemutatkozas) ([.pdf](data/01_import/MÁV_2022-08-08_ASR.pdf))
   * [GySEV Zrt.](https://www2.gysev.hu/palyavasuti-uzletag) ([.xlsx](data/01_import/GYSEV_2022-05-13_ASR.xlsx))
 * Stores them in a MySQL database with the following schema:
-  
+
+  <!--- TODO: report images below not rendering correctly in the Preview panel to JetBrains developers --->
   <!--- TODO: replace the .png extension below with .svg when https://youtrack.jetbrains.com/issue/DBE-17864/ is fixed -->
   <picture>
-    <source media="(prefers-color-scheme: light)" srcset="database_schema_light.png" height="200"/>
-    <source media="(prefers-color-scheme: dark)" srcset="database_schema_dark.png" height="200"/>
-    <img src="database_schema_light.png" alt="Database schema for SRs" height="200"/>
+    <source media="(prefers-color-scheme: light)" srcset="database_schema_light.png" />
+    <source media="(prefers-color-scheme: dark)" srcset="database_schema_dark.png" />
+    <img src="database_schema_light.png" alt="Database schema for SRs" />
   </picture>
 
 
