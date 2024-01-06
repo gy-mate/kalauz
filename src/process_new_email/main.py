@@ -2,11 +2,10 @@ import logging
 
 from dotenv import load_dotenv
 
-from src.process_new_email.database_connection import Database
 from src.process_new_email.table_updaters.common import HelperTableUpdater
 
 from src.process_new_email.table_updaters.companies import CompaniesUpdater
-from src.process_new_email.table_updaters.country_codes import CountryCodesUpdater
+from src.process_new_email.table_updaters.countries import CountryCodesUpdater
 
 
 def main() -> None:
@@ -21,20 +20,19 @@ def main() -> None:
     )
     load_dotenv()
 
-    database = Database("kalauz")
-    # TODO: remove comments below when https://github.com/python/mypy/issues/10160 or https://github.com/python/mypy/issues/9756 is fixed
+    # future: remove comments below when https://github.com/python/mypy/issues/10160 or https://github.com/python/mypy/issues/9756 is fixed
     updaters_to_run: list[HelperTableUpdater] = [  # type: ignore
         CountryCodesUpdater,  # type: ignore
         CompaniesUpdater,  # type: ignore
     ]
 
     for updater in updaters_to_run:
-        # TODO: remove the line below when https://youtrack.jetbrains.com/issue/PY-52210/ is fixed
+        # future: remove the line below when https://youtrack.jetbrains.com/issue/PY-52210/ is fixed
         # noinspection PyCallingNonCallable
-        
-        # TODO: report false positive bug to mypy developers
-        updater = updater(database)  # type: ignore
-        
+
+        # future: report bug (false positive) to mypy developers
+        updater = updater()  # type: ignore
+
         updater.process_data()
         updater.store_data()
 

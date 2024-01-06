@@ -9,15 +9,15 @@ import requests
 from src.process_new_email.database_connection import Database
 
 
-class HelperTableUpdater(ABC):
-    def __init__(self, database: Database) -> None:
+class HelperTableUpdater(Database, ABC):
+    def __init__(self) -> None:
+        super().__init__()
+
         self.logger = logging.getLogger(__name__)
 
         self.DATA_URL: str = NotImplemented
         self.TABLE_NAME: str = NotImplemented
         self._data_to_process: BytesIO = NotImplemented
-
-        self.database: Final = database
 
     def download_data(self, url: str) -> BytesIO:
         response = requests.get(
@@ -38,22 +38,22 @@ class HelperTableUpdater(ABC):
     @abstractmethod
     def store_data(self) -> None:
         pass
-    
-    
+
+
 class UICTableUpdater(HelperTableUpdater, ABC):
-    def __init__(self, database: Database) -> None:
-        super().__init__(database)
-        
-        self.DATA_BASE_URL: Final = "https://uic.org/spip.php?action=telecharger&arg="
-        
+    def __init__(self) -> None:
+        super().__init__()
+
         self.data: pd.DataFrame = NotImplemented
+
+        self.DATA_BASE_URL: Final = "https://uic.org/spip.php?action=telecharger&arg="
 
         self.logger.info(f"{self.__class__.__name__} initialized!")
 
     @abstractmethod
     def process_data(self) -> None:
         pass
-    
+
     @abstractmethod
     def store_data(self) -> None:
         pass

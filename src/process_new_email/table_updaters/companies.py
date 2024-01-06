@@ -1,4 +1,3 @@
-from abc import ABC
 from datetime import datetime
 from io import BytesIO
 import re
@@ -11,18 +10,19 @@ from src.process_new_email.table_updaters.common import UICTableUpdater
 
 
 @final
-class CompaniesUpdater(UICTableUpdater, ABC):
-    def __init__(self, database) -> None:
-        super().__init__(database)
-        
+# FIXME: extract methods as needed
+class CompaniesUpdater(UICTableUpdater):
+    def __init__(self) -> None:
+        super().__init__()
+
         self.DATA_URL = f"{self.DATA_BASE_URL}3023"
-        
+
         self._data_to_process: BytesIO = super().download_data(self.DATA_URL)
 
         self.logger.info(f"{self.__class__.__name__} initialized!")
 
     def process_data(self) -> None:
-        # TODO: remove the line below when https://youtrack.jetbrains.com/issue/PY-55260/ is fixed
+        # future: remove the line below when https://youtrack.jetbrains.com/issue/PY-55260/ is fixed
         # noinspection PyTypeChecker
         self.data = pd.read_excel(self._data_to_process)
 
@@ -88,7 +88,7 @@ class CompaniesUpdater(UICTableUpdater, ABC):
         )
 
     def store_data(self) -> None:
-        with self.database.engine.begin() as connection:
+        with self.engine.begin() as connection:
             query = """
             create table if not exists companies (
                 UIC_code int(4) not null,
@@ -115,7 +115,7 @@ class CompaniesUpdater(UICTableUpdater, ABC):
 
             connection.execute(text(query))
 
-        with self.database.engine.begin() as connection:
+        with self.engine.begin() as connection:
             for index, row in self.data.iterrows():
                 # noinspection PyListCreation
                 queries = []

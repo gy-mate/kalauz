@@ -1,10 +1,11 @@
-from abc import ABC
 from io import BytesIO
 from typing import Final, final
 
 from lxml import etree
 
-# TODO: find workaround of using a protected member below
+# TODO: report mandatory usage of protected member to lxml developers at https://bugs.launchpad.net/lxml
+#  https://github.com/lxml/lxml/blob/a4a78214506409e5bbb6c4249cac0c0ca6479d3e/src/lxml/etree.pyx#L1877
+#  https://github.com/lxml/lxml/blob/a4a78214506409e5bbb6c4249cac0c0ca6479d3e/src/lxml/etree.pyx#L3166
 # noinspection PyProtectedMember
 from lxml.etree import _Element
 import pandas as pd
@@ -24,9 +25,9 @@ def _swap_name(name: str) -> str:
 
 
 @final
-class CountryCodesUpdater(UICTableUpdater, ABC):
-    def __init__(self, database) -> None:
-        super().__init__(database)
+class CountryCodesUpdater(UICTableUpdater):
+    def __init__(self) -> None:
+        super().__init__()
 
         self._data_to_validate: _Element = NotImplemented
         self.namespace: dict = NotImplemented
@@ -147,12 +148,12 @@ class CountryCodesUpdater(UICTableUpdater, ABC):
             primary key (UIC_code)
         )
         """
-        with self.database.engine.begin() as connection:
+        with self.engine.begin() as connection:
             connection.execute(text(query))
         self.logger.info("Table `countries` sucessfully created (if needed)!")
 
     def _add_data(self) -> None:
-        with self.database.engine.begin() as connection:
+        with self.engine.begin() as connection:
             for index, row in self.data.iterrows():
                 query = """
                 insert ignore into countries (
