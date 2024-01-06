@@ -19,14 +19,23 @@ A program for...
 * Stores them in a MySQL database with the following schema:
   
   <!--- TODO: replace the .png extension below with .svg when https://youtrack.jetbrains.com/issue/DBE-17864/ is fixed -->
-  <img src="database_schema.png" alt="Database schema for SRs" height="200"/>
+  <picture>
+    <source media="(prefers-color-scheme: light)" srcset="database_schema_light.png" height="200"/>
+    <source media="(prefers-color-scheme: dark)" srcset="database_schema_dark.png" height="200"/>
+    <img src="database_schema_light.png" alt="Database schema for SRs" height="200"/>
+  </picture>
 
 
 ## 📥 Installation
 
-```bash
-make install
-```
+1. [Clone the repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository)
+2. Run the following commands in the terminal:
+  ```bash
+  cd kalauz
+  ```
+  ```bash
+  make install
+  ```
 
 
 ## 📦 Dependencies
