@@ -30,16 +30,14 @@ A program for...
 ## 📥 Installation
 
 1. [Clone the repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository)
-2. Run the following commands in the terminal:
+2. Run the following command in the terminal:
+
   ```bash
-  cd kalauz
-  ```
-  ```bash
-  make install
+  cd kalauz && make install
   ```
 
 
-## 📦 Dependencies
+### 📦 Dependencies
 
 * [Python](https://www.python.org/downloads/) `3.9+`
 * [MySQL](https://dev.mysql.com/downloads/mysql/) `5.6+`
