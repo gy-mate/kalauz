@@ -1,31 +1,30 @@
+from abc import ABC
 from datetime import datetime
-from io import BytesIO
 import re
 from typing import final
 
-import pandas as pd
 from sqlalchemy import text
 
-from src.process_new_email.table_updaters.common import UICTableUpdater
+from src.process_new_email.table_updaters.common import ExcelProcessor, UICTableUpdater
 
 
 @final
-# FIXME: extract methods as needed
-class CompaniesUpdater(UICTableUpdater):
+# TODO: add logging
+class CompaniesUpdater(ExcelProcessor, UICTableUpdater, ABC):
     def __init__(self) -> None:
         super().__init__()
 
         self.DATA_URL = f"{self.DATA_BASE_URL}3023"
 
-        self._data_to_process: BytesIO = super().download_data(self.DATA_URL)
+        self._data_to_process = self.download_data(self.DATA_URL)
 
         self.logger.info(f"{self.__class__.__name__} initialized!")
 
-    def process_data(self) -> None:
-        # future: remove the line below when https://youtrack.jetbrains.com/issue/PY-55260/ is fixed
-        # noinspection PyTypeChecker
-        self.data = pd.read_excel(self._data_to_process)
+    def _correct_column_names(self):
+        self._replace_nonword_with_underscore()
+        self._rename_columns_manually()
 
+    def _replace_nonword_with_underscore(self):
         # TODO: report wrong display of newlines in DataFrame view to pandas developers
         self.data.rename(
             columns=lambda x: re.sub(
@@ -35,6 +34,8 @@ class CompaniesUpdater(UICTableUpdater):
             ).lower(),
             inplace=True,
         )
+
+    def _rename_columns_manually(self):
         self.data.rename(
             columns={
                 "code": "UIC_code",
@@ -46,6 +47,12 @@ class CompaniesUpdater(UICTableUpdater):
             inplace=True,
         )
 
+    def _delete_data(self):
+        self._remove_invalid_and_irrelevant_companies()
+        self._drop_unnecessary_columns()
+        self._remove_invalid_companies()
+
+    def _remove_invalid_and_irrelevant_companies(self):
         self.data.dropna(
             subset=[
                 "allocation_date",
@@ -53,6 +60,8 @@ class CompaniesUpdater(UICTableUpdater):
             ],
             inplace=True,
         )
+
+    def _drop_unnecessary_columns(self):
         self.data.drop(
             columns=[
                 "request_date",
@@ -61,6 +70,7 @@ class CompaniesUpdater(UICTableUpdater):
             inplace=True,
         )
 
+    def _remove_invalid_companies(self):
         # noinspection PyUnusedLocal
         today = datetime.today()
         self.data.query(
@@ -68,27 +78,8 @@ class CompaniesUpdater(UICTableUpdater):
             inplace=True,
         )
 
-        boolean_columns = [
-            "freight",
-            "passenger",
-            "infrastructure",
-            "holding",
-            "integrated",
-            "other",
-        ]
-        for column in boolean_columns:
-            self.data[column] = self.data[column].apply(lambda x: x == "x" or x == "X")
-
-        self.data.replace(
-            to_replace={
-                pd.NA: None,
-                pd.NaT: None,
-            },
-            inplace=True,
-        )
-
     def store_data(self) -> None:
-        with self.engine.begin() as connection:
+        with self.database.engine.begin() as connection:
             query = """
             create table if not exists companies (
                 UIC_code int(4) not null,
@@ -115,12 +106,9 @@ class CompaniesUpdater(UICTableUpdater):
 
             connection.execute(text(query))
 
-        with self.engine.begin() as connection:
+        with self.database.engine.begin() as connection:
             for index, row in self.data.iterrows():
-                # noinspection PyListCreation
-                queries = []
-
-                queries.append(
+                queries = [
                     """
                 insert ignore into companies (
                     UIC_code,
@@ -156,9 +144,7 @@ class CompaniesUpdater(UICTableUpdater):
                     :other,
                     :URL
                 )
-                """
-                )
-                queries.append(
+                """,
                     """
                 update companies
                 set
@@ -178,8 +164,8 @@ class CompaniesUpdater(UICTableUpdater):
                     URL = :URL
                 where
                     UIC_code = :UIC_code
-                """
-                )
+                """,
+                ]
 
                 for query in queries:
                     connection.execute(

@@ -38,10 +38,10 @@ class CountryCodesUpdater(UICTableUpdater):
         self._TAG_BEGINNING_COLUMN: Final = f"{self._TAG_ROW}_"
         self.XSD_URL: Final = f"{self.DATA_BASE_URL}320"
 
-        self._data_to_process: BytesIO = super().download_data(self.DATA_URL)
+        self._data_to_process = self.download_data(self.DATA_URL)
 
         try:
-            self.xsd_to_process: Final[BytesIO] = super().download_data(self.XSD_URL)
+            self.xsd_to_process: Final = self.download_data(self.XSD_URL)
             self._xsd: Final[etree.XMLSchema] = self._process_xsd()
         except (HTTPError, IndexError) as exception:
             self.logger.warning(exception)
@@ -52,8 +52,8 @@ class CountryCodesUpdater(UICTableUpdater):
         xsd_unzipped = self._unzip(self.xsd_to_process)
         return etree.XMLSchema(etree.parse(xsd_unzipped))
 
-    def _unzip(self, xsd: BytesIO) -> BytesIO:
-        with zipfile.ZipFile(xsd, "r") as zipped_file:
+    def _unzip(self, xsd: bytes) -> BytesIO:
+        with zipfile.ZipFile(BytesIO(xsd), "r") as zipped_file:
             file_names = zipped_file.infolist()
             if len(file_names) > 1:
                 raise IndexError(
@@ -76,7 +76,7 @@ class CountryCodesUpdater(UICTableUpdater):
         self._swap_names_separated_with_comma()
 
     def _validate_data(self) -> None:
-        self._data_to_validate = etree.parse(self._data_to_process).getroot()
+        self._data_to_validate = etree.parse(BytesIO(self._data_to_process)).getroot()
         self.logger.info(f"Data downloaded from {self.DATA_URL} successfully parsed!")
 
         self.namespace = self._data_to_validate.nsmap
@@ -148,12 +148,12 @@ class CountryCodesUpdater(UICTableUpdater):
             primary key (UIC_code)
         )
         """
-        with self.engine.begin() as connection:
+        with self.database.engine.begin() as connection:
             connection.execute(text(query))
         self.logger.info("Table `countries` sucessfully created (if needed)!")
 
     def _add_data(self) -> None:
-        with self.engine.begin() as connection:
+        with self.database.engine.begin() as connection:
             for index, row in self.data.iterrows():
                 query = """
                 insert ignore into countries (
