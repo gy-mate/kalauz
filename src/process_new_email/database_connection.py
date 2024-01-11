@@ -2,7 +2,8 @@ import logging
 import os
 from typing import Final
 
-from sqlalchemy import Engine, create_engine, URL, text
+from sqlalchemy import Engine, create_engine, URL, inspect, text
+from sqlalchemy.sql.ddl import CreateSchema
 
 from src.singleton import Singleton
 
@@ -49,10 +50,9 @@ class Database(metaclass=Singleton):
             self.logger.info("Successfully connected to the database server!")
 
     def _connect_to_database(self) -> Engine:
-        with self.engine.begin() as connection:
-            connection.execute(
-                text(f"create database if not exists {self.DATABASE_NAME}")
-            )
+        if not inspect(self.engine).has_schema(self.DATABASE_NAME):
+            with self.engine.begin() as connection:
+                connection.execute(CreateSchema(self.DATABASE_NAME))
 
         return self._connect_to_created_database()
 
