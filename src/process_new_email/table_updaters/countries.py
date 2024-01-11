@@ -37,6 +37,7 @@ class CountryCodesUpdater(UICTableUpdater):
         self._PATH_ROW: Final = f".//{self._TAG_ROW}"
         self._TAG_BEGINNING_COLUMN: Final = f"{self._TAG_ROW}_"
         self.XSD_URL: Final = f"{self.DATA_BASE_URL}320"
+        self.TABLE_NAME = "countries"
 
         self._data_to_process = self.download_data(self.DATA_URL)
 
@@ -104,52 +105,51 @@ class CountryCodesUpdater(UICTableUpdater):
     def _rename_columns(self):
         self.data.rename(
             columns={
-                "Country_ISO_Code": "ISO_code",
-                "Country_UIC_Code": "UIC_code",
-                "Country_Name_EN": "name_EN",
-                "Country_Name_FR": "name_FR",
-                "Country_Name_DE": "name_DE",
+                "Country_ISO_Code": "code_iso",
+                "Country_UIC_Code": "code_uic",
+                "Country_Name_EN": "name_en",
+                "Country_Name_FR": "name_fr",
+                "Country_Name_DE": "name_de",
             },
             inplace=True,
         )
 
     def _drop_unnecessary_columns(self):
         self.data.dropna(
-            subset=["UIC_code"],
+            subset=["code_uic"],
             inplace=True,
         )
 
     def _swap_names_separated_with_comma(self):
         columns_to_swap = [
-            "name_EN",
-            "name_FR",
-            "name_DE",
+            "name_en",
+            "name_fr",
+            "name_de",
         ]
-        self.data["name_EN"] = self.data["name_EN"].apply(lambda x: x.rstrip())
+        self.data["name_en"] = self.data["name_en"].apply(lambda x: x.rstrip())
         for column_name in columns_to_swap:
             self.data[column_name] = self.data[column_name].apply(
                 lambda x: _swap_name(x)
             )
 
-    def store_data(self) -> None:
-        self._create_table_if_not_exists()
-        self._add_data()
-
     def _create_table_if_not_exists(self) -> None:
-        query = """
-        create table if not exists countries (
-            ISO_code varchar(2) not null,
-            UIC_code int(2) not null,
-            name_EN varchar(255) not null,
-            name_FR varchar(255),
-            name_DE varchar(255),
-            
-            index (ISO_code),
-            primary key (UIC_code)
-        )
-        """
         with self.database.engine.begin() as connection:
-            connection.execute(text(query))
+            query = """
+            create table if not exists :table_name (
+                code_iso varchar(2) not null,
+                code_uic int(2) not null,
+                name_en varchar(255) not null,
+                name_fr varchar(255),
+                name_de varchar(255),
+                
+                index (code_iso),
+                primary key (code_uic)
+            )
+            """
+            connection.execute(
+                text(query),
+                {"table_name": self.TABLE_NAME},
+            )
         self.logger.info("Table `countries` sucessfully created (if needed)!")
 
     def _add_data(self) -> None:
@@ -157,18 +157,18 @@ class CountryCodesUpdater(UICTableUpdater):
             for index, row in self.data.iterrows():
                 query = """
                 insert ignore into countries (
-                    ISO_code,
-                    UIC_code,
-                    name_EN,
-                    name_FR,
-                    name_DE
+                    code_iso,
+                    code_uic,
+                    name_en,
+                    name_fr,
+                    name_de
                 )
                 values (
-                    :ISO_code,
-                    :UIC_code,
-                    :name_EN,
-                    :name_FR,
-                    :name_DE
+                    :code_iso,
+                    :code_uic,
+                    :name_en,
+                    :name_fr,
+                    :name_de
                 )
                 """
                 connection.execute(
