@@ -1,10 +1,13 @@
 # 🛤️ kalauz
 
+<a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
+
+
 ## 📖 About
 
 A program for...
 * **processing** rail network operator companies' internal, dirty **spreadsheets** of speed restrictions
-* **storing** that data in a mySQL **database**
+* **storing** that data in a MySQL **database**
 * **visualizing** the speed restrictions on a **map.**
 
 
@@ -13,25 +16,37 @@ A program for...
 * Processes the following companies' spreadsheets of SRs in the following formats:
   * [MÁV Magyar Államvasutak Zrt.](https://www.mavcsoport.hu/mav/bemutatkozas) ([.pdf](data/01_import/MÁV_2022-08-08_ASR.pdf))
   * [GySEV Zrt.](https://www2.gysev.hu/palyavasuti-uzletag) ([.xlsx](data/01_import/GYSEV_2022-05-13_ASR.xlsx))
-* Stores them in a mySQL database with the following schema:
-  
-  <!--- replace the .png extension below with .svg when https://youtrack.jetbrains.com/issue/DBE-17864/ is fixed -->
-  <img src="database_schema.png" alt="Database schema for SRs" height="200"/>
+* Stores them in a MySQL database with the following schema:
+
+  <!--- TODO: report images below not rendering correctly in the Preview panel to JetBrains developers --->
+  <!--- TODO: replace the .png extension below with .svg when https://youtrack.jetbrains.com/issue/DBE-17864/ is fixed -->
+  <picture>
+    <source media="(prefers-color-scheme: light)" srcset="database_schema_light.png" height="600"/>
+    <source media="(prefers-color-scheme: dark)" srcset="database_schema_dark.png" height="600"/>
+    <img src="database_schema_light.png" alt="Database schema for SRs" height="600"/>
+  </picture>
 
 
 ## 📥 Installation
 
-```bash
-make install
-```
+1. [Clone the repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository)
+2. Run the following command in the terminal:
+
+  ```bash
+  cd kalauz && make install
+  ```
 
 
-## 📦 Dependencies
+### 📦 Dependencies
 
 * [Python](https://www.python.org/downloads/) `3.9+`
-* [mySQL](https://dev.mysql.com/downloads/mysql/) `5.6+`
+* [MySQL](https://dev.mysql.com/downloads/mysql/) `5.6+`
   * Store your database password in a `DATABASE_PASSWORD` variable 
     in a `.env` file in the root of the repository.
+
+### 🛠️ For development
+
+* [mypy](https://github.com/python/mypy)
 
 
 ## 📚 Reference
@@ -46,7 +61,7 @@ Abbreviations used:
 ## 📜 License
 
 This project is licensed under the _GNU General Public License v3.0_.
-See the [license](copying.txt) file (or the _License_ tab on GitHub) for its full text.
+See the [license](copying.txt) file (or the _GPL-3.0 license_ tab on GitHub) for its full text.
 
 
 ## 🏦 Funding

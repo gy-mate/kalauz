@@ -1,47 +1,121 @@
 from abc import ABC, abstractmethod
 from io import BytesIO
-import os
-from typing import Final
+import logging
+from typing import Any, Final
 
-import mysql.connector
+import numpy as np
+import pandas as pd
 import requests
 
-from src.logger import LoggerMixin
+# future: remove the comment below when stubs for the library below are available
+import xlrd  # type: ignore
+
+from src.process_new_email.database_connection import Database
 
 
-class HelperTableUpdater(LoggerMixin, ABC):
-
-    def __init__(self, data_url: str):
+class TableUpdater(ABC):
+    def __init__(self) -> None:
         super().__init__()
-        
-        self._DATA_URL: Final = data_url
-        self._DATA_TO_PROCESS: Final[BytesIO] = self.download_data(data_url)
-        
-        self.CONNECTION_TO_DATABASE: Final = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password=os.getenv("DATABASE_PASSWORD"),
-            database="kalauz"
-        )
-        self.CURSOR: Final = self.CONNECTION_TO_DATABASE.cursor()
-    
-    def download_data(self, url: str) -> BytesIO:
-        response = requests.get(
-            url,
+
+        self.logger = logging.getLogger(__name__)
+        self.database = Database()
+        self._dowload_session = requests.Session()
+
+        self.DATA_URL: str = NotImplemented
+        self.TABLE_NAME: str = NotImplemented
+
+        self.data: Any = NotImplemented
+        self._data_to_process: bytes = NotImplemented
+
+    def download_data(self, url: str) -> bytes:
+        response = self._dowload_session.get(
+            url=url,
             headers={
-                "User-Agent":
-                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                    "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1.2 Safari/605.1.15"
-            }
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1.2 Safari/605.1.15"
+            },
         )
         response.raise_for_status()
         self.logger.info(f"File successfully downloaded from {url}!")
-        return BytesIO(response.content)
-    
+        return bytes(response.content)
+
     @abstractmethod
     def process_data(self) -> None:
         pass
 
-    @abstractmethod
     def store_data(self) -> None:
+        self._create_table_if_not_exists()
+        self._add_data()
+
+    @abstractmethod
+    def _create_table_if_not_exists(self) -> None:
         pass
+
+    @abstractmethod
+    def _add_data(self) -> None:
+        pass
+
+
+class UICTableUpdater(TableUpdater, ABC):
+    def __init__(self) -> None:
+        super().__init__()
+
+        self.DATA_BASE_URL: Final = "https://uic.org/spip.php?action=telecharger&arg="
+
+
+class ExcelProcessor(TableUpdater):
+    def __init__(self) -> None:
+        super().__init__()
+
+        self.data: pd.DataFrame = NotImplemented
+
+    def process_data(self) -> None:
+        try:
+            # future: remove the line below when https://youtrack.jetbrains.com/issue/PY-55260/ is fixed
+            # noinspection PyTypeChecker
+            # future: report bug (false positive) to mypy developers
+            self.data = pd.read_excel(BytesIO(self._data_to_process))  # type: ignore
+        except xlrd.compdoc.CompDocError:
+            workbook = xlrd.open_workbook(
+                file_contents=self._data_to_process,
+                ignore_workbook_corruption=True,
+            )
+            self.data = pd.read_excel(workbook)
+
+        self._correct_column_names()
+
+        self._delete_data()
+        self._correct_data()
+
+    def _correct_column_names(self) -> None:
+        self._rename_columns_manually()
+
+    @abstractmethod
+    def _rename_columns_manually(self) -> None:
+        pass
+
+    def _delete_data(self) -> None:
+        pass
+
+    def _correct_data(self) -> None:
+        self._correct_data_manually()
+        self._correct_boolean_values()
+        self._correct_na_values_for_database()
+
+    def _correct_data_manually(self) -> None:
+        pass
+
+    @abstractmethod
+    def _correct_boolean_values(self) -> None:
+        pass
+
+    def _correct_na_values_for_database(self) -> None:
+        self.data.replace(
+            to_replace={
+                pd.NA: None,
+                pd.NaT: None,
+                # future: remove the line below when https://github.com/pandas-dev/pandas/issues/32265 is fixed
+                np.NaN: None,
+            },
+            inplace=True,
+        )
