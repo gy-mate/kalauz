@@ -15,16 +15,17 @@ class CompaniesUpdater(ExcelProcessor, UICTableUpdater, ABC):
         super().__init__()
 
         self.DATA_URL = f"{self.DATA_BASE_URL}3023"
+        self.TABLE_NAME = "companies"
 
         self._data_to_process = self.download_data(self.DATA_URL)
 
         self.logger.info(f"{self.__class__.__name__} initialized!")
 
-    def _correct_column_names(self):
+    def _correct_column_names(self) -> None:
         self._replace_nonword_with_underscore()
         self._rename_columns_manually()
 
-    def _replace_nonword_with_underscore(self):
+    def _replace_nonword_with_underscore(self) -> None:
         # TODO: report wrong display of newlines in DataFrame view to pandas developers
         self.data.rename(
             columns=lambda x: re.sub(
@@ -35,24 +36,24 @@ class CompaniesUpdater(ExcelProcessor, UICTableUpdater, ABC):
             inplace=True,
         )
 
-    def _rename_columns_manually(self):
+    def _rename_columns_manually(self) -> None:
         self.data.rename(
             columns={
-                "code": "UIC_code",
+                "code": "code_uic",
                 "full_name": "name",
-                "country": "country_ISO_code",
+                "country": "country_code_iso",
                 "infra-_structure": "infrastructure",
-                "url": "URL",
+                "url": "url",
             },
             inplace=True,
         )
 
-    def _delete_data(self):
+    def _delete_data(self) -> None:
         self._remove_invalid_and_irrelevant_companies()
         self._drop_unnecessary_columns()
         self._remove_invalid_companies()
 
-    def _remove_invalid_and_irrelevant_companies(self):
+    def _remove_invalid_and_irrelevant_companies(self) -> None:
         self.data.dropna(
             subset=[
                 "allocation_date",
@@ -61,7 +62,7 @@ class CompaniesUpdater(ExcelProcessor, UICTableUpdater, ABC):
             inplace=True,
         )
 
-    def _drop_unnecessary_columns(self):
+    def _drop_unnecessary_columns(self) -> None:
         self.data.drop(
             columns=[
                 "request_date",
@@ -70,7 +71,8 @@ class CompaniesUpdater(ExcelProcessor, UICTableUpdater, ABC):
             inplace=True,
         )
 
-    def _remove_invalid_companies(self):
+    def _remove_invalid_companies(self) -> None:
+        # future: report bug below to JetBrains or pandas developers
         # noinspection PyUnusedLocal
         today = datetime.today()
         self.data.query(
@@ -78,14 +80,26 @@ class CompaniesUpdater(ExcelProcessor, UICTableUpdater, ABC):
             inplace=True,
         )
 
-    def store_data(self) -> None:
+    def _correct_boolean_values(self) -> None:
+        boolean_columns = [
+            "freight",
+            "passenger",
+            "infrastructure",
+            "holding",
+            "integrated",
+            "other",
+        ]
+        for column in boolean_columns:
+            self.data[column] = self.data[column].apply(lambda x: x == "x" or x == "X")
+
+    def _create_table_if_not_exists(self) -> None:
         with self.database.engine.begin() as connection:
             query = """
-            create table if not exists companies (
-                UIC_code int(4) not null,
+            create table if not exists :table_name (
+                code_uic int(4) not null,
                 short_name varchar(255),
                 name varchar(255) not null,
-                country_ISO_code varchar(2) not null,
+                country_code_iso varchar(2) not null,
                 allocation_date date,
                 modified_date date,
                 begin_of_validity date,
@@ -96,25 +110,27 @@ class CompaniesUpdater(ExcelProcessor, UICTableUpdater, ABC):
                 holding boolean not null,
                 integrated boolean not null,
                 other boolean not null,
-                URL varchar(255),
+                url varchar(255),
                 
-                index (UIC_code),
-                primary key (UIC_code),
-                foreign key (country_ISO_code) references countries(ISO_code)
+                index (code_uic),
+                primary key (code_uic),
+                foreign key (country_code_iso) references countries(code_iso)
             )
             """
+            connection.execute(
+                text(query),
+                {"table_name": self.TABLE_NAME},
+            )
 
-            connection.execute(text(query))
-
+    def _add_data(self) -> None:
         with self.database.engine.begin() as connection:
-            for index, row in self.data.iterrows():
-                queries = [
-                    """
+            queries = [
+                """
                 insert ignore into companies (
-                    UIC_code,
+                    code_uic,
                     short_name,
                     name,
-                    country_ISO_code,
+                    country_code_iso,
                     allocation_date,
                     modified_date,
                     begin_of_validity,
@@ -125,13 +141,13 @@ class CompaniesUpdater(ExcelProcessor, UICTableUpdater, ABC):
                     holding,
                     integrated,
                     other,
-                    URL
+                    url
                 )
                 values (
-                    :UIC_code,
+                    :code_uic,
                     :short_name,
                     :name,
-                    :country_ISO_code,
+                    :country_code_iso,
                     :allocation_date,
                     :modified_date,
                     :begin_of_validity,
@@ -142,15 +158,15 @@ class CompaniesUpdater(ExcelProcessor, UICTableUpdater, ABC):
                     :holding,
                     :integrated,
                     :other,
-                    :URL
+                    :url
                 )
                 """,
-                    """
+                """
                 update companies
                 set
                     short_name = :short_name,
                     name = :name,
-                    country_ISO_code = :country_ISO_code,
+                    country_code_iso = :country_code_iso,
                     allocation_date = :allocation_date,
                     modified_date = :modified_date,
                     begin_of_validity = :begin_of_validity,
@@ -161,12 +177,13 @@ class CompaniesUpdater(ExcelProcessor, UICTableUpdater, ABC):
                     holding = :holding,
                     integrated = :integrated,
                     other = :other,
-                    URL = :URL
+                    url = :url
                 where
-                    UIC_code = :UIC_code
+                    code_uic = :code_uic
                 """,
-                ]
+            ]
 
+            for index, row in self.data.iterrows():
                 for query in queries:
                     connection.execute(
                         text(query),
