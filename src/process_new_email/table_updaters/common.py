@@ -6,6 +6,7 @@ from typing import Any, Final
 import numpy as np
 import pandas as pd
 import requests
+from sqlalchemy import MetaData
 
 # future: remove the comment below when stubs for the library below are available
 import xlrd  # type: ignore
@@ -14,6 +15,9 @@ from src.process_new_email.database_connection import Database
 
 
 class TableUpdater(ABC):
+    TABLE_NAME: str = NotImplemented
+    database_metadata: MetaData = NotImplemented
+    
     def __init__(self) -> None:
         super().__init__()
 
@@ -22,7 +26,6 @@ class TableUpdater(ABC):
         self._dowload_session = requests.Session()
 
         self.DATA_URL: str = NotImplemented
-        self.TABLE_NAME: str = NotImplemented
 
         self.data: Any = NotImplemented
         self._data_to_process: bytes = NotImplemented

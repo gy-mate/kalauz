@@ -3,19 +3,107 @@ from datetime import datetime
 import re
 from typing import final
 
-from sqlalchemy import text
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Date,
+    ForeignKey,
+    MetaData,
+    SmallInteger,
+    String,
+    Table,
+    text,
+)
 
 from src.process_new_email.table_updaters.common import ExcelProcessor, UICTableUpdater
+from src.process_new_email.table_updaters.countries import CountriesUpdater
 
 
 @final
 # TODO: add logging
 class CompaniesUpdater(ExcelProcessor, UICTableUpdater, ABC):
+    TABLE_NAME = "companies"
+    database_metadata = MetaData()
+
+    table = Table(
+        TABLE_NAME,
+        database_metadata,
+        Column(
+            name="code_uic",
+            type_=SmallInteger,
+            nullable=False,
+            index=True,
+            primary_key=True,
+        ),
+        Column(
+            name="short_name",
+            type_=String(255),
+        ),
+        Column(
+            name="name",
+            type_=String(255),
+            nullable=False,
+        ),
+        Column(
+            "country_code_iso",
+            String(2),
+            ForeignKey(CountriesUpdater.table.c.code_iso),
+            nullable=False,
+        ),
+        Column(
+            name="allocation_date",
+            type_=Date,
+        ),
+        Column(
+            name="modified_date",
+            type_=Date,
+        ),
+        Column(
+            name="begin_of_validity",
+            type_=Date,
+        ),
+        Column(
+            name="end_of_validity",
+            type_=Date,
+        ),
+        Column(
+            name="freight",
+            type_=Boolean,
+            nullable=False,
+        ),
+        Column(
+            name="passenger",
+            type_=Boolean,
+            nullable=False,
+        ),
+        Column(
+            name="infrastructure",
+            type_=Boolean,
+            nullable=False,
+        ),
+        Column(
+            name="holding",
+            type_=Boolean,
+        ),
+        Column(
+            name="integrated",
+            type_=Boolean,
+        ),
+        Column(
+            name="other",
+            type_=Boolean,
+            nullable=False,
+        ),
+        Column(
+            name="url",
+            type_=String(255),
+        ),
+    )
+
     def __init__(self) -> None:
         super().__init__()
 
         self.DATA_URL = f"{self.DATA_BASE_URL}3023"
-        self.TABLE_NAME = "companies"
 
         self._data_to_process = self.download_data(self.DATA_URL)
 
@@ -94,32 +182,9 @@ class CompaniesUpdater(ExcelProcessor, UICTableUpdater, ABC):
 
     def _create_table_if_not_exists(self) -> None:
         with self.database.engine.begin() as connection:
-            query = """
-            create table if not exists :table_name (
-                code_uic int(4) not null,
-                short_name varchar(255),
-                name varchar(255) not null,
-                country_code_iso varchar(2) not null,
-                allocation_date date,
-                modified_date date,
-                begin_of_validity date,
-                end_of_validity date,
-                freight boolean not null,
-                passenger boolean not null,
-                infrastructure boolean not null,
-                holding boolean not null,
-                integrated boolean not null,
-                other boolean not null,
-                url varchar(255),
-                
-                index (code_uic),
-                primary key (code_uic),
-                foreign key (country_code_iso) references countries(code_iso)
-            )
-            """
-            connection.execute(
-                text(query),
-                {"table_name": self.TABLE_NAME},
+            self.table.create(
+                bind=connection,
+                checkfirst=True,
             )
 
     def _add_data(self) -> None:

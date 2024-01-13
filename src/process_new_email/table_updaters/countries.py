@@ -10,7 +10,7 @@ from lxml import etree
 from lxml.etree import _Element
 import pandas as pd
 from requests import HTTPError
-from sqlalchemy import text
+from sqlalchemy import Column, MetaData, SmallInteger, String, Table, text
 import zipfile
 
 from src.process_new_email.table_updaters.common import UICTableUpdater
@@ -25,7 +25,40 @@ def _swap_name(name: str) -> str:
 
 
 @final
-class CountryCodesUpdater(UICTableUpdater):
+class CountriesUpdater(UICTableUpdater):
+    TABLE_NAME = "countries"
+    database_metadata = MetaData()
+
+    table = Table(
+        TABLE_NAME,
+        database_metadata,
+        Column(
+            name="code_iso",
+            type_=String(2),
+            nullable=False,
+            index=True,
+        ),
+        Column(
+            name="code_uic",
+            type_=SmallInteger,
+            nullable=False,
+            primary_key=True,
+        ),
+        Column(
+            name="name_en",
+            type_=String(255),
+            nullable=False,
+        ),
+        Column(
+            name="name_fr",
+            type_=String(255),
+        ),
+        Column(
+            name="name_de",
+            type_=String(255),
+        ),
+    )
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -37,7 +70,6 @@ class CountryCodesUpdater(UICTableUpdater):
         self._PATH_ROW: Final = f".//{self._TAG_ROW}"
         self._TAG_BEGINNING_COLUMN: Final = f"{self._TAG_ROW}_"
         self.XSD_URL: Final = f"{self.DATA_BASE_URL}320"
-        self.TABLE_NAME = "countries"
 
         self._data_to_process = self.download_data(self.DATA_URL)
 
@@ -134,21 +166,9 @@ class CountryCodesUpdater(UICTableUpdater):
 
     def _create_table_if_not_exists(self) -> None:
         with self.database.engine.begin() as connection:
-            query = """
-            create table if not exists :table_name (
-                code_iso varchar(2) not null,
-                code_uic int(2) not null,
-                name_en varchar(255) not null,
-                name_fr varchar(255),
-                name_de varchar(255),
-                
-                index (code_iso),
-                primary key (code_uic)
-            )
-            """
-            connection.execute(
-                text(query),
-                {"table_name": self.TABLE_NAME},
+            self.table.create(
+                bind=connection,
+                checkfirst=True,
             )
         self.logger.info("Table `countries` sucessfully created (if needed)!")
 

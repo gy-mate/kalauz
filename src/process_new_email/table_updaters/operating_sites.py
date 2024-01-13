@@ -4,7 +4,16 @@ import re
 from typing import Final
 
 from bs4 import BeautifulSoup
-from sqlalchemy import text
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Integer,
+    MetaData,
+    SmallInteger,
+    String,
+    Table,
+    text,
+)
 
 from src.process_new_email.table_updaters.common import ExcelProcessor, TableUpdater
 
@@ -33,6 +42,78 @@ def _translate_operating_site_type(operating_site_type: str) -> str:
 
 
 class OperatingSitesUpdater(ExcelProcessor, TableUpdater, ABC):
+    TABLE_NAME = "operating_sites"
+    database_metadata = MetaData()
+
+    table = Table(
+        TABLE_NAME,
+        database_metadata,
+        Column(
+            name="name",
+            type_=String(255),
+            nullable=False,
+        ),
+        Column(
+            name="name_shortened",
+            type_=String(255),
+        ),
+        Column(
+            name="name_short",
+            type_=String(255),
+        ),
+        Column(
+            name="operator",
+            type_=String(255),
+        ),
+        Column(
+            name="type",
+            type_=String(255),
+        ),
+        Column(
+            name="code_uic",
+            type_=Integer,
+            nullable=False,
+            index=True,
+            primary_key=True,
+        ),
+        Column(
+            name="code_telegraph",
+            type_=String(4),
+        ),
+        Column(
+            name="category_passenger",
+            type_=SmallInteger,
+        ),
+        Column(
+            name="category_freight",
+            type_=SmallInteger,
+        ),
+        Column(
+            name="traffic_passenger",
+            type_=Boolean,
+        ),
+        Column(
+            name="traffic_freight",
+            type_=Boolean,
+        ),
+        Column(
+            name="terminus",
+            type_=Boolean,
+        ),
+        Column(
+            name="request_stop",
+            type_=Boolean,
+        ),
+        Column(
+            name="train_meeting",
+            type_=Boolean,
+        ),
+        Column(
+            name="open_to_train_operators",
+            type_=Boolean,
+        ),
+    )
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -45,7 +126,6 @@ class OperatingSitesUpdater(ExcelProcessor, TableUpdater, ABC):
         self.INFRA_ID: int = NotImplemented
         self.INFRA_ID_URL: str = NotImplemented
         self.XLS_URL: str = NotImplemented
-        self.TABLE_NAME = "operating_sites"
 
         self._data_to_process = self.download_data(
             self.WEBSITE_DOMAIN + self.WEBSITE_URL
@@ -54,12 +134,20 @@ class OperatingSitesUpdater(ExcelProcessor, TableUpdater, ABC):
         self.logger.info(f"{self.__class__.__name__} initialized!")
 
     def download_data(self, url: str) -> bytes:
+        splash_page_soup = self._get_splash_page(url)
+        self._get_infra_id(splash_page_soup, url)
+        list_page = self._download_list_page(url)
+        return self._download_xls_file(list_page)
+
+    def _get_splash_page(self, url):
         splash_page = super().download_data(url)
         splash_page_soup = BeautifulSoup(
             markup=splash_page,
             features="lxml",
         )
+        return splash_page_soup
 
+    def _get_infra_id(self, splash_page_soup, url):
         try:
             select_tag = splash_page_soup.find(
                 name="select",
@@ -70,12 +158,15 @@ class OperatingSitesUpdater(ExcelProcessor, TableUpdater, ABC):
         except ValueError as exception:
             self.logger.critical(exception)
             raise
-
         # future: report bug (false positive) to mypy developers
         self.INFRA_ID = int(select_tag.find("option")["value"])  # type: ignore
+
+    def _download_list_page(self, url):
         self.INFRA_ID_URL = f"&infra_id={self.INFRA_ID}"
         list_page = super().download_data(url + self.INFRA_ID_URL)
+        return list_page
 
+    def _download_xls_file(self, list_page):
         self.XLS_URL = re.findall(
             pattern=r"/ehuszfelulet/excelexport\?id_xls=\w+",
             string=str(list_page),
@@ -109,7 +200,9 @@ class OperatingSitesUpdater(ExcelProcessor, TableUpdater, ABC):
         self.data["type"] = self.data["type"].apply(
             lambda x: _translate_operating_site_type(str(x))
         )
+        self._replace_code_uic_letters()
 
+    def _replace_code_uic_letters(self):
         country_codes_iso = ["HU", "AT", "SK", "UA", "RO", "RS", "HR", "SI"]
         for country_code_iso in country_codes_iso:
             country_code_uic = self._get_uic_code(country_code_iso)
@@ -129,6 +222,7 @@ class OperatingSitesUpdater(ExcelProcessor, TableUpdater, ABC):
                 text(query),
                 {"country_code_iso": country_code_iso},
             ).fetchone()
+
             try:
                 assert result is not None
             except AssertionError as exception:
@@ -149,33 +243,7 @@ class OperatingSitesUpdater(ExcelProcessor, TableUpdater, ABC):
             self.data[column] = self.data[column].apply(lambda x: x == "igen")
 
     def _create_table_if_not_exists(self) -> None:
-        with self.database.engine.begin() as connection:
-            query = """
-                create table if not exists :table_name (
-                    name varchar(255) not null,
-                    name_shortened varchar(255),
-                    name_short varchar(255),
-                    operator varchar(255),
-                    type varchar(255),
-                    code_uic int(7) not null,
-                    code_telegraph varchar(4),
-                    category_passenger int(1),
-                    category_freight int(1),
-                    traffic_passenger boolean,
-                    traffic_freight boolean,
-                    terminus boolean,
-                    request_stop boolean,
-                    train_meeting boolean,
-                    open_to_train_operators boolean,
-                    
-                    index (code_uic),
-                    primary key (code_uic)
-                )
-            """
-            connection.execute(
-                text(query),
-                {"table_name": self.TABLE_NAME},
-            )
+        self.table.create(self.database.engine, checkfirst=True)
 
     def _add_data(self) -> None:
         with self.database.engine.begin() as connection:
