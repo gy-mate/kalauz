@@ -1,4 +1,3 @@
-from abc import ABC
 from datetime import datetime
 import re
 from typing import final
@@ -21,7 +20,7 @@ from src.process_new_email.table_updaters.countries import CountriesUpdater
 
 @final
 # TODO: add logging
-class CompaniesUpdater(ExcelProcessor, UICTableUpdater, ABC):
+class CompaniesUpdater(ExcelProcessor, UICTableUpdater):
     TABLE_NAME = "companies"
     database_metadata = MetaData()
 

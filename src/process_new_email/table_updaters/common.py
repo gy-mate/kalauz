@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from datetime import datetime
 from io import BytesIO
 import logging
 from typing import Any, Final
@@ -66,7 +67,9 @@ class UICTableUpdater(TableUpdater, ABC):
         self.DATA_BASE_URL: Final = "https://uic.org/spip.php?action=telecharger&arg="
 
 
-class ExcelProcessor(TableUpdater):
+class ExcelProcessor(TableUpdater, ABC):
+    TODAY = datetime.today().date()
+    
     def __init__(self) -> None:
         super().__init__()
 

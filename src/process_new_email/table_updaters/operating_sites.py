@@ -1,5 +1,3 @@
-from abc import ABC
-from datetime import datetime
 import re
 from typing import Final
 
@@ -15,7 +13,7 @@ from sqlalchemy import (
     text,
 )
 
-from src.process_new_email.table_updaters.common import ExcelProcessor, TableUpdater
+from src.process_new_email.table_updaters.common import ExcelProcessor
 
 
 def _translate_operating_site_type(operating_site_type: str) -> str:
@@ -41,7 +39,7 @@ def _translate_operating_site_type(operating_site_type: str) -> str:
     return dictionary[operating_site_type]
 
 
-class OperatingSitesUpdater(ExcelProcessor, TableUpdater, ABC):
+class OperatingSitesUpdater(ExcelProcessor):
     TABLE_NAME = "operating_sites"
     database_metadata = MetaData()
 
@@ -117,11 +115,10 @@ class OperatingSitesUpdater(ExcelProcessor, TableUpdater, ABC):
     def __init__(self) -> None:
         super().__init__()
 
-        today = datetime.today().date()
         self.WEBSITE_DOMAIN: Final = "https://www.kapella2.hu"
         self.WEBSITE_URL: Final = (
             f"/ehuszfelulet/szolgalatihelyek?vizsgalt_idopont="
-            f"{today}&vizsgalt_idoszak_kezdo={today}&vizsgalt_idoszak_veg={today}"
+            f"{self.TODAY}&vizsgalt_idoszak_kezdo={self.TODAY}&vizsgalt_idoszak_veg={self.TODAY}"
         )
         self.INFRA_ID: int = NotImplemented
         self.INFRA_ID_URL: str = NotImplemented
