@@ -13,7 +13,7 @@ from sqlalchemy import (
     text,
 )
 
-from src.process_new_email.table_updaters.common import ExcelProcessor
+from src.process_new_email.table_updaters.common import DataDownloader, ExcelProcessor
 
 
 def _translate_operating_site_type(operating_site_type: str) -> str:
@@ -39,77 +39,30 @@ def _translate_operating_site_type(operating_site_type: str) -> str:
     return dictionary[operating_site_type]
 
 
-class OperatingSitesUpdater(ExcelProcessor):
+class OperatingSitesUpdater(DataDownloader, ExcelProcessor):
     TABLE_NAME = "operating_sites"
     database_metadata = MetaData()
 
     table = Table(
         TABLE_NAME,
         database_metadata,
+        Column(name="name", type_=String(255), nullable=False),
+        Column(name="name_shortened", type_=String(255)),
+        Column(name="name_short", type_=String(255)),
+        Column(name="operator", type_=String(255)),
+        Column(name="type", type_=String(255)),
         Column(
-            name="name",
-            type_=String(255),
-            nullable=False,
+            name="code_uic", type_=Integer, nullable=False, index=True, primary_key=True
         ),
-        Column(
-            name="name_shortened",
-            type_=String(255),
-        ),
-        Column(
-            name="name_short",
-            type_=String(255),
-        ),
-        Column(
-            name="operator",
-            type_=String(255),
-        ),
-        Column(
-            name="type",
-            type_=String(255),
-        ),
-        Column(
-            name="code_uic",
-            type_=Integer,
-            nullable=False,
-            index=True,
-            primary_key=True,
-        ),
-        Column(
-            name="code_telegraph",
-            type_=String(4),
-        ),
-        Column(
-            name="category_passenger",
-            type_=SmallInteger,
-        ),
-        Column(
-            name="category_freight",
-            type_=SmallInteger,
-        ),
-        Column(
-            name="traffic_passenger",
-            type_=Boolean,
-        ),
-        Column(
-            name="traffic_freight",
-            type_=Boolean,
-        ),
-        Column(
-            name="terminus",
-            type_=Boolean,
-        ),
-        Column(
-            name="request_stop",
-            type_=Boolean,
-        ),
-        Column(
-            name="train_meeting",
-            type_=Boolean,
-        ),
-        Column(
-            name="open_to_train_operators",
-            type_=Boolean,
-        ),
+        Column(name="code_telegraph", type_=String(4)),
+        Column(name="category_passenger", type_=SmallInteger),
+        Column(name="category_freight", type_=SmallInteger),
+        Column(name="traffic_passenger", type_=Boolean),
+        Column(name="traffic_freight", type_=Boolean),
+        Column(name="terminus", type_=Boolean),
+        Column(name="request_stop", type_=Boolean),
+        Column(name="train_meeting", type_=Boolean),
+        Column(name="open_to_train_operators", type_=Boolean),
     )
 
     def __init__(self) -> None:
@@ -124,20 +77,18 @@ class OperatingSitesUpdater(ExcelProcessor):
         self.INFRA_ID_URL: str = NotImplemented
         self.XLS_URL: str = NotImplemented
 
-        self._data_to_process = self.download_data(
-            self.WEBSITE_DOMAIN + self.WEBSITE_URL
-        )
+        self._data_to_process = self.get_data(self.WEBSITE_DOMAIN + self.WEBSITE_URL)
 
         self.logger.info(f"{self.__class__.__name__} initialized!")
 
-    def download_data(self, url: str) -> bytes:
+    def get_data(self, url: str) -> bytes:
         splash_page_soup = self._get_splash_page(url)
         self._get_infra_id(splash_page_soup, url)
         list_page = self._download_list_page(url)
         return self._download_xls_file(list_page)
 
     def _get_splash_page(self, url):
-        splash_page = super().download_data(url)
+        splash_page = super().get_data(url)
         splash_page_soup = BeautifulSoup(
             markup=splash_page,
             features="lxml",
@@ -160,7 +111,7 @@ class OperatingSitesUpdater(ExcelProcessor):
 
     def _download_list_page(self, url):
         self.INFRA_ID_URL = f"&infra_id={self.INFRA_ID}"
-        list_page = super().download_data(url + self.INFRA_ID_URL)
+        list_page = super().get_data(url + self.INFRA_ID_URL)
         return list_page
 
     def _download_xls_file(self, list_page):
@@ -168,7 +119,7 @@ class OperatingSitesUpdater(ExcelProcessor):
             pattern=r"/ehuszfelulet/excelexport\?id_xls=\w+",
             string=str(list_page),
         )[0]
-        return super().download_data(self.WEBSITE_DOMAIN + self.XLS_URL)
+        return super().get_data(self.WEBSITE_DOMAIN + self.XLS_URL)
 
     def _rename_columns_manually(self):
         # future: report wrong display and copying of hyphen (e.g. Fil'akovo) to pandas and JetBrains developers

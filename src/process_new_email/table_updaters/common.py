@@ -18,30 +18,17 @@ from src.process_new_email.database_connection import Database
 class TableUpdater(ABC):
     TABLE_NAME: str = NotImplemented
     database_metadata: MetaData = NotImplemented
-    
+
     def __init__(self) -> None:
         super().__init__()
 
         self.logger = logging.getLogger(__name__)
         self.database = Database()
-        self._dowload_session = requests.Session()
 
         self.DATA_URL: str = NotImplemented
 
         self.data: Any = NotImplemented
         self._data_to_process: bytes = NotImplemented
-
-    def download_data(self, url: str) -> bytes:
-        response = self._dowload_session.get(
-            url=url,
-            headers={
-                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1.2 Safari/605.1.15"
-            },
-        )
-        response.raise_for_status()
-        self.logger.info(f"File successfully downloaded from {url}!")
-        return bytes(response.content)
 
     @abstractmethod
     def process_data(self) -> None:
@@ -60,7 +47,26 @@ class TableUpdater(ABC):
         pass
 
 
-class UICTableUpdater(TableUpdater, ABC):
+class DataDownloader(TableUpdater, ABC):
+    def __init__(self) -> None:
+        super().__init__()
+        
+        self._dowload_session = requests.Session()
+
+    def get_data(self, url: str) -> bytes:
+        response = self._dowload_session.get(
+            url=url,
+            headers={
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                              "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1.2 Safari/605.1.15"
+            },
+        )
+        response.raise_for_status()
+        self.logger.info(f"File successfully downloaded from {url}!")
+        return bytes(response.content)
+
+
+class UICTableUpdater(DataDownloader, ABC):
     def __init__(self) -> None:
         super().__init__()
 
@@ -69,7 +75,7 @@ class UICTableUpdater(TableUpdater, ABC):
 
 class ExcelProcessor(TableUpdater, ABC):
     TODAY = datetime.today().date()
-    
+
     def __init__(self) -> None:
         super().__init__()
 

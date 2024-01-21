@@ -34,69 +34,25 @@ class CompaniesUpdater(ExcelProcessor, UICTableUpdater):
             index=True,
             primary_key=True,
         ),
-        Column(
-            name="short_name",
-            type_=String(255),
-        ),
-        Column(
-            name="name",
-            type_=String(255),
-            nullable=False,
-        ),
+        Column(name="short_name", type_=String(255)),
+        Column(name="name", type_=String(255), nullable=False),
         Column(
             "country_code_iso",
             String(2),
             ForeignKey(CountriesUpdater.table.c.code_iso),
             nullable=False,
         ),
-        Column(
-            name="allocation_date",
-            type_=Date,
-        ),
-        Column(
-            name="modified_date",
-            type_=Date,
-        ),
-        Column(
-            name="begin_of_validity",
-            type_=Date,
-        ),
-        Column(
-            name="end_of_validity",
-            type_=Date,
-        ),
-        Column(
-            name="freight",
-            type_=Boolean,
-            nullable=False,
-        ),
-        Column(
-            name="passenger",
-            type_=Boolean,
-            nullable=False,
-        ),
-        Column(
-            name="infrastructure",
-            type_=Boolean,
-            nullable=False,
-        ),
-        Column(
-            name="holding",
-            type_=Boolean,
-        ),
-        Column(
-            name="integrated",
-            type_=Boolean,
-        ),
-        Column(
-            name="other",
-            type_=Boolean,
-            nullable=False,
-        ),
-        Column(
-            name="url",
-            type_=String(255),
-        ),
+        Column(name="allocation_date", type_=Date),
+        Column(name="modified_date", type_=Date),
+        Column(name="begin_of_validity", type_=Date),
+        Column(name="end_of_validity", type_=Date),
+        Column(name="freight", type_=Boolean, nullable=False),
+        Column(name="passenger", type_=Boolean, nullable=False),
+        Column(name="infrastructure", type_=Boolean, nullable=False),
+        Column(name="holding", type_=Boolean),
+        Column(name="integrated", type_=Boolean),
+        Column(name="other", type_=Boolean, nullable=False),
+        Column(name="url", type_=String(255)),
     )
 
     def __init__(self) -> None:
@@ -104,7 +60,7 @@ class CompaniesUpdater(ExcelProcessor, UICTableUpdater):
 
         self.DATA_URL = f"{self.DATA_BASE_URL}3023"
 
-        self._data_to_process = self.download_data(self.DATA_URL)
+        self._data_to_process = self.get_data(self.DATA_URL)
 
         self.logger.info(f"{self.__class__.__name__} initialized!")
 

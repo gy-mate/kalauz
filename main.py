@@ -7,6 +7,7 @@ from src.process_new_email.table_updaters.common import TableUpdater
 from src.process_new_email.table_updaters.companies import CompaniesUpdater
 from src.process_new_email.table_updaters.countries import CountriesUpdater
 from src.process_new_email.table_updaters.operating_sites import OperatingSitesUpdater
+from src.process_new_email.table_updaters.SRs import MavSRUpdater, GysevSRUpdater
 
 # future: mark all packages as namespace packages in the IDE when https://youtrack.jetbrains.com/issue/PY-55212/ is fixed
 
@@ -28,6 +29,8 @@ def main() -> None:
         CountriesUpdater,  # type: ignore
         CompaniesUpdater,  # type: ignore
         OperatingSitesUpdater,  # type: ignore
+        MavSRUpdater,  # type: ignore
+        GysevSRUpdater,  # type: ignore
     ]
 
     for updater in updaters_to_run:

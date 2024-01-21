@@ -32,31 +32,11 @@ class CountriesUpdater(UICTableUpdater):
     table = Table(
         TABLE_NAME,
         database_metadata,
-        Column(
-            name="code_iso",
-            type_=String(2),
-            nullable=False,
-            index=True,
-        ),
-        Column(
-            name="code_uic",
-            type_=SmallInteger,
-            nullable=False,
-            primary_key=True,
-        ),
-        Column(
-            name="name_en",
-            type_=String(255),
-            nullable=False,
-        ),
-        Column(
-            name="name_fr",
-            type_=String(255),
-        ),
-        Column(
-            name="name_de",
-            type_=String(255),
-        ),
+        Column(name="code_iso", type_=String(2), nullable=False, index=True),
+        Column(name="code_uic", type_=SmallInteger, nullable=False, primary_key=True),
+        Column(name="name_en", type_=String(255), nullable=False),
+        Column(name="name_fr", type_=String(255)),
+        Column(name="name_de", type_=String(255)),
     )
 
     def __init__(self) -> None:
@@ -71,10 +51,10 @@ class CountriesUpdater(UICTableUpdater):
         self._TAG_BEGINNING_COLUMN: Final = f"{self._TAG_ROW}_"
         self.XSD_URL: Final = f"{self.DATA_BASE_URL}320"
 
-        self._data_to_process = self.download_data(self.DATA_URL)
+        self._data_to_process = self.get_data(self.DATA_URL)
 
         try:
-            self.xsd_to_process: Final = self.download_data(self.XSD_URL)
+            self.xsd_to_process: Final = self.get_data(self.XSD_URL)
             self._xsd: Final[etree.XMLSchema] = self._process_xsd()
         except (HTTPError, IndexError) as exception:
             self.logger.warning(exception)
