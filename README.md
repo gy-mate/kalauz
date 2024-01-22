@@ -1,5 +1,7 @@
 # 🛤️ kalauz
 
+[![Build status](https://scrutinizer-ci.com/g/gy-mate/kalauz/badges/build.png?b=master)](https://scrutinizer-ci.com/g/gy-mate/kalauz/build-status/master)
+[![Scrutinizer code quality](https://img.shields.io/scrutinizer/quality/g/gy-mate/kalauz/master)](https://scrutinizer-ci.com/g/cookiecutter/cookiecutter/?branch=master)
 [![Code style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://makeapullrequest.com)
 
