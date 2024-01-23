@@ -5,9 +5,11 @@ import logging
 from typing import Any, Final
 
 import numpy as np
+from openpyxl import load_workbook
+from openpyxl.worksheet.worksheet import Worksheet
 import pandas as pd
 import requests
-from sqlalchemy import MetaData
+from sqlalchemy import MetaData, Table
 
 # future: remove the comment below when stubs for the library below are available
 import xlrd  # type: ignore
@@ -18,6 +20,7 @@ from src.process_new_email.database_connection import Database
 class TableUpdater(ABC):
     TABLE_NAME: str = NotImplemented
     database_metadata: MetaData = NotImplemented
+    table: Table = NotImplemented
 
     def __init__(self) -> None:
         super().__init__()
@@ -28,7 +31,6 @@ class TableUpdater(ABC):
         self.DATA_URL: str = NotImplemented
 
         self.data: Any = NotImplemented
-        self._data_to_process: bytes = NotImplemented
 
     @abstractmethod
     def process_data(self) -> None:
@@ -38,9 +40,12 @@ class TableUpdater(ABC):
         self._create_table_if_not_exists()
         self._add_data()
 
-    @abstractmethod
     def _create_table_if_not_exists(self) -> None:
-        pass
+        self.table.create(
+            bind=self.database.engine,
+            checkfirst=True,
+        )
+        self.logger.info(f"Table `{self.TABLE_NAME}` sucessfully created (if needed)!")
 
     @abstractmethod
     def _add_data(self) -> None:
@@ -50,7 +55,7 @@ class TableUpdater(ABC):
 class DataDownloader(TableUpdater, ABC):
     def __init__(self) -> None:
         super().__init__()
-        
+
         self._dowload_session = requests.Session()
 
     def get_data(self, url: str) -> bytes:
@@ -58,7 +63,7 @@ class DataDownloader(TableUpdater, ABC):
             url=url,
             headers={
                 "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                              "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1.2 Safari/605.1.15"
+                "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1.2 Safari/605.1.15"
             },
         )
         response.raise_for_status()
@@ -72,6 +77,8 @@ class UICTableUpdater(DataDownloader, ABC):
 
         self.DATA_BASE_URL: Final = "https://uic.org/spip.php?action=telecharger&arg="
 
+        self._data_to_process: bytes = NotImplemented
+
 
 class ExcelProcessor(TableUpdater, ABC):
     TODAY = datetime.today().date()
@@ -82,22 +89,16 @@ class ExcelProcessor(TableUpdater, ABC):
         self.data: pd.DataFrame = NotImplemented
 
     def process_data(self) -> None:
-        try:
-            # future: remove the line below when https://youtrack.jetbrains.com/issue/PY-55260/ is fixed
-            # noinspection PyTypeChecker
-            # future: report bug (false positive) to mypy developers
-            self.data = pd.read_excel(BytesIO(self._data_to_process))  # type: ignore
-        except xlrd.compdoc.CompDocError:
-            workbook = xlrd.open_workbook(
-                file_contents=self._data_to_process,
-                ignore_workbook_corruption=True,
-            )
-            self.data = pd.read_excel(workbook)
+        self._import_data()
 
         self._correct_column_names()
 
         self._delete_data()
         self._correct_data()
+
+    @abstractmethod
+    def _import_data(self) -> None:
+        pass
 
     def _correct_column_names(self) -> None:
         self._rename_columns_manually()
@@ -114,6 +115,7 @@ class ExcelProcessor(TableUpdater, ABC):
         self._correct_boolean_values()
         self._correct_na_values_for_database()
 
+    @abstractmethod
     def _correct_data_manually(self) -> None:
         pass
 
@@ -131,3 +133,52 @@ class ExcelProcessor(TableUpdater, ABC):
             },
             inplace=True,
         )
+
+
+class ExcelSimpleProcessor(ExcelProcessor, ABC):
+    def __init__(self) -> None:
+        super().__init__()
+
+        self._data_to_process: bytes = NotImplemented
+
+    def _import_data(self) -> None:
+        try:
+            # future: remove the line below when https://youtrack.jetbrains.com/issue/PY-55260/ is fixed
+            # noinspection PyTypeChecker
+            # future: report bug (false positive) to mypy developers
+            self.data = pd.read_excel(BytesIO(self._data_to_process))  # type: ignore
+        except xlrd.compdoc.CompDocError:
+            workbook = xlrd.open_workbook(
+                file_contents=self._data_to_process,
+                ignore_workbook_corruption=True,
+            )
+            self.data = pd.read_excel(workbook)
+
+    def _correct_data_manually(self) -> None:
+        pass
+
+
+class ExcelDeepProcessor(ExcelProcessor, ABC):
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+
+        self._file_to_be_imported: str = NotImplemented
+        self._data_to_process: list[Worksheet] = NotImplemented
+
+    def _import_data(self) -> None:
+        self._data_to_process = self._get_worksheets(self._file_to_be_imported)
+
+    def _get_worksheets(self, xlsx_file_location: str) -> list[Worksheet]:
+        try:
+            self.logger.info(f"Loading {xlsx_file_location} started!")
+            xlsx_workbook = load_workbook(
+                filename=xlsx_file_location,
+                data_only=True,
+            )
+            self.logger.info(f"{xlsx_file_location} loaded!")
+            return list(xlsx_workbook.worksheets)
+        finally:
+            self.logger.info(f"All worksheets imported from {xlsx_file_location}!")
+            
+    def _rename_columns_manually(self) -> None:
+        pass

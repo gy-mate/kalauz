@@ -144,14 +144,6 @@ class CountriesUpdater(UICTableUpdater):
                 lambda x: _swap_name(x)
             )
 
-    def _create_table_if_not_exists(self) -> None:
-        with self.database.engine.begin() as connection:
-            self.table.create(
-                bind=connection,
-                checkfirst=True,
-            )
-        self.logger.info("Table `countries` sucessfully created (if needed)!")
-
     def _add_data(self) -> None:
         with self.database.engine.begin() as connection:
             for index, row in self.data.iterrows():

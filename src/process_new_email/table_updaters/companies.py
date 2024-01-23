@@ -135,13 +135,6 @@ class CompaniesUpdater(ExcelProcessor, UICTableUpdater):
         for column in boolean_columns:
             self.data[column] = self.data[column].apply(lambda x: x == "x" or x == "X")
 
-    def _create_table_if_not_exists(self) -> None:
-        with self.database.engine.begin() as connection:
-            self.table.create(
-                bind=connection,
-                checkfirst=True,
-            )
-
     def _add_data(self) -> None:
         with self.database.engine.begin() as connection:
             queries = [

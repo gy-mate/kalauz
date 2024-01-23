@@ -13,7 +13,7 @@ from sqlalchemy import (
     text,
 )
 
-from src.process_new_email.table_updaters.common import DataDownloader, ExcelProcessor
+from src.process_new_email.table_updaters.common import DataDownloader, ExcelSimpleProcessor
 
 
 def _translate_operating_site_type(operating_site_type: str) -> str:
@@ -39,7 +39,7 @@ def _translate_operating_site_type(operating_site_type: str) -> str:
     return dictionary[operating_site_type]
 
 
-class OperatingSitesUpdater(DataDownloader, ExcelProcessor):
+class OperatingSitesUpdater(DataDownloader, ExcelSimpleProcessor):
     TABLE_NAME = "operating_sites"
     database_metadata = MetaData()
 
@@ -189,9 +189,6 @@ class OperatingSitesUpdater(DataDownloader, ExcelProcessor):
         ]
         for column in boolean_columns:
             self.data[column] = self.data[column].apply(lambda x: x == "igen")
-
-    def _create_table_if_not_exists(self) -> None:
-        self.table.create(self.database.engine, checkfirst=True)
 
     def _add_data(self) -> None:
         with self.database.engine.begin() as connection:
