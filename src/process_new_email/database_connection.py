@@ -7,6 +7,8 @@ from sqlalchemy.sql.ddl import CreateSchema
 
 from src.singleton import Singleton
 
+# future: swith to SQLAlchemy ORM when https://youtrack.jetbrains.com/issue/PY-4536 is fixed
+
 
 class Database(metaclass=Singleton):
     def __init__(self) -> None:
