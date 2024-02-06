@@ -29,8 +29,8 @@ def main() -> None:
         CountriesUpdater,  # type: ignore
         CompaniesUpdater,  # type: ignore
         OperatingSitesUpdater,  # type: ignore
-        # MavUpdater,  # type: ignore
-        # GysevUpdater,  # type: ignore
+        MavUpdater,  # type: ignore
+        GysevUpdater,  # type: ignore
     ]
 
     for updater in updaters_to_run:
