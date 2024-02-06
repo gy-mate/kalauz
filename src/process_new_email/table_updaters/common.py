@@ -143,10 +143,9 @@ class ExcelSimpleProcessor(ExcelProcessor, ABC):
 
     def _import_data(self) -> None:
         try:
-            # future: remove the line below when https://youtrack.jetbrains.com/issue/PY-55260/ is fixed
+            # future: remove the line below when https://youtrack.jetbrains.com/issue/PY-70308/ is fixed
             # noinspection PyTypeChecker
-            # future: report bug (false positive) to mypy developers
-            self.data = pd.read_excel(BytesIO(self._data_to_process))  # type: ignore
+            self.data = pd.read_excel(BytesIO(self._data_to_process))
         except xlrd.compdoc.CompDocError:
             workbook = xlrd.open_workbook(
                 file_contents=self._data_to_process,
