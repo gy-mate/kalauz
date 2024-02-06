@@ -14,13 +14,16 @@ from sqlalchemy import (
     text,
 )
 
-from src.process_new_email.table_updaters.common import ExcelProcessor, UICTableUpdater
+from src.process_new_email.table_updaters.common import (
+    ExcelSimpleProcessor,
+    UICTableUpdater,
+)
 from src.process_new_email.table_updaters.countries import CountriesUpdater
 
 
 @final
 # TODO: add logging
-class CompaniesUpdater(ExcelProcessor, UICTableUpdater):
+class CompaniesUpdater(ExcelSimpleProcessor, UICTableUpdater):
     TABLE_NAME = "companies"
     database_metadata = MetaData()
 
