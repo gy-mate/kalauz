@@ -19,6 +19,7 @@ from sqlalchemy import (
     String,
     Table,
     text,
+    Time,
 )
 
 from src.process_new_email.table_updaters.common import (
@@ -33,6 +34,7 @@ class SRUpdater(ExcelProcessor, ABC):
     TABLE_NAME = "speed_restrictions"
     database_metadata = MetaData()
 
+    # TODO: estabilish one-to-many relationships between SRs and switches
     table = Table(
         TABLE_NAME,
         database_metadata,
@@ -55,8 +57,9 @@ class SRUpdater(ExcelProcessor, ABC):
         Column(name="metre_post_from", type_=Integer, nullable=False),
         Column(name="metre_post_to", type_=Integer, nullable=False),
         Column(name="open_line_tracks_left_or_right", type_=Boolean),
-        Column(name="station_uic_from", type_=Integer, nullable=False),
-        Column(name="station_uic_to", type_=Integer),
+        Column(name="station_from", type_=String(255), nullable=False),
+        Column(name="station_to", type_=String(255)),
+        Column(name="on_main_track", type_=Boolean, nullable=False),
         Column(name="station_track_switch_source_text", type_=String(255)),
         Column(name="station_track_switch_from", type_=String(255)),
         Column(name="station_track_switch_to", type_=String(255)),
@@ -64,9 +67,11 @@ class SRUpdater(ExcelProcessor, ABC):
         Column(name="reduced_speed", type_=Integer, nullable=False),
         Column(name="reduced_speed_for_mus", type_=Integer),
         Column(name="cause", type_=String(255)),
-        Column(name="time_from", type_=Date, nullable=False),
+        Column(name="date_from", type_=Date, nullable=False),
+        Column(name="time_from", type_=Time),
         Column(name="maintenance_planned", type_=Boolean),
-        Column(name="time_to", type_=Date),
+        Column(name="date_to", type_=Date),
+        Column(name="time_to", type_=Time),
         Column(name="work_to_be_done", type_=String(255)),
         Column(name="comment", type_=String(255)),
     )
@@ -75,7 +80,8 @@ class SRUpdater(ExcelProcessor, ABC):
         super().__init__()
 
         self.COMPANY = company
-        self.COMPANY_UIC_CODE = self._get_company_uic_code(self.COMPANY)
+        self.COMPANY_CODE_UIC = self._get_company_uic_code(self.COMPANY)
+        self.COUNTRY_CODE_ISO = self._get_country_iso_code(self.COMPANY)
         self.LIST_TYPE = "ASR"
         self.SOURCE_EXTENSION = source_extension
 
@@ -84,6 +90,8 @@ class SRUpdater(ExcelProcessor, ABC):
             self.TODAY = date(2023, 7, 26)
         elif self.COMPANY == "GYSEV":
             self.TODAY = date(2023, 8, 4)
+        else:
+            raise ValueError(f"Unknown company: {self.COMPANY}!")
 
         self._file_to_be_imported = f"data/01_import/{self.COMPANY}_{self.TODAY}_{self.LIST_TYPE}.{self.SOURCE_EXTENSION}"
 
@@ -98,13 +106,32 @@ class SRUpdater(ExcelProcessor, ABC):
                 text(query),
                 {"company": company},
             ).fetchone()
-            
+
             try:
                 assert result is not None
             except AssertionError as exception:
                 self.logger.critical(exception)
                 raise
             return int(result[0])
+
+    def _get_country_iso_code(self, company: str) -> str:
+        with self.database.engine.begin() as connection:
+            query = """
+                select country_code_iso
+                from companies
+                where short_name = :company
+            """
+            result = connection.execute(
+                text(query),
+                {"company": company},
+            ).fetchone()
+
+            try:
+                assert result is not None
+            except AssertionError as exception:
+                self.logger.critical(exception)
+                raise
+            return result[0]
 
 
 def _is_tsr(cell: Cell) -> bool:
@@ -124,30 +151,6 @@ def _header_or_footer(row: list) -> bool:
 
 def remove_space_after_hyphen(data: str) -> str:
     return re.sub(r"(?<=\w)- (?=\w)", "-", str(data))
-
-
-def get_station_uic(country_uic, station_name):
-    """
-    Receives:
-    the country's UIC code;
-    a station name.
-
-    Gets the station's non-standard UIC code from the station database.
-    If not found, asks for an input.
-    Replaces 'HU' with the UIC country code from its beginning.
-
-    Returns the station's UIC code as an int.
-    """
-    try:
-        return int(
-            str(country_uic)
-            + re.search(r"(?<=HU).*", station_database[station_name])[0]
-        )
-    except KeyError:
-        self.logger.warning(
-            f"Error: {station_name} could not be converted to UIC code!"
-        )
-        # return int(input(f'Please input {station_name}\'s UIC code!'))
 
 
 def extract_number(data):
@@ -230,50 +233,42 @@ def extract_number(data):
         return "InvalidRomanNumeralError"
 
 
-def _get_operating_speed(text_to_search: str) -> int:
-    return _get_number_between_brackets(text_to_search)
-
-
-def _get_number_between_brackets(text_to_search):
+def _get_number_between_brackets(text_to_search: str) -> int:
     return round(int(re.findall(r"(?<=\().*(?=\))", text_to_search)[0]))
 
 
-def get_reduced_speeds(text_to_search : str) -> int | tuple[int, int]:
-    """
-    Receives a text.
+def _get_date(text_to_search: str) -> str:
+    return text_to_search[:10]
 
-    Returns the reduced speeds in km/h for MUs and locomotives.
-    """
+
+def _get_end_time(text_to_search: str) -> str:
+    return text_to_search[12:22]
+
+
+def _get_metre_post(text_to_search: str) -> int | None:
+    try:
+        assert isinstance(text_to_search, int)
+        return int(text_to_search * 100)
+    except AssertionError:
+        return None
+
+
+def _get_reduced_speeds(text_to_search: str) -> tuple[int, int]:
     if text_to_search.find("/") == -1:
-        return round(int(re.findall(r".*(?= \()", text_to_search)[0])) * 2
+        reduced_speed = reduced_speed_for_mus = round(
+            int(re.findall(r".*(?= \()", text_to_search)[0])
+        )
     else:
-        return round(int(re.findall(r".*(?=/)", text_to_search)[0])), round(
+        reduced_speed = round(int(re.findall(r".*(?=/)", text_to_search)[0]))
+        reduced_speed_for_mus = round(
             int(re.findall(r"(?<=/).*(?= )", text_to_search)[0])
         )
 
+    return reduced_speed, reduced_speed_for_mus
 
-def convert_date_to_iso(text_to_search: str) -> datetime:
-    """
-    Receives a date (and time) as a str.
-    Returns the text converted to ISO format.
-    """
-    if type(text_to_search) is str:
-        try:
-            return (
-                datetime.strptime(text_to_search, "%Y.%m.%d %H:%M")
-                .replace(tzinfo=ZoneInfo(key="Europe/Budapest"))
-            )
-        except TypeError:
-            return "TypeError"
-        except ValueError:
-            return convert_date_to_iso(re.findall(r".*(?=-)", text_to_search)[0])
-    elif type(text_to_search) is datetime:
-        try:
-            return text_to_search.date()
-        except TypeError:
-            return "TypeError"
-        except ValueError:
-            return "ValueError"
+
+def _get_operating_speed(text_to_search: str) -> int:
+    return _get_number_between_brackets(text_to_search)
 
 
 class MavUpdater(SRUpdater, ExcelDeepProcessor):
@@ -291,66 +286,42 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
         for worksheet in self._data_to_process:
             for row_of_cells in [list(cell) for cell in worksheet.iter_rows()]:
                 is_temporary = _is_tsr(row_of_cells[0])
-                row = [cell.value for cell in row_of_cells]
+                row = [str(cell.value) for cell in row_of_cells]
 
                 if not _header_or_footer(row):
-                    try:
-                        assert isinstance(row[5], int)
-                    except AssertionError:
-                        self.logger.critical(
-                            f"Error: The value of `metre_post_from` ({row[5]}) could not be converted to int!"
-                        )
-                        raise
-
-                    metre_post_to: int | None = None
-                    try:
-                        assert isinstance(row[6], int)
-                        metre_post_to = int(row[6] * 100)
-                    except AssertionError:
-                        pass
-                    
-                    try:
-                        assert isinstance(row[8], str)
-                    except AssertionError:
-                        self.logger.critical(
-                            f"Error: The value of `operating_speed` ({row[8]}) could not be converted to str!"
-                        )
-                        raise
-                    
-                    reduced_speed, reduced_speed_for_mus = get_reduced_speeds(row[8])
+                    reduced_speed, reduced_speed_for_mus = _get_reduced_speeds(row[8])
 
                     row_to_add = {
-                        "country_iso": "HU",
-                        "company_uic": self.COMPANY_UIC_CODE,
+                        "country_iso": self.COUNTRY_CODE_ISO,
+                        "company_uic": self.COMPANY_CODE_UIC,
                         "internal_id": None,
                         "in_timetable": not is_temporary,
-                        "due_to_railway_features": None,
+                        "due_to_railway_features": NotImplemented,
                         "line": row[0],
-                        "metre_post_from": int(row[5] * 100),
-                        "metre_post_to": metre_post_to,
-                        "open_line_tracks_left_or_right": None,
-                        "station_uic_from": None,
-                        "station_uic_to": None,
+                        "metre_post_from": _get_metre_post(row[5]),
+                        "metre_post_to": _get_metre_post(row[6]),
+                        "open_line_tracks_left_or_right": NotImplemented,
+                        "station_from": remove_space_after_hyphen(row[1]),
+                        "station_to": NotImplemented,
+                        "on_main_track": NotImplemented,
                         "station_track_switch_source_text": row[4],
-                        "station_track_switch_from": None,
-                        "station_track_switch_to": None,
+                        "station_track_switch_from": NotImplemented,
+                        "station_track_switch_to": NotImplemented,
                         "operating_speed": _get_operating_speed(row[8]),
-                        "reduced_speed": None,
-                        "reduced_speed_for_mus": None,
+                        "reduced_speed": reduced_speed,
+                        "reduced_speed_for_mus": reduced_speed_for_mus,
                         "cause": row[12],
-                        "time_from": convert_date_to_iso(row[11]),
-                        "maintenance_planned": None,
-                        "time_to": None,
-                        "work_to_be_done": None,
+                        "date_from": _get_date(row[11]),
+                        "time_from": self._convert_date_to_iso(row[11]),
+                        "maintenance_planned": NotImplemented,
+                        "date_to": NotImplemented,
+                        "time_to": (
+                            self._convert_date_to_iso(row[13]) if row[13] else None
+                        ),
+                        "work_to_be_done": NotImplemented,
                         "comment": row[14],
                     }
 
-                    current_sr.station_from_name = remove_space_after_hyphen(row[1])
-                    current_sr.station_from_uic = get_station_uic(
-                        current_sr.country_uic, current_sr.station_from_name
-                    )
-
-                    current_sr.on_station = not row[2]  # true if cell is empty
                     if current_sr.on_station:
                         if "kitérő" in str(row[4]):
                             current_sr.applied_to = "switch"
@@ -377,9 +348,25 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
                                 current_sr.track_open_line
                             ) = "UnknownError"
 
-                    current_sr.time_to = (
-                        convert_date_to_iso(row[13]) if row[13] else None
-                    )
+    def _convert_date_to_iso(self, text_to_search: str) -> datetime:
+        try:
+            if len(text_to_search) == 10:
+                return datetime.strptime(text_to_search, "%Y.%m.%d").replace(
+                    tzinfo=ZoneInfo(key="Europe/Budapest")
+                )
+            elif len(text_to_search) == 16:
+                return datetime.strptime(text_to_search, "%Y.%m.%d %H:%M").replace(
+                    tzinfo=ZoneInfo(key="Europe/Budapest")
+                )
+            elif len(text_to_search) == 22:
+                return self._convert_date_to_iso(
+                    f"{_get_date(text_to_search)} {_get_end_time(text_to_search)}"
+                )
+            else:
+                raise ValueError(f"Unrecognized date format: {text_to_search}!")
+        except ValueError as exception:
+            self.logger.critical(exception)
+            raise
 
     def _correct_boolean_values(self) -> None:
         pass
