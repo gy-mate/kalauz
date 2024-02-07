@@ -7,7 +7,9 @@ from src.process_new_email.table_updaters.common import TableUpdater
 from src.process_new_email.table_updaters.companies import CompaniesUpdater
 from src.process_new_email.table_updaters.countries import CountriesUpdater
 from src.process_new_email.table_updaters.operating_sites import OperatingSitesUpdater
-from src.process_new_email.table_updaters.SRs import MavUpdater, GysevUpdater
+from src.process_new_email.SR_processors.MÁV import MavUpdater
+from src.process_new_email.SR_processors.GySEV import GysevUpdater
+
 
 # future: mark all packages as namespace packages in the IDE when https://youtrack.jetbrains.com/issue/PY-55212/ is fixed
 
