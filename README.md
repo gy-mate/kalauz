@@ -18,8 +18,8 @@ A program for...
 ## 📋 Features
 
 * Processes the following companies' spreadsheets of SRs in the following formats:
-  * [MÁV Magyar Államvasutak Zrt.](https://www.mavcsoport.hu/mav/bemutatkozas) ([.pdf](data/01_import/MÁV_2022-08-08_ASR.pdf))
-  * [GySEV Zrt.](https://www2.gysev.hu/palyavasuti-uzletag) ([.xlsx](data/01_import/GYSEV_2022-05-13_ASR.xlsx))
+  * [MÁV Magyar Államvasutak Zrt.](https://www.mavcsoport.hu/mav/bemutatkozas) ([`.pdf`](data/01_import/MÁV_2022-08-08_ASR.pdf) converted to `.xlsx` manually on [ilovepdf.com](https://www.ilovepdf.com))
+  * [GySEV Zrt.](https://www2.gysev.hu/palyavasuti-uzletag) ([`.xlsx`](data/01_import/GYSEV_2022-05-13_ASR.xlsx))
 * Stores them in a MySQL database with the following schema:
 
   <!--- TODO: report images below not rendering correctly in the Preview panel to JetBrains developers --->
@@ -48,18 +48,19 @@ A program for...
   * Store your database password in a `DATABASE_PASSWORD` variable 
     in a `.env` file in the root of the repository.
 
-### 🛠️ For development
+#### 🛠️ For development
 
 * [mypy](https://github.com/python/mypy)
 
 
 ## 📚 Reference
 
-Abbreviations used:
-* SR = speed restriction
-* TSR = temporary speed restriction
-* ASR = all speed restrictions
-* MU = multiple unit.
+| abbreviation | meaning                     |
+|--------------|-----------------------------|
+| SR           | speed restriction           |
+| TSR          | temporary speed restriction |
+| ASR          | all speed restrictions      |
+| MU           | multiple unit               |
 
 
 ## 📜 License
