@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from io import BytesIO
 import logging
-from typing import Any, Final
+from typing import Any, ClassVar, Final
 
 import numpy as np
 from openpyxl import load_workbook
@@ -18,9 +18,9 @@ from src.process_new_email.database_connection import Database
 
 
 class TableUpdater(ABC):
-    TABLE_NAME: str = NotImplemented
-    database_metadata: MetaData = NotImplemented
-    table: Table = NotImplemented
+    TABLE_NAME: ClassVar[str] = NotImplemented
+    database_metadata: ClassVar[MetaData] = NotImplemented
+    table: ClassVar[Table] = NotImplemented
 
     def __init__(self) -> None:
         super().__init__()
@@ -178,6 +178,6 @@ class ExcelDeepProcessor(ExcelProcessor, ABC):
             return list(xlsx_workbook.worksheets)
         finally:
             self.logger.info(f"All worksheets imported from {xlsx_file_location}!")
-            
+
     def _rename_columns_manually(self) -> None:
         pass

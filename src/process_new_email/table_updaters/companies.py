@@ -1,6 +1,6 @@
 from datetime import datetime
 import re
-from typing import final
+from typing import ClassVar, final
 
 from sqlalchemy import (
     Boolean,
@@ -24,10 +24,10 @@ from src.process_new_email.table_updaters.countries import CountriesUpdater
 @final
 # TODO: add logging
 class CompaniesUpdater(ExcelSimpleProcessor, UICTableUpdater):
-    TABLE_NAME = "companies"
-    database_metadata = MetaData()
+    TABLE_NAME: ClassVar[str] = "companies"
+    database_metadata: ClassVar[MetaData] = MetaData()
 
-    table = Table(
+    table: ClassVar[Table] = Table(
         TABLE_NAME,
         database_metadata,
         Column(

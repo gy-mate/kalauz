@@ -1,5 +1,6 @@
 from abc import ABC
 from datetime import date
+from typing import ClassVar
 
 # future: remove the comment below when stubs for the library below are available
 import roman  # type: ignore
@@ -25,11 +26,11 @@ from src.process_new_email.table_updaters.countries import CountriesUpdater
 
 
 class SRUpdater(ExcelProcessor, ABC):
-    TABLE_NAME = "speed_restrictions"
-    database_metadata = MetaData()
+    TABLE_NAME: ClassVar[str] = "speed_restrictions"
+    database_metadata: ClassVar[MetaData] = MetaData()
 
     # TODO: estabilish one-to-many relationships between SRs and switches
-    table = Table(
+    table: ClassVar[Table] = Table(
         TABLE_NAME,
         database_metadata,
         Column(

@@ -1,5 +1,5 @@
 import re
-from typing import Final
+from typing import ClassVar, Final
 
 from bs4 import BeautifulSoup
 from sqlalchemy import (
@@ -13,7 +13,10 @@ from sqlalchemy import (
     text,
 )
 
-from src.process_new_email.table_updaters.common import DataDownloader, ExcelSimpleProcessor
+from src.process_new_email.table_updaters.common import (
+    DataDownloader,
+    ExcelSimpleProcessor,
+)
 
 
 def _translate_operating_site_type(operating_site_type: str) -> str:
@@ -40,10 +43,10 @@ def _translate_operating_site_type(operating_site_type: str) -> str:
 
 
 class OperatingSitesUpdater(DataDownloader, ExcelSimpleProcessor):
-    TABLE_NAME = "operating_sites"
-    database_metadata = MetaData()
+    TABLE_NAME: ClassVar[str] = "operating_sites"
+    database_metadata: ClassVar[MetaData] = MetaData()
 
-    table = Table(
+    table: ClassVar[Table] = Table(
         TABLE_NAME,
         database_metadata,
         Column(name="name", type_=String(255), nullable=False),

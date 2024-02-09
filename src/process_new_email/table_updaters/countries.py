@@ -1,5 +1,5 @@
 from io import BytesIO
-from typing import Final, final
+from typing import ClassVar, Final, final
 
 from lxml import etree
 
@@ -26,10 +26,10 @@ def _swap_name(name: str) -> str:
 
 @final
 class CountriesUpdater(UICTableUpdater):
-    TABLE_NAME = "countries"
-    database_metadata = MetaData()
+    TABLE_NAME: ClassVar[str] = "countries"
+    database_metadata: ClassVar[MetaData] = MetaData()
 
-    table = Table(
+    table: ClassVar[Table] = Table(
         TABLE_NAME,
         database_metadata,
         Column(name="code_iso", type_=String(2), nullable=False, index=True),
