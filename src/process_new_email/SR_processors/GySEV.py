@@ -1,6 +1,9 @@
+from typing import final
+
 from src.process_new_email.SR_processors.common import SRUpdater
 
 
+@final
 class GysevUpdater(SRUpdater):
     def __init__(self) -> None:
         super().__init__(
