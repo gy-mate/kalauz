@@ -130,6 +130,8 @@ class ExcelProcessor(TableUpdater, ABC):
                 pd.NaT: None,
                 # future: remove the line below when https://github.com/pandas-dev/pandas/issues/32265 is fixed
                 np.NaN: None,
+                # TODO: remove the line below in production
+                NotImplemented: None,
             },
             inplace=True,
         )
