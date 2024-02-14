@@ -1,6 +1,6 @@
 # future: delete line below, uncomment and extract dependencies below that to requirements-dev.txt when https://youtrack.jetbrains.com/issue/PY-9941/ is fixed
 # only for development
-# black~=24.1.1
+# black~=24.2.0
 # lxml-stubs~=0.5.1
 # pandas-stubs~=2.1.4.231227
 # types-beautifulsoup4~=4.12.0.20240106
@@ -17,5 +17,5 @@ python-dotenv~=1.0.1
 requests~=2.31.0
 roman~=4.1
 scikit-learn~=1.4.0
-SQLAlchemy~=2.0.25
+SQLAlchemy~=2.0.27
 xlrd~=2.0.1
