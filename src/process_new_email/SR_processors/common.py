@@ -15,7 +15,6 @@ from sqlalchemy import (
     String,
     Table,
     text,
-    Time,
 )
 
 from src.process_new_email.table_updaters.common import (
@@ -33,6 +32,9 @@ class SRUpdater(ExcelProcessor, ABC):
     table: ClassVar[Table] = Table(
         TABLE_NAME,
         database_metadata,
+        Column(
+            name="id", type_=String(255), nullable=False, index=True, primary_key=True
+        ),
         Column(
             "country_iso",
             String(2),
@@ -56,17 +58,21 @@ class SRUpdater(ExcelProcessor, ABC):
         Column(name="on_main_track", type_=Boolean, nullable=False),
         Column(name="main_track_left_or_right", type_=Boolean),
         Column(name="station_track_switch_source_text", type_=String(255)),
-        Column(name="station_track_switch_from", type_=String(255)),
-        Column(name="station_track_switch_to", type_=String(255)),
+        Column(name="station_track_from", type_=String(255)),
+        Column(name="station_switch_from", type_=String(255)),
+        Column(name="station_switch_to", type_=String(255)),
         Column(name="operating_speed", type_=Integer, nullable=False),
         Column(name="reduced_speed", type_=Integer, nullable=False),
         Column(name="reduced_speed_for_mus", type_=Integer),
-        Column(name="cause", type_=String(255)),
-        Column(name="date_from", type_=Date, nullable=False),
-        Column(name="time_from", type_=Time),
+        Column(name="not_signalled_from_start_point", type_=Boolean, nullable=False),
+        Column(name="not_signalled_from_end_point", type_=Boolean, nullable=False),
+        Column(name="cause_source_text", type_=String(255)),
+        Column(name="cause_category_1", type_=String(255)),
+        Column(name="cause_category_2", type_=String(255)),
+        Column(name="cause_category_3", type_=String(255)),
+        Column(name="time_from", type_=Date, nullable=False),
         Column(name="maintenance_planned", type_=Boolean),
-        Column(name="date_to", type_=Date),
-        Column(name="time_to", type_=Time),
+        Column(name="time_to", type_=Date),
         Column(name="work_to_be_done", type_=String(255)),
         Column(name="comment", type_=String(255)),
     )
@@ -80,10 +86,11 @@ class SRUpdater(ExcelProcessor, ABC):
         self.LIST_TYPE = "ASR"
         self.SOURCE_EXTENSION = source_extension
 
+        # TODO: implement company name detection from filename
         # future: delete `if` section below in production
         if self.COMPANY == "MÁV":
             self.TODAY = date(2023, 7, 26)
-        elif self.COMPANY == "GYSEV":
+        elif self.COMPANY == "GySEV/Raaberbahn":
             self.TODAY = date(2023, 8, 4)
         else:
             raise ValueError(f"Unknown company: {self.COMPANY}!")
