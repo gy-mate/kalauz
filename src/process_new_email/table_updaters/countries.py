@@ -107,9 +107,9 @@ class CountriesUpdater(UICTableUpdater):
         return self._xsd and self._xsd.validate(self._data_to_validate)
 
     def _read_data_from_xml(self):
-        # TODO: report wrong documentation URL of pd.read_xml() to JetBrains or pandas developers
+        # future: report wrong documentation URL of pd.read_xml() to JetBrains or pandas developers
         return pd.read_xml(
-            path_or_buffer=self._data_to_process,
+            path_or_buffer=BytesIO(self._data_to_process),
             xpath=self._PATH_ROW,
             namespaces=self.namespace,
         )
