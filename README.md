@@ -4,7 +4,7 @@
 [![Scrutinizer code quality](https://img.shields.io/scrutinizer/quality/g/gy-mate/kalauz/master)](https://scrutinizer-ci.com/g/cookiecutter/cookiecutter/?branch=master)
 [![Type hinting used](https://img.shields.io/badge/type_hinting-used-brightgreen)](https://docs.python.org/3/library/typing.html)
 [![Code style: Black](https://img.shields.io/badge/code_style-black-black.svg)](https://github.com/psf/black)
-[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)](https://makeapullrequest.com)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request)
 
 
 ## 📖 About
