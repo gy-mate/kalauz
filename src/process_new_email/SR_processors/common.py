@@ -36,13 +36,13 @@ class SRUpdater(ExcelProcessor, ABC):
             name="id", type_=String(255), nullable=False, index=True, primary_key=True
         ),
         Column(
-            "country_iso",
+            "country_code_iso",
             String(2),
             ForeignKey(CountriesUpdater.table.c.code_iso),
             nullable=False,
         ),
         Column(
-            "company_uic",
+            "company_code_uic",
             SmallInteger,
             ForeignKey(CompaniesUpdater.table.c.code_uic),
             nullable=False,

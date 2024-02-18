@@ -88,8 +88,8 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
                     reduced_speed, reduced_speed_for_mus = _get_reduced_speeds(row[8])
 
                     row_to_add = {
-                        "country_iso": self.COUNTRY_CODE_ISO,
-                        "company_uic": self.COMPANY_CODE_UIC,
+                        "country_code_iso": self.COUNTRY_CODE_ISO,
+                        "company_code_uic": self.COMPANY_CODE_UIC,
                         "internal_id": None,
                         "in_timetable": not _is_tsr(row_of_cells[0]),
                         "due_to_railway_features": NotImplemented,
@@ -101,9 +101,7 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
                             self._remove_space_after_hyphen(row[2]) if row[2] else None
                         ),
                         "on_main_track": True if row[3] else False,
-                        "main_track_left_or_right": (
-                            self._on_right_track(row[3]) if row[3] else None
-                        ),
+                        "main_track_left_or_right": self._on_right_track(row[3]),
                         "station_track_switch_source_text": row[4],
                         "station_track_from": self._get_station_track_switch_from(
                             row[4]
@@ -118,7 +116,6 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
                         "cause_source_text": row[11],
                         "cause_category_1": NotImplemented,
                         "cause_category_2": NotImplemented,
-                        # future: report wrong circle size below (too big) to JetBrains developers; see https://www.unicode.org/charts/PDF/U1F780.pdf#page=3
                         "cause_category_3": NotImplemented,
                         "time_from": self._get_utc_time(row[10]),
                         "maintenance_planned": None,
@@ -126,10 +123,10 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
                         "work_to_be_done": None,
                         "comment": row[14],
                     }
-                    
+
                     string_to_hash = "; ".join(
                         [
-                            str(row_to_add["company_uic"]),
+                            str(row_to_add["company_code_uic"]),
                             str(row_to_add["line"]),
                             str(row_to_add["metre_post_from"]),
                             str(row_to_add["metre_post_to"]),
@@ -164,24 +161,29 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
             self.logger.critical(f"`station_from` is empty!")
             raise
 
-    def _on_right_track(self, text_to_search: str) -> bool:
+    def _on_right_track(self, text_to_search: str | None) -> bool | None:
         try:
+            assert text_to_search
             if "bal" in text_to_search:
                 return False
             elif "jobb" in text_to_search:
                 return True
             else:
                 raise ValueError(f"Unrecognized track side: {text_to_search}!")
+        except AssertionError:
+            return None
         except ValueError as exception:
             self.logger.critical(exception)
             raise
 
-    def _get_station_track_switch_from(self, text_to_search: str | None) -> int | str:
+    def _get_station_track_switch_from(
+        self, text_to_search: str | None
+    ) -> int | str | None:
         try:
             assert text_to_search
             return self._extract_number(text_to_search)
         except AssertionError:
-            return "AssertionError"
+            return None
         except roman.InvalidRomanNumeralError:
             return "InvalidRomanNumeralError"
 
@@ -246,20 +248,18 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
             re.VERBOSE | re.MULTILINE,
         )
 
-        text = str(text_to_search)
-
         try:
-            if arabic_regex.search(text):
-                result = arabic_regex.search(text)
+            if arabic_regex.search(text_to_search):
+                result = arabic_regex.search(text_to_search)
                 assert result
                 return int(result[0])
             else:
-                result = roman_mix_regex.search(text)
+                result = roman_mix_regex.search(text_to_search)
                 try:
                     assert result
                     return int(roman.fromRoman(result[0]))
                 except AssertionError:
-                    result = arabic_letter_regex.search(text)
+                    result = arabic_letter_regex.search(text_to_search)
                     assert result
                     return result[0]
         except AssertionError:
@@ -314,8 +314,8 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
                 """
                 insert ignore into speed_restrictions (
                     id,
-                    country_iso,
-                    company_uic,
+                    country_code_iso,
+                    company_code_uic,
                     internal_id,
                     in_timetable,
                     due_to_railway_features,
@@ -347,8 +347,8 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
                 )
                 values (
                     :id,
-                    :country_iso,
-                    :company_uic,
+                    :country_code_iso,
+                    :company_code_uic,
                     :internal_id,
                     :in_timetable,
                     :due_to_railway_features,
@@ -389,7 +389,7 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
                 where id = :id
                 """,
             ]
-            
+
             for index, row in self.data.iterrows():
                 for query in queries:
                     connection.execute(
