@@ -1,0 +1,25 @@
+[out:json];
+
+
+area["ISO3166-1"="HU"]
+//area["name"="Rajka"]
+  -> .country;
+
+
+relation["route"="railway"]["ref"]["operator"="MÁV"](area.country);
+out geom;
+
+node["railway"="milestone"](area.country);
+out;
+
+
+way(680443640) ->.operatingSite;
+nw["layer"="-5"](area.operatingSite);
+out geom;
+
+way(123456789) ->.operatingSite;
+nw[!"layer"](area.operatingSite);
+nw["layer"="0"](area.operatingSite);
+out geom;
+
+<repeat>

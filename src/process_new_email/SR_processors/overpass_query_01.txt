@@ -1,0 +1,17 @@
+[out:json];
+
+area["ISO3166-1"="HU"]
+//area["name"="Rajka"]
+  -> .country;
+
+(
+    area["railway=station"]["operator"="MÁV"]["uic_ref"](area.country);
+    area["railway"="halt"]["operator"="MÁV"]["uic_ref"](area.country);
+    area["railway"="yard"]["operator"="MÁV"]["uic_ref"](area.country);
+    area["railway"="service_station"]["operator"="MÁV"]["uic_ref"](area.country);
+    area["railway"="junction"]["operator"="MÁV"]["uic_ref"](area.country);
+    area["railway"="crossover"]["operator"="MÁV"]["uic_ref"](area.country);
+    area["railway"="spur_junction"]["operator"="MÁV"]["uic_ref"](area.country);
+    area["railway"="site"]["operator"="MÁV"]["uic_ref"](area.country);
+);
+out geom;
