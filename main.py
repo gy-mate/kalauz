@@ -21,7 +21,7 @@ def main() -> None:
             logging.StreamHandler(),
             logging.FileHandler("kalauz.log"),
         ],
-        format="%(asctime)s – %(levelname)s @ %(name)s.%(funcName)s(): %(message)s",
+        format="%(asctime)s \t %(levelname)s \t %(name)s.%(funcName)s(): %(message)s",
         level=logging.DEBUG,
     )
     load_dotenv()
