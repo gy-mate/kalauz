@@ -13,11 +13,11 @@ node["railway"="milestone"](area.country);
 out;
 
 
-way(680443640) ->.operatingSite;
+way(680443640) -> .operatingSite;
 nw["layer"="-5"](area.operatingSite);
 out geom;
 
-way(123456789) ->.operatingSite;
+way(123456789) -> .operatingSite;
 nw[!"layer"](area.operatingSite);
 nw["layer"="0"](area.operatingSite);
 out geom;
