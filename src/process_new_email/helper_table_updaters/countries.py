@@ -13,7 +13,7 @@ from requests import HTTPError
 from sqlalchemy import Column, MetaData, SmallInteger, String, Table, text
 import zipfile
 
-from src.process_new_email.table_updaters.common import UICTableUpdater
+from src.process_new_email.common import UICTableUpdater
 
 
 def _uic_code_not_assigned(values: tuple[str, str, str]) -> bool:

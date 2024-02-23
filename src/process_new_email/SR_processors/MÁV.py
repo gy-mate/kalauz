@@ -12,7 +12,7 @@ from sqlalchemy import text
 import roman  # type: ignore
 
 from src.process_new_email.SR_processors.common import SRUpdater
-from src.process_new_email.table_updaters.common import ExcelDeepProcessor
+from src.process_new_email.common import ExcelDeepProcessor
 
 
 def _is_tsr(cell: Cell) -> bool:
@@ -72,6 +72,9 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
         )
 
     def _correct_data_manually(self) -> None:
+        self.existing_sr_ids = self._get_existing_sr_ids()
+        self.current_sr_ids: list[str] = []
+        
         rows_to_add: list[dict[str, Any]] = []
         for worksheet_id, worksheet in enumerate(self._data_to_process):
             for row_id, row_of_cells in enumerate(
@@ -135,8 +138,10 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
                             str(row_to_add["time_from"]),
                         ]
                     ).encode()
+                    current_sr_id = md5(string_to_hash).hexdigest()
+                    self.current_sr_ids.append(current_sr_id)
                     row_to_add |= {
-                        "id": md5(string_to_hash).hexdigest(),
+                        "id": current_sr_id,
                     }
 
                     rows_to_add.append(row_to_add)
@@ -144,6 +149,17 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
         # future: report bug (false positive) to mypy developers
         self.data = DataFrame.from_dict(rows_to_add)  # type: ignore
         pass
+
+    def _get_existing_sr_ids(self) -> list[str]:
+        with self.database.engine.connect() as connection:
+            query = """
+            select id
+            from speed_restrictions
+            """
+            result = connection.execute(
+                text(query),
+            ).fetchall()
+            return [row[0] for row in result]
 
     def _get_metre_post(self, text_to_search: str | None) -> int | None:
         try:
@@ -396,3 +412,22 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
                         text(query),
                         row.to_dict(),
                     )
+            
+        with self.database.engine.begin() as connection:
+            query = """
+            update speed_restrictions
+            set
+                time_to = :time_to
+            where id = :id and time_to is null
+            """
+            
+            for sr_id in set(self.existing_sr_ids) - set(self.current_sr_ids):
+                raise NotImplementedError
+                # noinspection PyUnreachableCode
+                connection.execute(
+                    text(query),
+                    {
+                        "id": sr_id,
+                        "time_to": self.TODAY,
+                    },
+                )

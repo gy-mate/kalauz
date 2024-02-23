@@ -13,7 +13,7 @@ from sqlalchemy import (
     text,
 )
 
-from src.process_new_email.table_updaters.common import (
+from src.process_new_email.common import (
     DataDownloader,
     ExcelSimpleProcessor,
 )

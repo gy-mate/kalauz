@@ -17,11 +17,11 @@ from sqlalchemy import (
     text,
 )
 
-from src.process_new_email.table_updaters.common import (
+from src.process_new_email.common import (
     ExcelProcessor,
 )
-from src.process_new_email.table_updaters.companies import CompaniesUpdater
-from src.process_new_email.table_updaters.countries import CountriesUpdater
+from src.process_new_email.helper_table_updaters.companies import CompaniesUpdater
+from src.process_new_email.helper_table_updaters.countries import CountriesUpdater
 
 
 class SRUpdater(ExcelProcessor, ABC):

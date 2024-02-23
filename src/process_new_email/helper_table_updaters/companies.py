@@ -14,11 +14,11 @@ from sqlalchemy import (
     text,
 )
 
-from src.process_new_email.table_updaters.common import (
+from src.process_new_email.common import (
     ExcelSimpleProcessor,
     UICTableUpdater,
 )
-from src.process_new_email.table_updaters.countries import CountriesUpdater
+from src.process_new_email.helper_table_updaters.countries import CountriesUpdater
 
 
 @final
