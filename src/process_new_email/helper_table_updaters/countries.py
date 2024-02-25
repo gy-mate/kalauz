@@ -90,7 +90,7 @@ class CountriesUpdater(UICTableUpdater):
 
     def _validate_data(self) -> None:
         self._data_to_validate = etree.parse(BytesIO(self._data_to_process)).getroot()
-        self.logger.info(f"Data downloaded from {self.DATA_URL} successfully parsed!")
+        self.logger.debug(f"Data downloaded from {self.DATA_URL} successfully parsed!")
 
         self.namespace = self._data_to_validate.nsmap
 
@@ -99,7 +99,7 @@ class CountriesUpdater(UICTableUpdater):
                 f"The .xml file downloaded from {self.DATA_URL} is invalid "
                 f"according to the .xsd downloaded and unzipped from {self.XSD_URL}!"
             )
-        self.logger.info(
+        self.logger.debug(
             f"Data downloaded from {self.DATA_URL} successfully validated!"
         )
 

@@ -279,10 +279,10 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
                     assert result
                     return result[0]
         except AssertionError:
-            self.logger.critical(f"Number not found in {text_to_search}!")
+            self.logger.debug(f"Number not found in {text_to_search}!")
             raise
         except roman.InvalidRomanNumeralError:
-            self.logger.critical(f"Invalid roman numeral in {text_to_search}!")
+            self.logger.debug(f"Invalid roman numeral in {text_to_search}!")
             raise
 
     def _get_date(self, text_to_search: str | None) -> str:

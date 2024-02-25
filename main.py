@@ -1,25 +1,44 @@
 import logging
+import sys
 
 from dotenv import load_dotenv
 
-from src.OSM_processors.downloader import OsmDownloader
 from src.process_new_email.common import TableUpdater
+from src.process_new_email.helper_table_updaters.companies import CompaniesUpdater
+from src.process_new_email.helper_table_updaters.countries import CountriesUpdater
+from src.process_new_email.helper_table_updaters.operating_sites import (
+    OperatingSitesUpdater,
+)
+from src.process_new_email.SR_processors.MÁV import MavUpdater
+from src.OSM_processors.downloader import OsmDownloader
 
 
 # future: mark all packages as namespace packages in the IDE when https://youtrack.jetbrains.com/issue/PY-55212/ is fixed
 
 
-def main() -> None:
-    logging.basicConfig(
-        encoding="utf-8",
-        handlers=[
-            logging.StreamHandler(),
-            logging.FileHandler("kalauz.log"),
-        ],
-        format="%(asctime)s \t %(levelname)s \t %(name)s.%(funcName)s(): %(message)s",
-        level=logging.DEBUG,
-    )
-    load_dotenv()
+def main(demonstration=False) -> None:
+    if demonstration:
+        logging.basicConfig(
+            encoding="utf-8",
+            handlers=[
+                logging.StreamHandler(sys.stdout),
+                logging.FileHandler("kalauz.log"),
+            ],
+            format="%(asctime)s \t %(message)s",
+            level=logging.INFO,
+        )
+        load_dotenv()
+    else:
+        logging.basicConfig(
+            encoding="utf-8",
+            handlers=[
+                logging.StreamHandler(),
+                logging.FileHandler("kalauz.log"),
+            ],
+            format="%(asctime)s \t %(levelname)s \t %(name)s.%(funcName)s(): %(message)s",
+            level=logging.DEBUG,
+        )
+        load_dotenv()
 
     # future: remove comments below when https://github.com/python/mypy/issues/10160 or https://github.com/python/mypy/issues/9756 is fixed
     updaters_to_run: list[TableUpdater] = [  # type: ignore
@@ -39,7 +58,7 @@ def main() -> None:
         updater.store_data()
 
         updater.logger.info(f"Table `{updater.TABLE_NAME}` sucessfully updated!")
-        
+
     OsmDownloader().run()
 
 

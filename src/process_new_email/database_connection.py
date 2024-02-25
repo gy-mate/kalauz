@@ -49,7 +49,7 @@ class Database(metaclass=Singleton):
             )
             return create_engine(database_url)
         finally:
-            self.logger.info("Successfully connected to the database server!")
+            self.logger.debug("Successfully connected to the database server!")
 
     def _connect_to_database(self) -> Engine:
         if not inspect(self.engine).has_schema(self.DATABASE_NAME):
@@ -70,6 +70,6 @@ class Database(metaclass=Singleton):
             )
             return create_engine(database_url)
         finally:
-            self.logger.info(
+            self.logger.debug(
                 f"Successfully connected to the {self.DATABASE_NAME} database of the server!"
             )

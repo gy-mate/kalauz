@@ -45,7 +45,7 @@ class TableUpdater(ABC):
             bind=self.database.engine,
             checkfirst=True,
         )
-        self.logger.info(f"Table `{self.TABLE_NAME}` sucessfully created (if needed)!")
+        self.logger.debug(f"Table `{self.TABLE_NAME}` sucessfully created (if needed)!")
 
     @abstractmethod
     def _add_data(self) -> None:
@@ -67,7 +67,7 @@ class DataDownloader(TableUpdater, ABC):
             },
         )
         response.raise_for_status()
-        self.logger.info(f"File successfully downloaded from {url}!")
+        self.logger.debug(f"File successfully downloaded from {url}!")
         return bytes(response.content)
 
 
