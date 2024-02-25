@@ -39,15 +39,34 @@ class OsmDownloader:
             """
             [out:json];
             
+            area["ISO3166-1"="HU"]
+              -> .country;
+            
+            
             (
-                area["railway=station"];
-                area["railway"="halt"];
-                area["railway"="yard"];
-                area["railway"="service_station"];
-                area["railway"="junction"];
-                area["railway"="crossover"];
-                area["railway"="spur_junction"];
-                area["railway"="site"];
+                area["operator"="MÁV"]["railway"="station"](area.country);
+                area["operator"="GYSEV"]["railway"="station"](area.country);
+                
+                area["operator"="MÁV"]["railway"="halt"](area.country);
+                area["operator"="GYSEV"]["railway"="halt"](area.country);
+                
+                area["operator"="MÁV"]["railway"="yard"](area.country);
+                area["operator"="GYSEV"]["railway"="yard"](area.country);
+                
+                area["operator"="MÁV"]["railway"="service_station"](area.country);
+                area["operator"="GYSEV"]["railway"="service_station"](area.country);
+                
+                area["operator"="MÁV"]["railway"="junction"](area.country);
+                area["operator"="GYSEV"]["railway"="junction"](area.country);
+                
+                area["operator"="MÁV"]["railway"="crossover"](area.country);
+                area["operator"="GYSEV"]["railway"="crossover"](area.country);
+                
+                area["operator"="MÁV"]["railway"="spur_junction"](area.country);
+                area["operator"="GYSEV"]["railway"="spur_junction"](area.country);
+                
+                area["operator"="MÁV"]["railway"="site"](area.country);
+                area["operator"="GYSEV"]["railway"="site"](area.country);
             );
             (._;>;);
             out;
@@ -55,35 +74,58 @@ class OsmDownloader:
         )
         self.logger.debug(f"Short query finished!")
 
-        areas = [_get_ids_layers(way) for way in result.ways]
+        operating_site_areas = [_get_ids_layers(operating_site) for operating_site in result.ways]
 
         query = """
         [out:json];
         
-        
         area["ISO3166-1"="HU"]
             -> .country;
         
-        node["railway"="milestone"](area.country);
+        (
+            way["operator"="MÁV"]["railway"="rail"](area.country);
+            way["operator"="GYSEV"]["railway"="rail"](area.country);
+        );
+        (._;>;);
         out;
         
         """
-        for area in areas:
-            if area["layer"]:
+        for operating_site_area in operating_site_areas:
+            if operating_site_area["layer"]:
                 query += f"""
-                
-                way({area["element_id"]}) -> .operatingSite;
-                nw["layer"="{area["layer"]}"](area.operatingSite);
+                way({operating_site_area["element_id"]}) -> .operatingSite;
+                (
+                    way["railway"="rail"]["layer"="{operating_site_area["layer"]}"](area.operatingSite);
+                    way["disused:railway"="rail"]["layer"="{operating_site_area["layer"]}"](area.operatingSite);
+                    way["abandoned:railway"="rail"]["layer"="{operating_site_area["layer"]}"](area.operatingSite);
+                    
+                    node["railway"="switch"]["layer"="{operating_site_area["layer"]}"](area.operatingSite);
+                    node["disused:railway"="switch"]["layer"="{operating_site_area["layer"]}"](area.operatingSite);
+                    node["abandoned:railway"="switch"]["layer"="{operating_site_area["layer"]}"](area.operatingSite);
+                );
                 (._;>;);
                 out;
                 """
             else:
                 query += f"""
-
-                way({area["element_id"]}) -> .operatingSite;
+                way({operating_site_area["element_id"]}) -> .operatingSite;
                 (
-                    nw[!"layer"](area.operatingSite);
-                    nw["layer"="0"](area.operatingSite);
+                    way["railway"="rail"][!"layer"](area.operatingSite);
+                    way["disused:railway"="rail"][!"layer"](area.operatingSite);
+                    way["abandoned:railway"="rail"][!"layer"](area.operatingSite);
+                    
+                    way["railway"="rail"]["layer"="0"](area.operatingSite);
+                    way["disused:railway"="rail"]["layer"="0"](area.operatingSite);
+                    way["abandoned:railway"="rail"]["layer"="0"](area.operatingSite);
+                    
+                    
+                    node["railway"="switch"][!"layer"](area.operatingSite);
+                    node["disused:railway"="switch"][!"layer"](area.operatingSite);
+                    node["abandoned:railway"="switch"][!"layer"](area.operatingSite);
+                    
+                    node["railway"="switch"]["layer"="0"](area.operatingSite);
+                    node["disused:railway"="switch"]["layer"="0"](area.operatingSite);
+                    node["abandoned:railway"="switch"]["layer"="0"](area.operatingSite);
                 );
                 (._;>;);
                 out;
@@ -122,14 +164,14 @@ class OsmDownloader:
             "GeoJsonLayer",
             data=feature_collection,
             pickable=True,
-            line_width_min_pixels=4,
+            line_width_min_pixels=2,
             get_line_color=[255, 255, 255],
             get_fill_color=[255, 255, 255],
         )
         view_state = ViewState(
-            latitude=47.4979,
-            longitude=19.0402,
-            zoom=6,
+            latitude=47.180833,
+            longitude=19.503056,
+            zoom=7,
         )
         deck = Deck(
             layers=[geojson_layer],
