@@ -6,7 +6,7 @@ from overpy import Element, Overpass  # type: ignore
 from pydeck import Layer, Deck, ViewState  # type: ignore
 
 
-def _get_ids_layers(element: Element) -> dict[str, int | None]:
+def _get_ids_of_layers(element: Element) -> dict[str, int | None]:
     # future: report bug (false positive) to JetBrains developers
     # noinspection PyUnresolvedReferences
     element_id = element.id
@@ -44,29 +44,45 @@ class OsmDownloader:
             
             
             (
-                area["operator"="MÁV"]["railway"="station"](area.country);
-                area["operator"="GYSEV"]["railway"="station"](area.country);
+                area["operator"="MÁV"]["railway"="station"]["uic_ref"](area.country);
+                area["operator"="GYSEV"]["railway"="station"]["uic_ref"](area.country);
+                relation["type"="multipolygon"]["operator"="MÁV"]["railway"="station"]["uic_ref"](area.country);
+                relation["type"="multipolygon"]["operator"="GYSEV"]["railway"="station"]["uic_ref"](area.country);
                 
-                area["operator"="MÁV"]["railway"="halt"](area.country);
-                area["operator"="GYSEV"]["railway"="halt"](area.country);
+                area["operator"="MÁV"]["railway"="halt"]["uic_ref"](area.country);
+                area["operator"="GYSEV"]["railway"="halt"]["uic_ref"](area.country);
+                relation["type"="multipolygon"]["operator"="MÁV"]["railway"="halt"]["uic_ref"](area.country);
+                relation["type"="multipolygon"]["operator"="GYSEV"]["railway"="halt"]["uic_ref"](area.country);
                 
-                area["operator"="MÁV"]["railway"="yard"](area.country);
-                area["operator"="GYSEV"]["railway"="yard"](area.country);
+                area["operator"="MÁV"]["railway"="yard"]["uic_ref"](area.country);
+                area["operator"="GYSEV"]["railway"="yard"]["uic_ref"](area.country);
+                relation["type"="multipolygon"]["operator"="MÁV"]["railway"="yard"]["uic_ref"](area.country);
+                relation["type"="multipolygon"]["operator"="GYSEV"]["railway"="yard"]["uic_ref"](area.country);
                 
-                area["operator"="MÁV"]["railway"="service_station"](area.country);
-                area["operator"="GYSEV"]["railway"="service_station"](area.country);
+                area["operator"="MÁV"]["railway"="service_station"]["uic_ref"](area.country);
+                area["operator"="GYSEV"]["railway"="service_station"]["uic_ref"](area.country);
+                relation["type"="multipolygon"]["operator"="MÁV"]["railway"="service_station"]["uic_ref"](area.country);
+                relation["type"="multipolygon"]["operator"="GYSEV"]["railway"="service_station"]["uic_ref"](area.country);
                 
-                area["operator"="MÁV"]["railway"="junction"](area.country);
-                area["operator"="GYSEV"]["railway"="junction"](area.country);
+                area["operator"="MÁV"]["railway"="junction"]["uic_ref"](area.country);
+                area["operator"="GYSEV"]["railway"="junction"]["uic_ref"](area.country);
+                relation["type"="multipolygon"]["operator"="MÁV"]["railway"="junction"]["uic_ref"](area.country);
+                relation["type"="multipolygon"]["operator"="GYSEV"]["railway"="junction"]["uic_ref"](area.country);
                 
-                area["operator"="MÁV"]["railway"="crossover"](area.country);
-                area["operator"="GYSEV"]["railway"="crossover"](area.country);
+                area["operator"="MÁV"]["railway"="crossover"]["uic_ref"](area.country);
+                area["operator"="GYSEV"]["railway"="crossover"]["uic_ref"](area.country);
+                relation["type"="multipolygon"]["operator"="MÁV"]["railway"="crossover"]["uic_ref"](area.country);
+                relation["type"="multipolygon"]["operator"="GYSEV"]["railway"="crossover"]["uic_ref"](area.country);
                 
-                area["operator"="MÁV"]["railway"="spur_junction"](area.country);
-                area["operator"="GYSEV"]["railway"="spur_junction"](area.country);
+                area["operator"="MÁV"]["railway"="spur_junction"]["uic_ref"](area.country);
+                area["operator"="GYSEV"]["railway"="spur_junction"]["uic_ref"](area.country);
+                relation["type"="multipolygon"]["operator"="MÁV"]["railway"="spur_junction"]["uic_ref"](area.country);
+                relation["type"="multipolygon"]["operator"="GYSEV"]["railway"="spur_junction"]["uic_ref"](area.country);
                 
-                area["operator"="MÁV"]["railway"="site"](area.country);
-                area["operator"="GYSEV"]["railway"="site"](area.country);
+                area["operator"="MÁV"]["railway"="site"]["uic_ref"](area.country);
+                area["operator"="GYSEV"]["railway"="site"]["uic_ref"](area.country);
+                relation["type"="multipolygon"]["operator"="MÁV"]["railway"="site"]["uic_ref"](area.country);
+                relation["type"="multipolygon"]["operator"="GYSEV"]["railway"="site"]["uic_ref"](area.country);
             );
             (._;>;);
             out;
@@ -74,7 +90,12 @@ class OsmDownloader:
         )
         self.logger.debug(f"Short query finished!")
 
-        operating_site_areas = [_get_ids_layers(operating_site) for operating_site in result.ways]
+        operating_site_areas = [
+            _get_ids_of_layers(operating_site) for operating_site in result.ways
+        ]
+        operating_site_relations = [
+            _get_ids_of_layers(operating_site) for operating_site in result.relations
+        ]
 
         query = """
         [out:json];
@@ -83,10 +104,10 @@ class OsmDownloader:
             -> .country;
         
         (
-            way["operator"="MÁV"]["railway"="rail"](area.country);
-            way["operator"="GYSEV"]["railway"="rail"](area.country);
+            relation["route"="railway"]["ref"]["operator"="MÁV"](area.country);
+            relation["route"="railway"]["ref"]["operator"="GYSEV"](area.country);
         );
-        (._;>;);
+        >>;
         out;
         
         """
@@ -109,6 +130,48 @@ class OsmDownloader:
             else:
                 query += f"""
                 way({operating_site_area["element_id"]}) -> .operatingSite;
+                (
+                    way["railway"="rail"][!"layer"](area.operatingSite);
+                    way["disused:railway"="rail"][!"layer"](area.operatingSite);
+                    way["abandoned:railway"="rail"][!"layer"](area.operatingSite);
+                    
+                    way["railway"="rail"]["layer"="0"](area.operatingSite);
+                    way["disused:railway"="rail"]["layer"="0"](area.operatingSite);
+                    way["abandoned:railway"="rail"]["layer"="0"](area.operatingSite);
+                    
+                    
+                    node["railway"="switch"][!"layer"](area.operatingSite);
+                    node["disused:railway"="switch"][!"layer"](area.operatingSite);
+                    node["abandoned:railway"="switch"][!"layer"](area.operatingSite);
+                    
+                    node["railway"="switch"]["layer"="0"](area.operatingSite);
+                    node["disused:railway"="switch"]["layer"="0"](area.operatingSite);
+                    node["abandoned:railway"="switch"]["layer"="0"](area.operatingSite);
+                );
+                (._;>;);
+                out;
+                """
+        for operating_site_relation in operating_site_relations:
+            if operating_site_relation["layer"]:
+                query += f"""
+                relation({operating_site_relation["element_id"]});
+                map_to_area -> .operatingSite;
+                (
+                    way["railway"="rail"]["layer"="{operating_site_relation["layer"]}"](area.operatingSite);
+                    way["disused:railway"="rail"]["layer"="{operating_site_relation["layer"]}"](area.operatingSite);
+                    way["abandoned:railway"="rail"]["layer"="{operating_site_relation["layer"]}"](area.operatingSite);
+                    
+                    node["railway"="switch"]["layer"="{operating_site_relation["layer"]}"](area.operatingSite);
+                    node["disused:railway"="switch"]["layer"="{operating_site_relation["layer"]}"](area.operatingSite);
+                    node["abandoned:railway"="switch"]["layer"="{operating_site_relation["layer"]}"](area.operatingSite);
+                );
+                (._;>;);
+                out;
+                """
+            else:
+                query += f"""
+                relation({operating_site_relation["element_id"]});
+                map_to_area -> .operatingSite;
                 (
                     way["railway"="rail"][!"layer"](area.operatingSite);
                     way["disused:railway"="rail"][!"layer"](area.operatingSite);
@@ -179,5 +242,4 @@ class OsmDownloader:
         )
 
         deck.to_html("map_pydeck.html")
-
         pass
