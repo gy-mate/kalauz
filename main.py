@@ -4,12 +4,11 @@ import sys
 from dotenv import load_dotenv
 
 from src.process_new_email.common import TableUpdater
-from src.process_new_email.helper_table_updaters.companies import CompaniesUpdater
 from src.process_new_email.helper_table_updaters.countries import CountriesUpdater
-from src.process_new_email.helper_table_updaters.operating_sites import (
-    OperatingSitesUpdater,
-)
-from src.process_new_email.SR_processors.MÁV import MavUpdater
+from src.process_new_email.helper_table_updaters.companies import CompaniesUpdater
+from src.process_new_email.helper_table_updaters.operating_sites import OperatingSitesUpdater
+from src.process_new_email.SR_processors.companies.MÁV import MavUpdater
+from src.process_new_email.SR_processors.companies.GYSEV import GysevUpdater
 from src.OSM_processors.downloader import OsmDownloader
 
 
