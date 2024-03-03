@@ -1,9 +1,14 @@
+import contextlib
 import logging
 
 # future: remove the comments below when stubs for the library below are available
 import geojson  # type: ignore
 from overpy import Element, Overpass  # type: ignore
 from pydeck import Layer, Deck, ViewState  # type: ignore
+from sqlalchemy.sql import text
+
+from src.SR import SR
+from src.process_new_email.common import DataProcessor
 
 
 def _get_ids_of_layers(element: Element) -> dict[str, int | None]:
@@ -24,14 +29,16 @@ def _get_ids_of_layers(element: Element) -> dict[str, int | None]:
     }
 
 
-class OsmDownloader:
+class OsmDownloader(DataProcessor):
     def __init__(self) -> None:
-        self.logger = logging.getLogger(__name__)
+        super().__init__()
 
     def run(self) -> None:
-        self._download()
+        self._download_osm_data()
+        self._process_srs()
+        self._visualise_srs()
 
-    def _download(self) -> None:
+    def _download_osm_data(self) -> None:
         api = Overpass()
 
         self.logger.debug(f"Short query started!")
@@ -119,10 +126,6 @@ class OsmDownloader:
                     way["railway"="rail"]["layer"="{operating_site_area["layer"]}"](area.operatingSite);
                     way["disused:railway"="rail"]["layer"="{operating_site_area["layer"]}"](area.operatingSite);
                     way["abandoned:railway"="rail"]["layer"="{operating_site_area["layer"]}"](area.operatingSite);
-                    
-                    node["railway"="switch"]["layer"="{operating_site_area["layer"]}"](area.operatingSite);
-                    node["disused:railway"="switch"]["layer"="{operating_site_area["layer"]}"](area.operatingSite);
-                    node["abandoned:railway"="switch"]["layer"="{operating_site_area["layer"]}"](area.operatingSite);
                 );
                 (._;>;);
                 out;
@@ -138,15 +141,6 @@ class OsmDownloader:
                     way["railway"="rail"]["layer"="0"](area.operatingSite);
                     way["disused:railway"="rail"]["layer"="0"](area.operatingSite);
                     way["abandoned:railway"="rail"]["layer"="0"](area.operatingSite);
-                    
-                    
-                    node["railway"="switch"][!"layer"](area.operatingSite);
-                    node["disused:railway"="switch"][!"layer"](area.operatingSite);
-                    node["abandoned:railway"="switch"][!"layer"](area.operatingSite);
-                    
-                    node["railway"="switch"]["layer"="0"](area.operatingSite);
-                    node["disused:railway"="switch"]["layer"="0"](area.operatingSite);
-                    node["abandoned:railway"="switch"]["layer"="0"](area.operatingSite);
                 );
                 (._;>;);
                 out;
@@ -160,10 +154,6 @@ class OsmDownloader:
                     way["railway"="rail"]["layer"="{operating_site_relation["layer"]}"](area.operatingSite);
                     way["disused:railway"="rail"]["layer"="{operating_site_relation["layer"]}"](area.operatingSite);
                     way["abandoned:railway"="rail"]["layer"="{operating_site_relation["layer"]}"](area.operatingSite);
-                    
-                    node["railway"="switch"]["layer"="{operating_site_relation["layer"]}"](area.operatingSite);
-                    node["disused:railway"="switch"]["layer"="{operating_site_relation["layer"]}"](area.operatingSite);
-                    node["abandoned:railway"="switch"]["layer"="{operating_site_relation["layer"]}"](area.operatingSite);
                 );
                 (._;>;);
                 out;
@@ -180,56 +170,82 @@ class OsmDownloader:
                     way["railway"="rail"]["layer"="0"](area.operatingSite);
                     way["disused:railway"="rail"]["layer"="0"](area.operatingSite);
                     way["abandoned:railway"="rail"]["layer"="0"](area.operatingSite);
-                    
-                    
-                    node["railway"="switch"][!"layer"](area.operatingSite);
-                    node["disused:railway"="switch"][!"layer"](area.operatingSite);
-                    node["abandoned:railway"="switch"][!"layer"](area.operatingSite);
-                    
-                    node["railway"="switch"]["layer"="0"](area.operatingSite);
-                    node["disused:railway"="switch"]["layer"="0"](area.operatingSite);
-                    node["abandoned:railway"="switch"]["layer"="0"](area.operatingSite);
                 );
                 (._;>;);
                 out;
                 """
 
         self.logger.debug(f"Long query started!")
-        result = api.query(query)
+        self.osm_data = api.query(query)
         self.logger.debug(f"Long query finished!")
 
+    def _process_srs(self) -> None:
+        with self.database.engine.begin() as connection:
+            query = """
+            select *
+            from speed_restrictions
+            where (time_to > now() or time_to is null) and time_from <= now();
+            """
+            result = connection.execute(text(query))
+
+        srs: list[SR] = []
+        for row in result:
+            srs.append(SR(*row))
+
+        self.sr_ways: list[int] = []
+        for sr in srs:
+            if sr.on_main_track:
+                try:
+                    for relation in self.osm_data.relations:
+                        with contextlib.suppress(KeyError):
+                            if (
+                                relation.tags["route"] == "railway"
+                                and relation.tags["ref"].upper() == sr.line.upper()
+                            ):
+                                for member in relation.members:
+                                    self.sr_ways.append(member.ref)
+                                break
+                    else:
+                        raise ValueError(f"Relation with `ref={sr.line}` not found!")
+                except ValueError as exception:
+                    self.logger.debug(exception)
+
+    def _visualise_srs(self) -> None:
         features = []
-        for i, node in enumerate(result.nodes):
-            # Create a Point geometry with the node's latitude and longitude
+        for i, node in enumerate(self.osm_data.nodes):
             point = geojson.Point((float(node.lon), float(node.lat)))
-            # Create a Feature with the geometry and the node's tags as properties
+            node.tags |= {"line_color": [0, 0, 0, 0]}
             feature = geojson.Feature(
                 geometry=point,
                 properties=node.tags,
             )
-            # Append the feature to the list
             features.append(feature)
-        for i, way in enumerate(result.ways):
-            # Create a LineString geometry with the latitudes and longitudes of the way's nodes
+        for i, way in enumerate(self.osm_data.ways):
             line = geojson.LineString(
                 [(float(node.lon), float(node.lat)) for node in way.nodes]
             )
-            # Create a Feature with the geometry and the way's tags as properties
-            feature = geojson.Feature(
-                geometry=line,
-                properties=way.tags,
-            )
-            # Append the feature to the list
+            if way.id in self.sr_ways:
+                way.tags |= {"line_color": [255, 0, 0]}
+                feature = geojson.Feature(
+                    geometry=line,
+                    properties=way.tags,
+                )
+            else:
+                way.tags |= {"line_color": [255, 255, 255]}
+                feature = geojson.Feature(
+                    geometry=line,
+                    properties=way.tags,
+                )
             features.append(feature)
-        feature_collection = geojson.FeatureCollection(features)
+        self.feature_collection = geojson.FeatureCollection(features)
 
         geojson_layer = Layer(
             "GeoJsonLayer",
-            data=feature_collection,
+            data=self.feature_collection,
             pickable=True,
             line_width_min_pixels=2,
-            get_line_color=[255, 255, 255],
-            get_fill_color=[255, 255, 255],
+            get_line_color="line_color",
+            get_fill_color=[0, 0, 0],
         )
         view_state = ViewState(
             latitude=47.180833,
@@ -241,5 +257,4 @@ class OsmDownloader:
             initial_view_state=view_state,
         )
 
-        deck.to_html("map_pydeck.html")
-        pass
+        deck.to_html(f"data/02_export/map_pydeck_{self.TODAY}.html")

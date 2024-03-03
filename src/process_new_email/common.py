@@ -17,16 +17,23 @@ import xlrd  # type: ignore
 from src.process_new_email.database_connection import Database
 
 
-class TableUpdater(ABC):
+class DataProcessor(ABC):
+    TODAY = datetime.today().date()
+    
+    def __init__(self) -> None:
+        super().__init__()
+        
+        self.logger = logging.getLogger(__name__)
+        self.database = Database()
+
+
+class TableUpdater(DataProcessor, ABC):
     TABLE_NAME: ClassVar[str] = NotImplemented
     database_metadata: ClassVar[MetaData] = NotImplemented
     table: ClassVar[Table] = NotImplemented
 
     def __init__(self) -> None:
         super().__init__()
-
-        self.logger = logging.getLogger(__name__)
-        self.database = Database()
 
         self.DATA_URL: str = NotImplemented
 
@@ -81,8 +88,6 @@ class UICTableUpdater(DataDownloader, ABC):
 
 
 class ExcelProcessor(TableUpdater, ABC):
-    TODAY = datetime.today().date()
-
     def __init__(self) -> None:
         super().__init__()
 
