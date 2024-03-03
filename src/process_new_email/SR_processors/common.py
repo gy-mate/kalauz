@@ -1,6 +1,5 @@
 from abc import ABC
 from datetime import date
-import os.path
 from typing import ClassVar
 
 # future: remove the comment below when stubs for the library below are available
@@ -57,7 +56,7 @@ class SRUpdater(ExcelProcessor, ABC):
         Column(name="station_from", type_=String(255), nullable=False),
         Column(name="station_to", type_=String(255)),
         Column(name="on_main_track", type_=Boolean, nullable=False),
-        Column(name="main_track_left_or_right", type_=Boolean),
+        Column(name="main_track_side", type_=String(255)),
         Column(name="station_track_switch_source_text", type_=String(255)),
         Column(name="station_track_from", type_=String(255)),
         Column(name="station_switch_from", type_=String(255)),

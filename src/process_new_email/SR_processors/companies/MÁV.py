@@ -10,6 +10,7 @@ from sqlalchemy import text
 
 # future: remove the comment below when stubs for the library below are available
 import roman  # type: ignore
+import sqlalchemy.exc
 
 from src.process_new_email.SR_processors.common import SRUpdater
 from src.process_new_email.common import ExcelDeepProcessor
@@ -17,6 +18,13 @@ from src.process_new_email.common import ExcelDeepProcessor
 
 def _is_tsr(cell: Cell) -> bool:
     return _is_text_in_cell_bold(cell)
+
+
+def _on_main_track(row: list[str | None]) -> bool:
+    if row[3] or (not row[3] and not row[4]):
+        return True
+    else:
+        return False
 
 
 def _is_text_in_cell_bold(cell: Cell) -> bool:
@@ -74,7 +82,7 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
     def _correct_data_manually(self) -> None:
         self.existing_sr_ids = self._get_existing_sr_ids()
         self.current_sr_ids: list[str] = []
-        
+
         rows_to_add: list[dict[str, Any]] = []
         for worksheet_id, worksheet in enumerate(self._data_to_process):
             for row_id, row_of_cells in enumerate(
@@ -96,15 +104,15 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
                         "internal_id": None,
                         "in_timetable": not _is_tsr(row_of_cells[0]),
                         "due_to_railway_features": NotImplemented,
-                        "line": row[0],
+                        "line": self._get_line(row[0]),
                         "metre_post_from": self._get_metre_post(row[5]),
                         "metre_post_to": self._get_metre_post(row[6]),
                         "station_from": self._remove_space_after_hyphen(row[1]),
                         "station_to": (
                             self._remove_space_after_hyphen(row[2]) if row[2] else None
                         ),
-                        "on_main_track": True if row[3] else False,
-                        "main_track_left_or_right": self._on_right_track(row[3]),
+                        "on_main_track": _on_main_track(row),
+                        "main_track_side": self._get_track_side(row[3]),
                         "station_track_switch_source_text": row[4],
                         "station_track_from": self._get_station_track_switch_from(
                             row[4]
@@ -133,7 +141,7 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
                             str(row_to_add["line"]),
                             str(row_to_add["metre_post_from"]),
                             str(row_to_add["metre_post_to"]),
-                            str(row_to_add["main_track_left_or_right"]),
+                            str(row_to_add["main_track_side"]),
                             str(row_to_add["station_track_switch_source_text"]),
                             str(row_to_add["time_from"]),
                         ]
@@ -150,16 +158,67 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
         self.data = DataFrame.from_dict(rows_to_add)  # type: ignore
         pass
 
+    def _get_line(self, line: str) -> str:
+        internal_to_vpe_line = {
+            "5a": "5K",
+            "5c": "935a",
+            "31": "30M",
+            "125a": "125",
+            "200": "1AK",
+            "203": "1AR",
+            "205": "1AN",
+            "206": "1AL",
+            "207": "1AM",
+            "209": "70",
+            "210": "1AT",
+            "215": "1CK",
+            "216": "1AO",
+            "217": "1AQ",
+            "218": "1AU",
+            "221": "1CM",
+            "261": "120S",
+            "262": "80R",
+            "264d": "120O",
+            "264f": "100T",
+            "265": "154N",
+            "268": "4K",
+            "275c": "93",
+            "280": "66",
+            "284a": "100FQ",
+            "291": "25K",
+            "341": "42M",
+            "342": "42L",
+            "350": "20P",
+            "351": "919b",
+            "352": "26K",
+            "354": "37K",
+            "370": "94L",
+            "390": "154M",
+            "4002": "100FL",
+        }
+        if line in internal_to_vpe_line:
+            try:
+                return internal_to_vpe_line[line]
+            finally:
+                self.logger.debug(
+                    f"Line {line} replaced with {internal_to_vpe_line[line]}!"
+                )
+        else:
+            return line
+
     def _get_existing_sr_ids(self) -> list[str]:
         with self.database.engine.connect() as connection:
             query = """
             select id
             from speed_restrictions
             """
-            result = connection.execute(
-                text(query),
-            ).fetchall()
-            return [row[0] for row in result]
+            try:
+                result = connection.execute(
+                    text(query),
+                ).fetchall()
+                return [row[0] for row in result]
+            except sqlalchemy.exc.ProgrammingError:
+                return []
 
     def _get_metre_post(self, text_to_search: str | None) -> int | None:
         try:
@@ -177,13 +236,15 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
             self.logger.critical(f"`station_from` is empty!")
             raise
 
-    def _on_right_track(self, text_to_search: str | None) -> bool | None:
+    def _get_track_side(self, text_to_search: str | None) -> str | None:
         try:
             assert text_to_search
             if "bal" in text_to_search:
-                return False
+                return "left"
             elif "jobb" in text_to_search:
-                return True
+                return "right"
+            elif "local" in text_to_search:
+                return "local"
             else:
                 raise ValueError(f"Unrecognized track side: {text_to_search}!")
         except AssertionError:
@@ -341,7 +402,7 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
                     station_from,
                     station_to,
                     on_main_track,
-                    main_track_left_or_right,
+                    main_track_side,
                     station_track_switch_source_text,
                     station_track_from,
                     station_switch_from,
@@ -374,7 +435,7 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
                     :station_from,
                     :station_to,
                     :on_main_track,
-                    :main_track_left_or_right,
+                    :main_track_side,
                     :station_track_switch_source_text,
                     :station_track_from,
                     :station_switch_from,
@@ -412,7 +473,7 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
                         text(query),
                         row.to_dict(),
                     )
-            
+
         with self.database.engine.begin() as connection:
             query = """
             update speed_restrictions
@@ -420,7 +481,7 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
                 time_to = :time_to
             where id = :id and time_to is null
             """
-            
+
             for sr_id in set(self.existing_sr_ids) - set(self.current_sr_ids):
                 raise NotImplementedError
                 # noinspection PyUnreachableCode
