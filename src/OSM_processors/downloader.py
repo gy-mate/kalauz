@@ -8,7 +8,7 @@ from pydeck import Layer, Deck, ViewState  # type: ignore
 from sqlalchemy.sql import text
 
 from src.SR import SR
-from src.process_new_email.common import DataProcessor
+from src.new_data_processors.common import DataProcessor
 
 
 def _get_ids_of_layers(element: Element) -> dict[str, int | None]:
@@ -104,6 +104,21 @@ class OsmDownloader(DataProcessor):
             _get_ids_of_layers(operating_site) for operating_site in result.relations
         ]
 
+        # future: replace query with uncommented lines below when https://github.com/drolbr/Overpass-API/issues/146 is closed
+        # query = """
+        # [out:json];
+        #
+        # area["ISO3166-1"="HU"]
+        #     -> .country;
+        #
+        # (
+        #     relation["route"="railway"]["ref"]["operator"~"(^MÁV(?=;))|((?<=;)MÁV(?=;))|((?<=;)MÁV$)"](area.country);
+        #     relation["route"="railway"]["ref"]["operator"~"(^GYSEV(?=;))|((?<=;)GYSEV(?=;))|((?<=;)GYSEV$)"](area.country);
+        # );
+        # >>;
+        # out;
+        #
+        # """
         query = """
         [out:json];
         
@@ -111,8 +126,8 @@ class OsmDownloader(DataProcessor):
             -> .country;
         
         (
-            relation["route"="railway"]["ref"]["operator"="MÁV"](area.country);
-            relation["route"="railway"]["ref"]["operator"="GYSEV"](area.country);
+            relation["route"="railway"]["ref"]["operator"~"MÁV"](area.country);
+            relation["route"="railway"]["ref"]["operator"~"GYSEV"](area.country);
         );
         >>;
         out;
@@ -181,10 +196,15 @@ class OsmDownloader(DataProcessor):
 
     def _process_srs(self) -> None:
         with self.database.engine.begin() as connection:
+            # TODO: replace query with uncommented lines below in production
+            # query = """
+            # select *
+            # from speed_restrictions
+            # where (time_to > now() or time_to is null) and time_from <= now();
+            # """
             query = """
             select *
             from speed_restrictions
-            where (time_to > now() or time_to is null) and time_from <= now();
             """
             result = connection.execute(text(query))
 
@@ -225,13 +245,13 @@ class OsmDownloader(DataProcessor):
                 [(float(node.lon), float(node.lat)) for node in way.nodes]
             )
             if way.id in self.sr_ways:
-                way.tags |= {"line_color": [255, 0, 0]}
+                way.tags |= {"line_color": [255, 255, 255]}
                 feature = geojson.Feature(
                     geometry=line,
                     properties=way.tags,
                 )
             else:
-                way.tags |= {"line_color": [255, 255, 255]}
+                way.tags |= {"line_color": [255, 0, 0]}
                 feature = geojson.Feature(
                     geometry=line,
                     properties=way.tags,

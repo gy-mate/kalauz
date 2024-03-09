@@ -18,8 +18,8 @@ A program for...
 ## 📋 Features
 
 * Processes the following companies' spreadsheets of SRs in the following formats:
-  * [MÁV Magyar Államvasutak Zrt.](https://www.mavcsoport.hu/mav/bemutatkozas) ([`.pdf`](data/01_import/MÁV_2022-08-08_ASR.pdf) converted to `.xlsx` manually on [ilovepdf.com](https://www.ilovepdf.com))
-  * [GYSEV Zrt.](https://www2.gysev.hu/palyavasuti-uzletag) ([`.xlsx`](data/01_import/GYSEV_2022-05-13_ASR.xlsx))
+  * [MÁV Magyar Államvasutak Zrt.](https://www.mavcsoport.hu/mav/bemutatkozas) ([`.pdf`](data/01_received/MÁV_kje4v43hacb32.pdf) converted to [`.xlsx`](data/02_converted/MÁV_2024-01-18_ASR.xlsx) manually on [ilovepdf.com](https://www.ilovepdf.com))
+  * [GYSEV Zrt.](https://www2.gysev.hu/palyavasuti-uzletag) ([`.xlsx`](data/02_converted/GYSEV_2022-05-13_ASR.xlsx))
 * Stores them in a MySQL database with the following schema:
 
   <!--- TODO: report images below not rendering correctly in the Preview panel to JetBrains developers --->
