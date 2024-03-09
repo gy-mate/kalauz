@@ -2,9 +2,10 @@
 # only for development
 # black~=24.2.0
 # lxml-stubs~=0.5.1
+# mypy~=1.9.0
 # pandas-stubs~=2.2.0.240218
-# types-beautifulsoup4~=4.12.0.20240106
-# types-openpyxl~=3.1.0.20240220
+# types-beautifulsoup4~=4.12.0.20240229
+# types-openpyxl~=3.1.0.20240308
 # types-requests~=2.31.0.20240218
 
 beautifulsoup4~=4.12.3
@@ -16,9 +17,10 @@ openpyxl~=3.1.2
 overpy~=0.7
 pandas~=2.2.1
 pydeck~=0.8.0
+pypdf~=4.1.0
 python-dotenv~=1.0.1
 requests~=2.31.0
 roman~=4.1
 scikit-learn~=1.4.0
-SQLAlchemy~=2.0.27
+SQLAlchemy~=2.0.28
 xlrd~=2.0.1
