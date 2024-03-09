@@ -22,21 +22,30 @@ from src.OSM_processors.downloader import OsmDownloader
 # future: mark all packages as namespace packages in the IDE when https://youtrack.jetbrains.com/issue/PY-55212/ is fixed
 
 
-def get_pdf_date(pdf_path):
-    with open(pdf_path, "rb") as pdf_file:
-        pdf_reader = PdfReader(pdf_file)
-        last_page = pdf_reader.pages[-1]
-        text = last_page.extract_text()
-        date_str = text.split()[-1]
-        return datetime.strptime(date_str, "%Y.%m.%d.").date()
+def get_pdf_date(pdf_file):
+    pdf_reader = PdfReader(pdf_file)
+    first_page = pdf_reader.pages[0]
+    text = first_page.extract_text()
+    date_str = text.split()[-2]
+    return datetime.strptime(date_str, "%Y.%m.%d.").date()
 
 
 def convert_pdf_to_xlsx(pdf_file):
     url = "https://eu-v2.convertapi.com/convert/pdf/to/xlsx"
-    params = {"Secret": "t11qaiFuA4uXj2Zc", "Timeout": "90", "EnableOcr": "false"}
-    files = {"File": (pdf_file.name, open(pdf_file.path, "rb"))}
+    params = {
+        "Secret": "t11qaiFuA4uXj2Zc",
+        "Timeout": "90",
+        "EnableOcr": "false",
+    }
+    files = {
+        "File": (pdf_file.name, pdf_file),
+    }
     print(f"Converting {pdf_file.name} to .xlsx started...")
-    response = requests.post(url, params=params, files=files)
+    response = requests.post(
+        url,
+        params=params,
+        files=files,
+    )
     print(f"...finished!")
 
     if response.status_code == 200:
@@ -75,21 +84,27 @@ def main(demonstration=False) -> None:
     folder_converted = os.path.abspath("data/02_converted/")
     with os.scandir(folder_received) as folder:
         for file in folder:
-            company_name = file.name.split("_")[0]
-            file_date = get_pdf_date(file.name)
-            extension = os.path.splitext(file)[1]
-            new_file_name_pdf = company_name + str(file_date) + extension
-            new_file_name_xlsx = company_name + str(file_date) + ".xlsx"
-            new_file_path_pdf = os.path.join(folder_received, new_file_name_pdf)
-            new_file_path_xlsx = os.path.join(folder_received, new_file_name_xlsx)
-            os.rename(
-                src=file.path,
-                dst=new_file_path_pdf,
-            )
-            with open(new_file_path_xlsx, "wb") as file_xlsx:
-                file_xlsx.write(convert_pdf_to_xlsx(file))
+            if file.name.endswith(".pdf"):
+                company_name = file.name.split("_")[0]
+                with open(file, "rb") as pdf_file:
+                    file_date = get_pdf_date(pdf_file)
+                    extension = os.path.splitext(file)[1]
+                    new_file_name_pdf = (
+                        f"{company_name}_{str(file_date)}_ASR.{extension}"
+                    )
+                    new_file_name_xlsx = f"{company_name}_{str(file_date)}_ASR.xlsx"
+                    new_file_path_pdf = os.path.join(folder_received, new_file_name_pdf)
+                    new_file_path_xlsx = os.path.join(
+                        folder_received, new_file_name_xlsx
+                    )
+                    os.rename(
+                        src=file.path,
+                        dst=new_file_path_pdf,
+                    )
+                    with open(new_file_path_xlsx, "wb") as file_xlsx:
+                        file_xlsx.write(convert_pdf_to_xlsx(pdf_file))
 
-            shutil.move(file.path, folder_converted)
+                shutil.move(file.path, folder_converted)
 
     # future: remove comments below when https://github.com/python/mypy/issues/10160 or https://github.com/python/mypy/issues/9756 is fixed
     updaters_to_run: list[TableUpdater] = [  # type: ignore
