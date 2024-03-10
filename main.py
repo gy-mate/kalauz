@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 import logging
 import os
 import shutil
@@ -30,30 +31,34 @@ def get_pdf_date(pdf_file):
     return datetime.strptime(date_str, "%Y.%m.%d.").date()
 
 
-def convert_pdf_to_xlsx(pdf_file):
-    url = "https://eu-v2.convertapi.com/convert/pdf/to/xlsx"
-    params = {
+def convert_pdf_to_xlsx(file_name, pdf_file):
+    api_url = "https://eu-v2.convertapi.com/convert/pdf/to/xlsx"
+    parameters = {
         "Secret": "t11qaiFuA4uXj2Zc",
-        "Timeout": "90",
         "EnableOcr": "false",
+        "StoreFile": "true",
+        "Timeout": "90",
     }
-    files = {
-        "File": (pdf_file.name, pdf_file),
+    file = {
+        "File": open(f"data/01_received/{file_name}", "rb"),
     }
-    print(f"Converting {pdf_file.name} to .xlsx started...")
+    print(f"Converting {file_name} to .xlsx started...")
     response = requests.post(
-        url,
-        params=params,
-        files=files,
+        url=api_url,
+        params=parameters,
+        files=file,
     )
-    print(f"...finished!")
+    print("...finished!")
 
     if response.status_code == 200:
-        return response.content
+        json_response = json.loads(response.content)
+        file_url = json_response["Files"][0]["Url"]
     else:
         raise requests.RequestException(
             f"Failed to convert .pdf to .xlsx: {response.status_code}: {response.text}"
         )
+    
+    return requests.get(file_url).content
 
 
 def main(demonstration=False) -> None:
@@ -90,28 +95,32 @@ def main(demonstration=False) -> None:
                     file_date = get_pdf_date(pdf_file)
                     extension = os.path.splitext(file)[1]
                     new_file_name_pdf = (
-                        f"{company_name}_{str(file_date)}_ASR.{extension}"
+                        f"{company_name}_{str(file_date)}_ASR{extension}"
                     )
                     new_file_name_xlsx = f"{company_name}_{str(file_date)}_ASR.xlsx"
                     new_file_path_pdf = os.path.join(folder_received, new_file_name_pdf)
                     new_file_path_xlsx = os.path.join(
-                        folder_received, new_file_name_xlsx
+                        folder_converted, new_file_name_xlsx
                     )
                     os.rename(
                         src=file.path,
                         dst=new_file_path_pdf,
                     )
-                    with open(new_file_path_xlsx, "wb") as file_xlsx:
-                        file_xlsx.write(convert_pdf_to_xlsx(pdf_file))
+                    with open(new_file_path_xlsx, "wb") as xlsx_file:
+                        xlsx_data = convert_pdf_to_xlsx(new_file_name_pdf, pdf_file)
+                        xlsx_file.write(xlsx_data)
 
-                shutil.move(file.path, folder_converted)
+                shutil.move(
+                    src=new_file_path_pdf,
+                    dst=folder_converted,
+                )
 
     # future: remove comments below when https://github.com/python/mypy/issues/10160 or https://github.com/python/mypy/issues/9756 is fixed
     updaters_to_run: list[TableUpdater] = [  # type: ignore
         # CountriesUpdater,  # type: ignore
         # CompaniesUpdater,  # type: ignore
         # OperatingSitesUpdater,  # type: ignore
-        # MavUpdater,  # type: ignore
+        MavUpdater,  # type: ignore
         # GysevUpdater,  # type: ignore
     ]
     for updater in updaters_to_run:
@@ -125,7 +134,7 @@ def main(demonstration=False) -> None:
 
         updater.logger.info(f"Table `{updater.TABLE_NAME}` sucessfully updated!")
 
-    # OsmDownloader().run()
+    OsmDownloader().run()
 
 
 if __name__ == "__main__":

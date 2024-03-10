@@ -91,11 +91,11 @@ class SRUpdater(ExcelProcessor, ABC):
         if self.COMPANY == "MÁV":
             self.TODAY = date(2023, 7, 26)
         elif self.COMPANY == "GySEV/Raaberbahn":
-            self.TODAY = date(2023, 8, 4)
+            self.TODAY = date(2023, 5, 13)
         else:
             raise ValueError(f"Unknown company: {self.COMPANY}!")
 
-        self._file_to_be_imported = f"data/01_import/{self.COMPANY}_{self.TODAY}_{self.LIST_TYPE}.{self.SOURCE_EXTENSION}"
+        self._file_to_be_imported = f"data/02_converted/{self.COMPANY}_{self.TODAY}_{self.LIST_TYPE}.{self.SOURCE_EXTENSION}"
 
     def _get_company_uic_code(self, company: str) -> int:
         with self.database.engine.begin() as connection:
