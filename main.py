@@ -120,7 +120,7 @@ def main(demonstration=False) -> None:
         # CountriesUpdater,  # type: ignore
         # CompaniesUpdater,  # type: ignore
         # OperatingSitesUpdater,  # type: ignore
-        MavUpdater,  # type: ignore
+        # MavUpdater,  # type: ignore
         # GysevUpdater,  # type: ignore
     ]
     for updater in updaters_to_run:
@@ -135,6 +135,8 @@ def main(demonstration=False) -> None:
         updater.logger.info(f"Table `{updater.TABLE_NAME}` sucessfully updated!")
 
     OsmDownloader().run()
+    
+    logging.getLogger(__name__).info("All done!")
 
 
 if __name__ == "__main__":
