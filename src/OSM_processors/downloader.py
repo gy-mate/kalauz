@@ -6,6 +6,12 @@ import geojson  # type: ignore
 from overpy import Element, Overpass  # type: ignore
 from pydeck import Layer, Deck, ViewState  # type: ignore
 from sqlalchemy.sql import text
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from src.SR import SR
 from src.new_data_processors.common import DataProcessor
@@ -38,10 +44,19 @@ class OsmDownloader(DataProcessor):
         self._process_srs()
         self._visualise_srs()
 
+    @retry(
+        retry=retry_if_exception_type(ConnectionResetError),
+        wait=wait_exponential(
+            multiplier=1,
+            min=4,
+            max=10,
+        ),
+        stop=stop_after_attempt(2),
+    )
     def _download_osm_data(self) -> None:
         api = Overpass()
 
-        self.logger.debug(f"Short query started!")
+        self.logger.debug(f"Short query started...")
         result = api.query(
             """
             [out:json];
@@ -95,7 +110,7 @@ class OsmDownloader(DataProcessor):
             out;
             """
         )
-        self.logger.debug(f"Short query finished!")
+        self.logger.debug(f"...finished!")
 
         operating_site_areas = [
             _get_ids_of_layers(operating_site) for operating_site in result.ways
@@ -190,9 +205,9 @@ class OsmDownloader(DataProcessor):
                 out;
                 """
 
-        self.logger.debug(f"Long query started!")
+        self.logger.debug(f"Long query started...")
         self.osm_data = api.query(query)
-        self.logger.debug(f"Long query finished!")
+        self.logger.debug(f"...finished!")
 
     def _process_srs(self) -> None:
         with self.database.engine.begin() as connection:
@@ -214,6 +229,7 @@ class OsmDownloader(DataProcessor):
 
         self.sr_ways: list[int] = []
         for sr in srs:
+            # future: remove line below when I have time to visualize SRs on more stations
             if sr.on_main_track:
                 try:
                     for relation in self.osm_data.relations:

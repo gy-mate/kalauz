@@ -87,13 +87,14 @@ class SRUpdater(ExcelProcessor, ABC):
         self.SOURCE_EXTENSION = source_extension
 
         # TODO: implement company name detection from filename
-        # future: delete `if` section below in production
-        if self.COMPANY == "MÁV":
-            self.TODAY = date(2023, 7, 26)
-        elif self.COMPANY == "GySEV/Raaberbahn":
-            self.TODAY = date(2023, 5, 13)
-        else:
-            raise ValueError(f"Unknown company: {self.COMPANY}!")
+        # future: delete `match` section below in production
+        match self.COMPANY:
+            case "MÁV":
+                self.TODAY = date(2023, 7, 26)
+            case "GySEV/Raaberbahn":
+                self.TODAY = date(2023, 5, 13)
+            case _:
+                raise ValueError(f"Unknown company: {self.COMPANY}!")
 
         self._file_to_be_imported = f"data/02_converted/{self.COMPANY}_{self.TODAY}_{self.LIST_TYPE}.{self.SOURCE_EXTENSION}"
 

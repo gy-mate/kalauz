@@ -6,6 +6,9 @@ from zoneinfo import ZoneInfo
 
 from openpyxl.cell import Cell
 from pandas import DataFrame
+
+# future: remove the comment below when stubs for the library below are available
+import regex_spm  # type: ignore
 from sqlalchemy import text
 
 # future: remove the comment below when stubs for the library below are available
@@ -21,7 +24,9 @@ def _is_tsr(cell: Cell) -> bool:
 
 
 def _on_main_track(row: list[str | None]) -> bool:
-    if row[3] or (not row[3] and not row[4]):
+    if row[3]:
+        return True
+    elif row[2] is None and row[3] is None:
         return True
     else:
         return False
@@ -100,6 +105,8 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
                     metre_post_to = self._get_metre_post(row[6])
                     reduced_speed, reduced_speed_for_mus = _get_reduced_speeds(row[8])
 
+                    # TODO: make overload methods from this section
+                    # future: make this an SR object
                     row_to_add = {
                         "country_code_iso": self.COUNTRY_CODE_ISO,
                         "company_code_uic": self.COMPANY_CODE_UIC,
@@ -159,57 +166,67 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
         # future: report bug (false positive) to mypy developers
         self.data = DataFrame.from_dict(rows_to_add)  # type: ignore
 
-    def _get_line(self, line_source: str, metre_post_to: int) -> str:
-        internal_to_vpe_line = {
-            "5a": "5K",
-            "5c": "935a",
-            "31": "30M",
-            "125a": "125",
-            "200": "1AK",
-            "203": "1AR",
-            "205": "1AN",
-            "206": "1AL",
-            "207": "1AM",
-            "209": "70",
-            "210": "1AT",
-            "215": "1CK",
-            "216": "1AO",
-            "217": "1AQ",
-            "218": "1AU",
-            "221": "1CM",
-            "261": "120S",
-            "262": "80R",
-            "264d": "120O",
-            "264f": "100T",
-            "265": "154N",
-            "268": "4K",
-            "275c": "93",
-            "280": "66",
-            "284a": "100FQ",
-            "291": "25K",
-            "341": "42M",
-            "342": "42L",
-            "350": "20P",
-            "351": "919b",
-            "352": "26K",
-            "354": "37K",
-            "370": "94L",
-            "372": "80S",
-            "390": "154M",
-            "4002": "100FL",
-        }
-        if line_source in internal_to_vpe_line:
-            line_corrected = internal_to_vpe_line[line_source]
-            self.logger.debug(
-                f"Line {line_source} replaced with {internal_to_vpe_line[line_source]}!"
-            )
-            
-            if line_corrected == "75" and metre_post_to > 4800:  # rough metre post number of diverging lines
-                return "75A"
-            else:
+    def _get_line(self, line_source: str | None, metre_post_to: int) -> str:
+        try:
+            assert line_source
+            internal_to_vpe_line = {
+                "3": "1T",
+                "5a": "5K",
+                "5c": "935a",
+                "11a": "11B",
+                "31": "30M",
+                "51": "50K",
+                "125a": "125",
+                "200": "1AK",
+                "203": "1AR",
+                "205": "1AN",
+                "206": "1AL",
+                "207": "1AM",
+                "209": "70",
+                "210": "1AT",
+                "215": "1CK",
+                "216": "1AO",
+                "217": "1AQ",
+                "218": "1AU",
+                "221": "1CM",
+                "261": "120S",
+                "262": "80R",
+                "264a": "100S",
+                "264d": "120O",
+                "264f": "100T",
+                "264g": "100N",
+                "265": "154N",
+                "268": "4K",
+                "275c": "93",
+                "280": "66",
+                "284a": "100FQ",
+                "291": "25K",
+                "341": "42M",
+                "342": "42L",
+                "350": "20P",
+                "351": "919b",
+                "352": "26K",
+                "354": "37K",
+                "370": "94L",
+                "372": "80S",
+                "390": "154M",
+                "4002": "100FL",
+            }
+            if line_source in internal_to_vpe_line:
+                line_corrected = internal_to_vpe_line[line_source]
+                self.logger.debug(
+                    f"Line {line_source} replaced with {internal_to_vpe_line[line_source]}!"
+                )
+                
+                if line_corrected == "75" and metre_post_to > 4800:  # rough metre post number of diverging lines
+                    return "75A"
+                
                 return line_corrected
-        else:
-            return line_source
+            else:
+                return line_source
+        except AssertionError:
+            self.logger.critical("Line not found!")
+            raise
 
     def _get_existing_sr_ids(self) -> list[str]:
         with self.database.engine.connect() as connection:
@@ -225,7 +242,7 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
             except sqlalchemy.exc.ProgrammingError:
                 return []
 
-    def _get_metre_post(self, text_to_search: str | None) -> int | None:
+    def _get_metre_post(self, text_to_search: str | None) -> int:
         try:
             assert text_to_search
             return int(float(text_to_search) * 100)
@@ -244,14 +261,16 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
     def _get_track_side(self, text_to_search: str | None) -> str | None:
         try:
             assert text_to_search
-            if "bal" in text_to_search:
-                return "left"
-            elif "jobb" in text_to_search:
-                return "right"
-            elif "local" in text_to_search:
-                return "local"
-            else:
-                raise ValueError(f"Unrecognized track side: {text_to_search}!")
+            # future: convert this to an enum class
+            match regex_spm.match_in(text_to_search):
+                case "bal":
+                    return "left"
+                case "jobb":
+                    return "right"
+                case "local":
+                    return "local"
+                case _:
+                    raise ValueError(f"Unrecognized track side: {text_to_search}!")
         except AssertionError:
             return None
         except ValueError as exception:

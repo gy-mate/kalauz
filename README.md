@@ -43,7 +43,7 @@ A program for...
 
 ### 📦 Dependencies
 
-* [Python](https://www.python.org/downloads/) `3.9+`
+* [Python](https://www.python.org/downloads/) `3.10+`
 * [MySQL](https://dev.mysql.com/downloads/mysql/) `5.6+`
   * Store your database password in a `DATABASE_PASSWORD` variable 
     in a `.env` file in the root of the repository.
