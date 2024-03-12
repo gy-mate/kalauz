@@ -48,6 +48,7 @@ class SRUpdater(ExcelProcessor, ABC):
             nullable=False,
         ),
         Column(name="internal_id", type_=String(255)),
+        Column(name="decision_id", type_=String(255)),
         Column(name="in_timetable", type_=Boolean, nullable=False),
         Column(name="due_to_railway_features", type_=Boolean, nullable=False),
         Column(name="line", type_=String(255), nullable=False),
@@ -90,7 +91,7 @@ class SRUpdater(ExcelProcessor, ABC):
         # future: delete `match` section below in production
         match self.COMPANY:
             case "MÁV":
-                self.TODAY = date(2023, 7, 26)
+                self.TODAY = date(2024, 1, 18)
             case "GySEV/Raaberbahn":
                 self.TODAY = date(2023, 5, 13)
             case _:

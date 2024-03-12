@@ -24,9 +24,7 @@ def _is_tsr(cell: Cell) -> bool:
 
 
 def _on_main_track(row: list[str | None]) -> bool:
-    if row[3]:
-        return True
-    elif row[2] is None and row[3] is None:
+    if row[2] or row[3]:
         return True
     else:
         return False
@@ -37,9 +35,7 @@ def _is_text_in_cell_bold(cell: Cell) -> bool:
 
 
 def _is_usable(row: list) -> bool:
-    if len(row) != 15:
-        return False
-    elif "Vonal" in str(row[0]):
+    if "Vonal" in str(row[0]):
         return False
     elif "Összes korlátozás:" in str(row[1]):
         return False
@@ -95,11 +91,16 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
                 [list(cell) for cell in worksheet.iter_rows()]
             ):
                 row: list[str | None] = []
-                for cell in row_of_cells:
+                for column_id, cell in enumerate(row_of_cells):
                     if cell.value is None:
                         row.append(cell.value)
                     else:
                         row.append(str(cell.value))
+                    
+                    if len(row_of_cells) < 16 and column_id == 10:
+                        row.append(None)
+                        if len(row_of_cells) == 14:
+                            row.append(None)
 
                 if _is_usable(row):
                     metre_post_to = self._get_metre_post(row[6])
@@ -111,6 +112,7 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
                         "country_code_iso": self.COUNTRY_CODE_ISO,
                         "company_code_uic": self.COMPANY_CODE_UIC,
                         "internal_id": None,
+                        "decision_id": row[11],
                         "in_timetable": not _is_tsr(row_of_cells[0]),
                         "due_to_railway_features": NotImplemented,
                         "line": self._get_line(row[0], metre_post_to),
@@ -133,15 +135,15 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
                         "reduced_speed_for_mus": reduced_speed_for_mus,
                         "not_signalled_from_start_point": NotImplemented,
                         "not_signalled_from_end_point": NotImplemented,
-                        "cause_source_text": row[11],
+                        "cause_source_text": row[12],
                         "cause_category_1": NotImplemented,
                         "cause_category_2": NotImplemented,
                         "cause_category_3": NotImplemented,
                         "time_from": self._get_utc_time(row[10]),
                         "maintenance_planned": None,
-                        "time_to": (self._get_utc_time(row[13]) if row[13] else None),
+                        "time_to": (self._get_utc_time(row[14]) if row[14] else None),
                         "work_to_be_done": None,
-                        "comment": row[14],
+                        "comment": row[15],
                     }
 
                     string_to_hash = "; ".join(
@@ -172,13 +174,17 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
             internal_to_vpe_line = {
                 "3": "1T",
                 "5a": "5K",
+                "5b": "5L",
                 "5c": "935a",
                 "11a": "11B",
                 "31": "30M",
                 "51": "50K",
+                "74": "78L",
                 "125a": "125",
-                "200": "1AK",
+                "200": "1AK",  # future: 1AV from 'Angyalföld elágazás'
+                "202": "1AK",
                 "203": "1AR",
+                "204": "1BL",
                 "205": "1AN",
                 "206": "1AL",
                 "207": "1AM",
@@ -188,18 +194,32 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
                 "216": "1AO",
                 "217": "1AQ",
                 "218": "1AU",
+                "219": "1AW",
+                "220": "1AY",
                 "221": "1CM",
+                "222": "1AL",
+                "224": "1AKO",
+                "225": "1AKN",
+                "227": "1BLA",
                 "261": "120S",
                 "262": "80R",
+                "263": "140N",
                 "264a": "100S",
+                "264b": "100R",
+                "264c": "120Q",
                 "264d": "120O",
                 "264f": "100T",
                 "264g": "100N",
+                "264j": "100EL",
                 "265": "154N",
                 "268": "4K",
+                "269": "146K",
                 "275c": "93",
                 "280": "66",
+                "281": "25",
                 "284a": "100FQ",
+                "284c": "100FM",
+                "284d": "100FP",
                 "291": "25K",
                 "341": "42M",
                 "342": "42L",
@@ -210,6 +230,7 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
                 "370": "94L",
                 "372": "80S",
                 "390": "154M",
+                "4001": "100FO",
                 "4002": "100FL",
             }
             if line_source in internal_to_vpe_line:
@@ -418,6 +439,7 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
                     country_code_iso,
                     company_code_uic,
                     internal_id,
+                    decision_id,
                     in_timetable,
                     due_to_railway_features,
                     line,
@@ -451,6 +473,7 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
                     :country_code_iso,
                     :company_code_uic,
                     :internal_id,
+                    :decision_id,
                     :in_timetable,
                     :due_to_railway_features,
                     :line,

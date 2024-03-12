@@ -8,6 +8,7 @@ class SR:
         country_code_iso: str,
         company_code_uic: int,
         internal_id: str,
+        decision_id: str,
         in_timetable: bool,
         due_to_railway_features: bool,
         line: str,
@@ -40,6 +41,7 @@ class SR:
         self.country_code_iso = country_code_iso
         self.company_code_uic = company_code_uic
         self.internal_id = internal_id
+        self.decision_id = decision_id
         self.in_timetable = in_timetable
         self.due_to_railway_features = due_to_railway_features
         self.line = line
