@@ -1,6 +1,6 @@
 # future: delete line below, uncomment and extract dependencies below that to requirements-dev.txt when https://youtrack.jetbrains.com/issue/PY-9941/ is fixed
 # only for development
-# black~=24.2.0
+# black~=24.3.0
 # lxml-stubs~=0.5.1
 # mypy~=1.9.0
 # pandas-stubs~=2.2.0.240218
