@@ -3,9 +3,7 @@ from datetime import datetime
 import logging
 from typing import Any, ClassVar, Final
 
-import numpy as np
 from pandas import DataFrame
-import pandas as pd
 import requests
 from requests import HTTPError
 from sqlalchemy import MetaData, Table
@@ -37,11 +35,11 @@ class TableUpdater(DataProcessor, ABC):
         self.DATA_URL: str = NotImplemented
 
         self.data: Any = NotImplemented
-        
+
     def run(self) -> None:
         self.process_data()
         self.store_data()
-        
+
         self.logger.info(f"Table `{self.TABLE_NAME}` sucessfully updated!")
 
     @abstractmethod
@@ -89,14 +87,9 @@ class DataDownloader(TableUpdater, ABC):
             raise
 
     def process_data(self) -> None:
-        self._import_data()
         self._correct_column_names()
         self._delete_data()
         self._correct_data()
-
-    @abstractmethod
-    def _import_data(self) -> None:
-        pass
 
     def _correct_column_names(self) -> None:
         self._rename_columns_manually()
@@ -128,15 +121,12 @@ class UICTableUpdater(DataDownloader, ABC):
         self.DATA_BASE_URL: Final = "https://uic.org/spip.php?action=telecharger&arg="
 
         self._data_to_process: bytes = NotImplemented
-        
-    def _import_data(self) -> None:
-        pass
-    
+
     def _rename_columns_manually(self) -> None:
         pass
-    
+
     def _correct_data_manually(self) -> None:
         pass
-    
+
     def _correct_boolean_values(self) -> None:
         pass
