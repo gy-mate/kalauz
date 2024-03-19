@@ -1,5 +1,6 @@
 # 🛤️ kalauz
 
+![Lines of code](https://img.shields.io/tokei/lines/github/gy-mate/kalauz?label=lines%20of%20code)
 [![Build status](https://scrutinizer-ci.com/g/gy-mate/kalauz/badges/build.png?b=master)](https://scrutinizer-ci.com/g/gy-mate/kalauz/build-status/master)
 [![Scrutinizer code quality](https://img.shields.io/scrutinizer/quality/g/gy-mate/kalauz/master)](https://scrutinizer-ci.com/g/cookiecutter/cookiecutter/?branch=master)
 [![Type hinting used](https://img.shields.io/badge/type_hinting-used-brightgreen)](https://docs.python.org/3/library/typing.html)
@@ -47,10 +48,9 @@ A program for...
 * [MySQL](https://dev.mysql.com/downloads/mysql/) `5.6+`
   * Store your database password in a `DATABASE_PASSWORD` variable 
     in a `.env` file in the root of the repository.
-
-#### 🛠️ For development
-
-* [mypy](https://github.com/python/mypy)
+* A [ConvertAPI](https://www.convertapi.com) account
+  * Store your API secret in a `CONVERTAPI_SECRET` variable 
+    in a `.env` file in the root of the repository.
 
 
 ## 📚 Reference

@@ -35,7 +35,7 @@ def _get_ids_of_layers(element: Element) -> dict[str, int | None]:
     }
 
 
-class OsmDownloader(DataProcessor):
+class Mapper(DataProcessor):
     def __init__(self) -> None:
         super().__init__()
 
@@ -225,12 +225,17 @@ class OsmDownloader(DataProcessor):
 
         srs: list[SR] = []
         for row in result:
-            srs.append(SR(*row))
+            srs.append(
+                # future: report bug (false positive) to mypy developers
+                SR(  # type: ignore
+                    *row[1:],
+                    sr_id=row[0],
+                )
+            )
 
         self.sr_ways: list[int] = []
         for sr in srs:
-            # future: remove line below when I have time to visualize SRs on more stations
-            if sr.on_main_track:
+            if sr.on_main_track:  # future: remove this line when I have time to visualize SRs on more stations
                 try:
                     for relation in self.osm_data.relations:
                         with contextlib.suppress(KeyError):
