@@ -42,7 +42,7 @@ def _translate_operating_site_type(operating_site_type: str) -> str:
     return dictionary[operating_site_type]
 
 
-class OperatingSitesUpdater(DataDownloader, ExcelProcessorSimple):
+class OperatingSitesUpdater(ExcelProcessorSimple, DataDownloader):
     TABLE_NAME: ClassVar[str] = "operating_sites"
     database_metadata: ClassVar[MetaData] = MetaData()
 
