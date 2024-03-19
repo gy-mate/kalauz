@@ -89,7 +89,7 @@ class SRUpdater(ExcelProcessor, ABC):
         # TODO: implement company name detection from filename
         # future: delete date mocking below in production
         match self.COMPANY:
-            case "MÁV":
+            case "MÁV":
                 self.TODAY = date(2024, 1, 18)
             case "GYSEV":
                 self.TODAY = date(2023, 5, 13)

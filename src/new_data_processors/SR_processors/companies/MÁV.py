@@ -58,7 +58,7 @@ def _get_end_time(text_to_search: str) -> str:
 class MavUpdater(SRUpdater, ExcelProcessorWithFormatting):
     def __init__(self) -> None:
         super().__init__(
-            company="MÁV",
+            company="MÁV",
             source_extension="xlsx",
         )
 
