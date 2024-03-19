@@ -87,7 +87,7 @@ class SRUpdater(ExcelProcessor, ABC):
         self.SOURCE_EXTENSION = source_extension
 
         # TODO: implement company name detection from filename
-        # future: delete `match` section below in production
+        # future: delete date mocking below in production
         match self.COMPANY:
             case "MÁV":
                 self.TODAY = date(2024, 1, 18)
