@@ -17,9 +17,8 @@ from sqlalchemy import (
     text,
 )
 
-from src.new_data_processors.common import (
-    ExcelProcessor,
-)
+from src.SR import SR
+from src.new_data_processors.common_excel_processors import ExcelProcessor
 from src.new_data_processors.helper_table_updaters.companies import CompaniesUpdater
 from src.new_data_processors.helper_table_updaters.countries import CountriesUpdater
 
@@ -92,10 +91,12 @@ class SRUpdater(ExcelProcessor, ABC):
         match self.COMPANY:
             case "MÁV":
                 self.TODAY = date(2024, 1, 18)
-            case "GySEV/Raaberbahn":
+            case "GYSEV":
                 self.TODAY = date(2023, 5, 13)
             case _:
                 raise ValueError(f"Unknown company: {self.COMPANY}!")
+
+        self.data: list[SR] = NotImplemented
 
         self._file_to_be_imported = f"data/02_converted/{self.COMPANY}_{self.TODAY}_{self.LIST_TYPE}.{self.SOURCE_EXTENSION}"
 
@@ -104,11 +105,11 @@ class SRUpdater(ExcelProcessor, ABC):
             query = """
                 select code_uic
                 from companies
-                where short_name = :company
+                where short_name like :company
             """
             result = connection.execute(
                 text(query),
-                {"company": company},
+                {"company": company + "%"},
             ).fetchone()
 
             try:
@@ -123,11 +124,11 @@ class SRUpdater(ExcelProcessor, ABC):
             query = """
                 select country_code_iso
                 from companies
-                where short_name = :company
+                where short_name like :company
             """
             result = connection.execute(
                 text(query),
-                {"company": company},
+                {"company": company + "%"},
             ).fetchone()
 
             try:

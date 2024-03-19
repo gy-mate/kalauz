@@ -15,8 +15,8 @@ from sqlalchemy import (
 
 from src.new_data_processors.common import (
     DataDownloader,
-    ExcelSimpleProcessor,
 )
+from src.new_data_processors.common_excel_processors import ExcelProcessorSimple
 
 
 def _translate_operating_site_type(operating_site_type: str) -> str:
@@ -42,7 +42,7 @@ def _translate_operating_site_type(operating_site_type: str) -> str:
     return dictionary[operating_site_type]
 
 
-class OperatingSitesUpdater(DataDownloader, ExcelSimpleProcessor):
+class OperatingSitesUpdater(DataDownloader, ExcelProcessorSimple):
     TABLE_NAME: ClassVar[str] = "operating_sites"
     database_metadata: ClassVar[MetaData] = MetaData()
 

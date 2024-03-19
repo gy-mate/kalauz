@@ -15,15 +15,15 @@ from sqlalchemy import (
 )
 
 from src.new_data_processors.common import (
-    ExcelSimpleProcessor,
     UICTableUpdater,
 )
+from src.new_data_processors.common_excel_processors import ExcelProcessorSimple
 from src.new_data_processors.helper_table_updaters.countries import CountriesUpdater
 
 
 @final
 # TODO: add logging
-class CompaniesUpdater(ExcelSimpleProcessor, UICTableUpdater):
+class CompaniesUpdater(ExcelProcessorSimple, UICTableUpdater):
     TABLE_NAME: ClassVar[str] = "companies"
     database_metadata: ClassVar[MetaData] = MetaData()
 

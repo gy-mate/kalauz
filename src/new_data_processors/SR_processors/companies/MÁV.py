@@ -15,8 +15,9 @@ from sqlalchemy import text
 import roman  # type: ignore
 import sqlalchemy.exc
 
+from src.SR import SR
 from src.new_data_processors.SR_processors.common import SRUpdater
-from src.new_data_processors.common import ExcelDeepProcessor
+from src.new_data_processors.common_excel_processors import ExcelProcessorWithFormatting
 
 
 def _is_tsr(cell: Cell) -> bool:
@@ -45,26 +46,6 @@ def _is_usable(row: list) -> bool:
         return True
 
 
-def _get_reduced_speeds(
-    text_to_search: str | None,
-) -> tuple[int, int] | tuple[None, None]:
-    try:
-        assert text_to_search
-        if text_to_search.find("/") == -1:
-            reduced_speed = reduced_speed_for_mus = round(
-                int(re.findall(r".*(?= \()", text_to_search)[0])
-            )
-        else:
-            reduced_speed = round(int(re.findall(r".*(?=/)", text_to_search)[0]))
-            reduced_speed_for_mus = round(
-                int(re.findall(r"(?<=/).*(?= )", text_to_search)[0])
-            )
-
-        return reduced_speed, reduced_speed_for_mus
-    except AssertionError:
-        return None, None
-
-
 def _get_number_between_brackets(text_to_search: str) -> int:
     return round(int(re.findall(r"(?<=\().*(?=\))", text_to_search)[0]))
 
@@ -74,7 +55,7 @@ def _get_end_time(text_to_search: str) -> str:
 
 
 @final
-class MavUpdater(SRUpdater, ExcelDeepProcessor):
+class MavUpdater(SRUpdater, ExcelProcessorWithFormatting):
     def __init__(self) -> None:
         super().__init__(
             company="MÁV",
@@ -85,6 +66,7 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
         self.existing_sr_ids = self._get_existing_sr_ids()
         self.current_sr_ids: list[str] = []
 
+        srs_to_add: list[SR] = []
         rows_to_add: list[dict[str, Any]] = []
         for worksheet_id, worksheet in enumerate(self._data_to_process):
             for row_id, row_of_cells in enumerate(
@@ -96,7 +78,7 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
                         row.append(cell.value)
                     else:
                         row.append(str(cell.value))
-                    
+
                     if len(row_of_cells) < 16 and column_id == 10:
                         row.append(None)
                         if len(row_of_cells) == 14:
@@ -104,10 +86,47 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
 
                 if _is_usable(row):
                     metre_post_to = self._get_metre_post(row[6])
-                    reduced_speed, reduced_speed_for_mus = _get_reduced_speeds(row[8])
+                    reduced_speed, reduced_speed_for_mus = self._get_reduced_speeds(
+                        row[8]
+                    )
 
                     # TODO: make overload methods from this section
                     # future: make this an SR object
+                    sr_to_add = SR(
+                        country_code_iso=self.COUNTRY_CODE_ISO,
+                        company_code_uic=self.COMPANY_CODE_UIC,
+                        internal_id=None,
+                        decision_id=row[11],
+                        in_timetable=not _is_tsr(row_of_cells[0]),
+                        due_to_railway_features=NotImplemented,
+                        line=self._get_line(row[0], metre_post_to),
+                        metre_post_from=self._get_metre_post(row[5]),
+                        metre_post_to=metre_post_to,
+                        station_from=self._remove_space_after_hyphen(row[1]),
+                        station_to=(
+                            self._remove_space_after_hyphen(row[2]) if row[2] else None
+                        ),
+                        on_main_track=_on_main_track(row),
+                        main_track_side=self._get_track_side(row[3]),
+                        station_track_switch_source_text=row[4],
+                        station_track_from=self._get_station_track_switch_from(row[4]),
+                        station_switch_from=NotImplemented,
+                        station_switch_to=NotImplemented,
+                        operating_speed=self._get_operating_speed(row[8]),
+                        reduced_speed=reduced_speed,
+                        reduced_speed_for_mus=reduced_speed_for_mus,
+                        not_signalled_from_start_point=NotImplemented,
+                        not_signalled_from_end_point=NotImplemented,
+                        cause_source_text=row[12],
+                        cause_category_1=NotImplemented,
+                        cause_category_2=NotImplemented,
+                        cause_category_3=NotImplemented,
+                        time_from=self._get_utc_time(row[10]),
+                        maintenance_planned=None,
+                        time_to=(self._get_utc_time(row[14]) if row[14] else None),
+                        work_to_be_done=None,
+                        comment=row[15],
+                    )
                     row_to_add = {
                         "country_code_iso": self.COUNTRY_CODE_ISO,
                         "company_code_uic": self.COMPANY_CODE_UIC,
@@ -157,16 +176,60 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
                             str(row_to_add["time_from"]),
                         ]
                     ).encode()
+                    sr_to_add.id = md5(string_to_hash).hexdigest()
                     current_sr_id = md5(string_to_hash).hexdigest()
                     self.current_sr_ids.append(current_sr_id)
                     row_to_add |= {
                         "id": current_sr_id,
                     }
 
+                    srs_to_add.append(sr_to_add)
                     rows_to_add.append(row_to_add)
 
-        # future: report bug (false positive) to mypy developers
-        self.data = DataFrame.from_dict(rows_to_add)  # type: ignore
+        self.data = srs_to_add
+
+    def _get_existing_sr_ids(self) -> list[str]:
+        with self.database.engine.connect() as connection:
+            query = """
+            select id
+            from speed_restrictions
+            """
+            try:
+                result = connection.execute(
+                    text(query),
+                ).fetchall()
+                return [row[0] for row in result]
+            except sqlalchemy.exc.ProgrammingError:
+                return []
+
+    def _get_metre_post(self, text_to_search: str | None) -> int:
+        try:
+            assert text_to_search
+            return int(float(text_to_search) * 100)
+        except AssertionError:
+            self.logger.critical(f"Metre post not found in {text_to_search}!")
+            raise
+
+    def _get_reduced_speeds(
+        self,
+        text_to_search: str | None,
+    ) -> tuple[int, int]:
+        try:
+            assert text_to_search
+            if text_to_search.find("/") == -1:
+                reduced_speed = reduced_speed_for_mus = round(
+                    int(re.findall(r".*(?= \()", text_to_search)[0])
+                )
+            else:
+                reduced_speed = round(int(re.findall(r".*(?=/)", text_to_search)[0]))
+                reduced_speed_for_mus = round(
+                    int(re.findall(r"(?<=/).*(?= )", text_to_search)[0])
+                )
+
+            return reduced_speed, reduced_speed_for_mus
+        except AssertionError:
+            self.logger.critical(f"Reduced speeds not found in {text_to_search}!")
+            raise
 
     def _get_line(self, line_source: str | None, metre_post_to: int) -> str:
         try:
@@ -181,7 +244,7 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
                 "51": "50K",
                 "74": "78L",
                 "125a": "125",
-                "200": "1AK",  # future: 1AV from 'Angyalföld elágazás'
+                "200": "1AK",  # future: '1AV' from 'Angyalföld elágazás'
                 "202": "1AK",
                 "203": "1AR",
                 "204": "1BL",
@@ -238,10 +301,12 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
                 self.logger.debug(
                     f"Line {line_source} replaced with {internal_to_vpe_line[line_source]}!"
                 )
-                
-                if line_corrected == "75" and metre_post_to > 4800:  # rough metre post number of diverging lines
+
+                if (
+                    line_corrected == "75" and metre_post_to > 4800
+                ):  # rough metre post number of diverging lines
                     return "75A"
-                
+
                 return line_corrected
             else:
                 return line_source
@@ -249,29 +314,7 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
             self.logger.critical("Line not found!")
             raise
 
-    def _get_existing_sr_ids(self) -> list[str]:
-        with self.database.engine.connect() as connection:
-            query = """
-            select id
-            from speed_restrictions
-            """
-            try:
-                result = connection.execute(
-                    text(query),
-                ).fetchall()
-                return [row[0] for row in result]
-            except sqlalchemy.exc.ProgrammingError:
-                return []
-
-    def _get_metre_post(self, text_to_search: str | None) -> int:
-        try:
-            assert text_to_search
-            return int(float(text_to_search) * 100)
-        except AssertionError:
-            self.logger.critical(f"Metre post not found in {text_to_search}!")
-            raise
-
-    def _remove_space_after_hyphen(self, data: str | None) -> str | None:
+    def _remove_space_after_hyphen(self, data: str | None) -> str:
         try:
             assert data
             return re.sub(r"(?<=\w)- (?=\w)", "-", str(data))
@@ -298,12 +341,10 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
             self.logger.critical(exception)
             raise
 
-    def _get_station_track_switch_from(
-        self, text_to_search: str | None
-    ) -> int | str | None:
+    def _get_station_track_switch_from(self, text_to_search: str | None) -> str | None:
         try:
             assert text_to_search
-            return self._extract_number(text_to_search)
+            return str(self._extract_number(text_to_search))
         except AssertionError:
             return None
         except roman.InvalidRomanNumeralError:
@@ -514,11 +555,11 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
                 """,
             ]
 
-            for index, row in self.data.iterrows():
+            for sr in self.data:
                 for query in queries:
                     connection.execute(
                         text(query),
-                        row.to_dict(),
+                        sr.__dict__,
                     )
 
         with self.database.engine.begin() as connection:
@@ -529,13 +570,15 @@ class MavUpdater(SRUpdater, ExcelDeepProcessor):
             where id = :id and time_to is null
             """
 
-            for sr_id in set(self.existing_sr_ids) - set(self.current_sr_ids):
+            for terminated_sr_id in set(self.existing_sr_ids) - set(
+                [sr.id for sr in self.data]
+            ):
                 raise NotImplementedError
                 # noinspection PyUnreachableCode
                 connection.execute(
                     text(query),
                     {
-                        "id": sr_id,
+                        "id": terminated_sr_id,
                         "time_to": self.TODAY,
                     },
                 )
