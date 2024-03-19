@@ -51,7 +51,7 @@ class ExcelProcessor(TableUpdater, ABC):
     @abstractmethod
     def _correct_boolean_values(self) -> None:
         pass
-    
+
     @abstractmethod
     def _correct_df_na_values_for_database(self) -> None:
         pass
@@ -78,7 +78,7 @@ class ExcelProcessorSimple(ExcelProcessor, ABC):
 
     def _correct_data_manually(self) -> None:
         pass
-    
+
     def _correct_df_na_values_for_database(self) -> None:
         self.data.replace(
             to_replace={
@@ -115,6 +115,6 @@ class ExcelProcessorWithFormatting(ExcelProcessor, ABC):
 
     def _rename_columns_manually(self) -> None:
         pass
-    
+
     def _correct_df_na_values_for_database(self) -> None:
         pass
