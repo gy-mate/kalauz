@@ -67,11 +67,11 @@ class CompaniesUpdater(ExcelProcessorSimple, UICTableUpdater):
 
         self.logger.info(f"{self.__class__.__name__} initialized!")
 
-    def _correct_column_names(self) -> None:
-        self._replace_nonword_with_underscore()
-        self._rename_columns_manually()
+    def correct_column_names(self) -> None:
+        self.replace_nonword_with_underscore()
+        self.rename_columns_manually()
 
-    def _replace_nonword_with_underscore(self) -> None:
+    def replace_nonword_with_underscore(self) -> None:
         # TODO: report wrong display of newlines in DataFrame view to pandas developers
         self.data.rename(
             columns=lambda x: re.sub(
@@ -82,7 +82,7 @@ class CompaniesUpdater(ExcelProcessorSimple, UICTableUpdater):
             inplace=True,
         )
 
-    def _rename_columns_manually(self) -> None:
+    def rename_columns_manually(self) -> None:
         self.data.rename(
             columns={
                 "code": "code_uic",
@@ -94,12 +94,12 @@ class CompaniesUpdater(ExcelProcessorSimple, UICTableUpdater):
             inplace=True,
         )
 
-    def _delete_data(self) -> None:
-        self._remove_invalid_and_irrelevant_companies()
-        self._drop_unnecessary_columns()
-        self._remove_invalid_companies()
+    def delete_data(self) -> None:
+        self.remove_invalid_and_irrelevant_companies()
+        self.drop_unnecessary_columns()
+        self.remove_invalid_companies()
 
-    def _remove_invalid_and_irrelevant_companies(self) -> None:
+    def remove_invalid_and_irrelevant_companies(self) -> None:
         self.data.dropna(
             subset=[
                 "allocation_date",
@@ -108,7 +108,7 @@ class CompaniesUpdater(ExcelProcessorSimple, UICTableUpdater):
             inplace=True,
         )
 
-    def _drop_unnecessary_columns(self) -> None:
+    def drop_unnecessary_columns(self) -> None:
         self.data.drop(
             columns=[
                 "request_date",
@@ -117,7 +117,7 @@ class CompaniesUpdater(ExcelProcessorSimple, UICTableUpdater):
             inplace=True,
         )
 
-    def _remove_invalid_companies(self) -> None:
+    def remove_invalid_companies(self) -> None:
         # future: report bug below to JetBrains or pandas developers
         # noinspection PyUnusedLocal
         today = datetime.today()
@@ -126,7 +126,7 @@ class CompaniesUpdater(ExcelProcessorSimple, UICTableUpdater):
             inplace=True,
         )
 
-    def _correct_boolean_values(self) -> None:
+    def correct_boolean_values(self) -> None:
         boolean_columns = [
             "freight",
             "passenger",
@@ -138,7 +138,7 @@ class CompaniesUpdater(ExcelProcessorSimple, UICTableUpdater):
         for column in boolean_columns:
             self.data[column] = self.data[column].apply(lambda x: x == "x" or x == "X")
 
-    def _add_data(self) -> None:
+    def add_data(self) -> None:
         with self.database.engine.begin() as connection:
             queries = [
                 """

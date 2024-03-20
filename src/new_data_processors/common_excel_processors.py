@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from io import BytesIO
+from typing import override
 
 import numpy as np
 from openpyxl import load_workbook
@@ -18,43 +19,36 @@ class ExcelProcessor(TableUpdater, ABC):
         super().__init__()
 
     def process_data(self) -> None:
-        self._import_data()
-
-        self._correct_column_names()
-
-        self._delete_data()
-        self._correct_data()
+        self.import_data()
+        self.correct_data()
 
     @abstractmethod
-    def _import_data(self) -> None:
+    def import_data(self) -> None:
         pass
 
-    def _correct_column_names(self) -> None:
-        self._rename_columns_manually()
+    def correct_data(self) -> None:
+        self.correct_data_manually()
+        self.correct_boolean_values()
+        self.correct_df_na_values_for_database()
 
     @abstractmethod
-    def _rename_columns_manually(self) -> None:
-        pass
-
-    def _delete_data(self) -> None:
-        pass
-
-    def _correct_data(self) -> None:
-        self._correct_data_manually()
-        self._correct_boolean_values()
-        self._correct_df_na_values_for_database()
-
-    @abstractmethod
-    def _correct_data_manually(self) -> None:
+    def correct_data_manually(self) -> None:
         pass
 
     @abstractmethod
-    def _correct_boolean_values(self) -> None:
+    def correct_boolean_values(self) -> None:
         pass
 
-    @abstractmethod
-    def _correct_df_na_values_for_database(self) -> None:
-        pass
+    def correct_df_na_values_for_database(self) -> None:
+        self.data.replace(
+            to_replace={
+                pd.NA: None,
+                pd.NaT: None,
+                np.NaN: None,  # future: remove this line when https://github.com/pandas-dev/pandas/issues/32265 is fixed
+                NotImplemented: None,  # TODO: remove this line in production
+            },
+            inplace=True,
+        )
 
 
 class ExcelProcessorSimple(ExcelProcessor, ABC):
@@ -63,7 +57,7 @@ class ExcelProcessorSimple(ExcelProcessor, ABC):
 
         self._data_to_process: bytes = NotImplemented
 
-    def _import_data(self) -> None:
+    def import_data(self) -> None:
         try:
             # future: remove the line below when https://youtrack.jetbrains.com/issue/PY-70308/ is fixed
             # noinspection PyTypeChecker
@@ -76,19 +70,8 @@ class ExcelProcessorSimple(ExcelProcessor, ABC):
             )
             self.data = pd.read_excel(workbook)
 
-    def _correct_data_manually(self) -> None:
+    def correct_data_manually(self) -> None:
         pass
-
-    def _correct_df_na_values_for_database(self) -> None:
-        self.data.replace(
-            to_replace={
-                pd.NA: None,
-                pd.NaT: None,
-                np.NaN: None,  # future: remove this line when https://github.com/pandas-dev/pandas/issues/32265 is fixed
-                NotImplemented: None,  # TODO: remove this line in production
-            },
-            inplace=True,
-        )
 
 
 class ExcelProcessorWithFormatting(ExcelProcessor, ABC):
@@ -98,10 +81,10 @@ class ExcelProcessorWithFormatting(ExcelProcessor, ABC):
         self._file_to_be_imported: str = NotImplemented
         self._data_to_process: list[Worksheet] = NotImplemented
 
-    def _import_data(self) -> None:
-        self._data_to_process = self._get_worksheets(self._file_to_be_imported)
+    def import_data(self) -> None:
+        self._data_to_process = self.get_worksheets(self._file_to_be_imported)
 
-    def _get_worksheets(self, xlsx_file_location: str) -> list[Worksheet]:
+    def get_worksheets(self, xlsx_file_location: str) -> list[Worksheet]:
         try:
             self.logger.info(f"Loading {xlsx_file_location} started!")
             xlsx_workbook = load_workbook(
@@ -113,8 +96,9 @@ class ExcelProcessorWithFormatting(ExcelProcessor, ABC):
         finally:
             self.logger.info(f"All worksheets imported from {xlsx_file_location}!")
 
-    def _rename_columns_manually(self) -> None:
+    def correct_boolean_values(self) -> None:
         pass
 
-    def _correct_df_na_values_for_database(self) -> None:
+    @override
+    def correct_df_na_values_for_database(self) -> None:
         pass

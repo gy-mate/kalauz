@@ -85,12 +85,12 @@ class OperatingSitesUpdater(ExcelProcessorSimple, DataDownloader):
         self.logger.info(f"{self.__class__.__name__} initialized!")
 
     def get_data(self, url: str) -> bytes:
-        splash_page_soup = self._get_splash_page(url)
-        self._get_infra_id(splash_page_soup, url)
-        list_page = self._download_list_page(url)
-        return self._download_xls_file(list_page)
+        splash_page_soup = self.get_splash_page(url)
+        self.get_infra_id(splash_page_soup, url)
+        list_page = self.download_list_page(url)
+        return self.download_xls_file(list_page)
 
-    def _get_splash_page(self, url):
+    def get_splash_page(self, url: str) -> BeautifulSoup:
         splash_page = super().get_data(url)
         splash_page_soup = BeautifulSoup(
             markup=splash_page,
@@ -98,7 +98,7 @@ class OperatingSitesUpdater(ExcelProcessorSimple, DataDownloader):
         )
         return splash_page_soup
 
-    def _get_infra_id(self, splash_page_soup, url):
+    def get_infra_id(self, splash_page_soup, url) -> None:
         try:
             select_tag = splash_page_soup.find(
                 name="select",
@@ -112,19 +112,19 @@ class OperatingSitesUpdater(ExcelProcessorSimple, DataDownloader):
         # future: report bug (false positive) to mypy developers
         self.INFRA_ID = int(select_tag.find("option")["value"])  # type: ignore
 
-    def _download_list_page(self, url):
+    def download_list_page(self, url: str) -> bytes:
         self.INFRA_ID_URL = f"&infra_id={self.INFRA_ID}"
         list_page = super().get_data(url + self.INFRA_ID_URL)
         return list_page
 
-    def _download_xls_file(self, list_page):
+    def download_xls_file(self, list_page: bytes) -> bytes:
         self.XLS_URL = re.findall(
             pattern=r"/ehuszfelulet/excelexport\?id_xls=\w+",
             string=str(list_page),
         )[0]
         return super().get_data(self.WEBSITE_DOMAIN + self.XLS_URL)
 
-    def _rename_columns_manually(self):
+    def rename_columns_manually(self) -> None:
         # future: report wrong display and copying of hyphen (e.g. Fil'akovo) to pandas and JetBrains developers
         self.data.rename(
             columns={
@@ -147,22 +147,22 @@ class OperatingSitesUpdater(ExcelProcessorSimple, DataDownloader):
             inplace=True,
         )
 
-    def _correct_data_manually(self):
+    def correct_data_manually(self) -> None:
         self.data["type"] = self.data["type"].apply(
             lambda x: _translate_operating_site_type(str(x))
         )
-        self._replace_code_uic_letters()
+        self.replace_code_uic_letters()
 
-    def _replace_code_uic_letters(self):
+    def replace_code_uic_letters(self) -> None:
         country_codes_iso = ["HU", "AT", "SK", "UA", "RO", "RS", "HR", "SI"]
         for country_code_iso in country_codes_iso:
-            country_code_uic = self._get_uic_code(country_code_iso)
+            country_code_uic = self.get_uic_code(country_code_iso)
             self.data["code_uic"] = self.data["code_uic"].str.replace(
                 pat=country_code_iso,
                 repl=country_code_uic,
             )
 
-    def _get_uic_code(self, country_code_iso: str) -> str:
+    def get_uic_code(self, country_code_iso: str) -> str:
         with self.database.engine.begin() as connection:
             query = """
                 select code_uic
@@ -180,8 +180,8 @@ class OperatingSitesUpdater(ExcelProcessorSimple, DataDownloader):
                 self.logger.critical(exception)
                 raise
             return str(result[0])
-
-    def _correct_boolean_values(self):
+    
+    def correct_boolean_values(self) -> None:
         boolean_columns = [
             "traffic_passenger",
             "traffic_freight",
@@ -193,7 +193,7 @@ class OperatingSitesUpdater(ExcelProcessorSimple, DataDownloader):
         for column in boolean_columns:
             self.data[column] = self.data[column].apply(lambda x: x == "igen")
 
-    def _add_data(self) -> None:
+    def add_data(self) -> None:
         with self.database.engine.begin() as connection:
             queries = [
                 """

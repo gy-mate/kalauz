@@ -18,15 +18,15 @@ class Database(metaclass=Singleton):
         self._HOST: Final = "localhost"
         self._PORT: Final = 3306
         self._USERNAME: Final = "root"
-        self._PASSWORD: Final = self._get_password()
+        self._PASSWORD: Final = self.get_password()
         self.DATABASE_NAME: Final = "kalauz"
 
-        self.engine = self._connect_to_database_server()
-        self.engine = self._connect_to_database()
+        self.engine = self.connect_to_database_server()
+        self.engine = self.connect_to_database()
 
         self.logger.info(f"{self.__class__.__name__} initialized!")
 
-    def _get_password(self) -> str:
+    def get_password(self) -> str:
         try:
             database_password = os.getenv("DATABASE_PASSWORD")
             if not database_password:
@@ -38,7 +38,7 @@ class Database(metaclass=Singleton):
             raise
         return database_password
 
-    def _connect_to_database_server(self) -> Engine:
+    def connect_to_database_server(self) -> Engine:
         try:
             database_url = URL.create(
                 drivername=self._DRIVERNAME,
@@ -51,14 +51,14 @@ class Database(metaclass=Singleton):
         finally:
             self.logger.debug("Successfully connected to the database server!")
 
-    def _connect_to_database(self) -> Engine:
+    def connect_to_database(self) -> Engine:
         if not inspect(self.engine).has_schema(self.DATABASE_NAME):
             with self.engine.begin() as connection:
                 connection.execute(CreateSchema(self.DATABASE_NAME))
 
-        return self._connect_to_created_database()
+        return self.connect_to_created_database()
 
-    def _connect_to_created_database(self) -> Engine:
+    def connect_to_created_database(self) -> Engine:
         try:
             database_url = URL.create(
                 drivername=self._DRIVERNAME,

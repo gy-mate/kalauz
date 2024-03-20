@@ -22,7 +22,7 @@ class NewFilesRegistrar(DataProcessor):
     def run(self):
         self.process_received_files()
         self.logger.info("All new files registered!")
-    
+
     def process_received_files(self) -> None:
         folder_received = os.path.abspath("data/01_received/")
         folder_converted = os.path.abspath("data/02_converted/")
@@ -37,7 +37,9 @@ class NewFilesRegistrar(DataProcessor):
                             f"{company_name}_{str(file_date)}_ASR{extension}"
                         )
                         new_file_name_xlsx = f"{company_name}_{str(file_date)}_ASR.xlsx"
-                        new_file_path_pdf = os.path.join(folder_received, new_file_name_pdf)
+                        new_file_path_pdf = os.path.join(
+                            folder_received, new_file_name_pdf
+                        )
                         new_file_path_xlsx = os.path.join(
                             folder_converted, new_file_name_xlsx
                         )
@@ -48,12 +50,12 @@ class NewFilesRegistrar(DataProcessor):
                         with open(new_file_path_xlsx, "wb") as xlsx_file:
                             xlsx_data = self.convert_pdf_to_xlsx(new_file_name_pdf)
                             xlsx_file.write(xlsx_data)
-                    
+
                     shutil.move(
                         src=new_file_path_pdf,
                         dst=folder_converted,
                     )
-    
+
     def convert_pdf_to_xlsx(self, file_name) -> bytes:
         try:
             api_url = "https://eu-v2.convertapi.com/convert/pdf/to/xlsx"
@@ -73,16 +75,16 @@ class NewFilesRegistrar(DataProcessor):
                 files=file,
             )
             print("...finished!")
-            
+
             response.raise_for_status()
             json_response = json.loads(response.content)
             file_url = json_response["Files"][0]["Url"]
-            
+
             return requests.get(file_url).content
         except HTTPError:
             self.logger.critical(f"Failed to convert .pdf to .xlsx!")
             raise
-    
+
     def get_convertapi_secret(self) -> str:
         try:
             env_var_name = "CONVERTAPI_SECRET"
@@ -95,4 +97,3 @@ class NewFilesRegistrar(DataProcessor):
         except ValueError as exception:
             self.logger.critical(exception)
             raise
-        

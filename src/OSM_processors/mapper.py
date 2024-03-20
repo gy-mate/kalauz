@@ -1,9 +1,8 @@
 import contextlib
-import logging
 
 # future: remove the comments below when stubs for the library below are available
 import geojson  # type: ignore
-from overpy import Element, Overpass  # type: ignore
+from overpy import Element, Overpass, Result  # type: ignore
 from pydeck import Layer, Deck, ViewState  # type: ignore
 from sqlalchemy.sql import text
 from tenacity import (
@@ -39,10 +38,13 @@ class Mapper(DataProcessor):
     def __init__(self) -> None:
         super().__init__()
 
+        self.osm_data: Result = NotImplemented
+        self.sr_ways: list[int] = []
+
     def run(self) -> None:
-        self._download_osm_data()
-        self._process_srs()
-        self._visualise_srs()
+        self.download_osm_data()
+        self.process_srs()
+        self.visualise_srs()
 
     @retry(
         retry=retry_if_exception_type(ConnectionResetError),
@@ -53,7 +55,7 @@ class Mapper(DataProcessor):
         ),
         stop=stop_after_attempt(2),
     )
-    def _download_osm_data(self) -> None:
+    def download_osm_data(self) -> None:
         api = Overpass()
 
         self.logger.debug(f"Short query started...")
@@ -209,7 +211,7 @@ class Mapper(DataProcessor):
         self.osm_data = api.query(query)
         self.logger.debug(f"...finished!")
 
-    def _process_srs(self) -> None:
+    def process_srs(self) -> None:
         with self.database.engine.begin() as connection:
             # TODO: replace query with uncommented lines below in production
             # query = """
@@ -233,9 +235,10 @@ class Mapper(DataProcessor):
                 )
             )
 
-        self.sr_ways: list[int] = []
         for sr in srs:
-            if sr.on_main_track:  # future: remove this line when I have time to visualize SRs on more stations
+            if (
+                sr.on_main_track
+            ):  # future: remove this line when I have time to visualize SRs on more stations
                 try:
                     for relation in self.osm_data.relations:
                         with contextlib.suppress(KeyError):
@@ -251,7 +254,7 @@ class Mapper(DataProcessor):
                 except ValueError as exception:
                     self.logger.debug(exception)
 
-    def _visualise_srs(self) -> None:
+    def visualise_srs(self) -> None:
         features = []
         for i, node in enumerate(self.osm_data.nodes):
             point = geojson.Point((float(node.lon), float(node.lat)))
@@ -278,11 +281,11 @@ class Mapper(DataProcessor):
                     properties=way.tags,
                 )
             features.append(feature)
-        self.feature_collection = geojson.FeatureCollection(features)
+        feature_collection = geojson.FeatureCollection(features)
 
         geojson_layer = Layer(
             "GeoJsonLayer",
-            data=self.feature_collection,
+            data=feature_collection,
             pickable=True,
             line_width_min_pixels=2,
             get_line_color="line_color",
@@ -298,4 +301,6 @@ class Mapper(DataProcessor):
             initial_view_state=view_state,
         )
 
+        self.logger.debug(f"Exporting map started...")
         deck.to_html(f"data/04_exported/map_pydeck_{self.TODAY}.html")
+        self.logger.debug(f"...finished!")

@@ -1,11 +1,9 @@
 from datetime import datetime
 from hashlib import md5
 import re
-from typing import Any, final
-from zoneinfo import ZoneInfo
+from typing import final
 
 from openpyxl.cell import Cell
-from pandas import DataFrame
 
 # future: remove the comment below when stubs for the library below are available
 import regex_spm  # type: ignore
@@ -20,22 +18,22 @@ from src.new_data_processors.SR_processors.common import SRUpdater
 from src.new_data_processors.common_excel_processors import ExcelProcessorWithFormatting
 
 
-def _is_tsr(cell: Cell) -> bool:
-    return _is_text_in_cell_bold(cell)
+def is_tsr(cell: Cell) -> bool:
+    return is_text_in_cell_bold(cell)
 
 
-def _on_main_track(row: list[str | None]) -> bool:
+def on_main_track(row: list[str | None]) -> bool:
     if row[2] or row[3]:
         return True
     else:
         return False
 
 
-def _is_text_in_cell_bold(cell: Cell) -> bool:
+def is_text_in_cell_bold(cell: Cell) -> bool:
     return cell.font.bold
 
 
-def _is_usable(row: list) -> bool:
+def is_usable(row: list) -> bool:
     if "Vonal" in str(row[0]):
         return False
     elif "Összes korlátozás:" in str(row[1]):
@@ -46,12 +44,8 @@ def _is_usable(row: list) -> bool:
         return True
 
 
-def _get_number_between_brackets(text_to_search: str) -> int:
+def get_number_between_brackets(text_to_search: str) -> int:
     return round(int(re.findall(r"(?<=\().*(?=\))", text_to_search)[0]))
-
-
-def _get_end_time(text_to_search: str) -> str:
-    return text_to_search[17:22]
 
 
 @final
@@ -62,12 +56,8 @@ class MavUpdater(SRUpdater, ExcelProcessorWithFormatting):
             source_extension="xlsx",
         )
 
-    def _correct_data_manually(self) -> None:
-        self.existing_sr_ids = self._get_existing_sr_ids()
-        self.current_sr_ids: list[str] = []
-
+    def correct_data_manually(self) -> None:
         srs_to_add: list[SR] = []
-        rows_to_add: list[dict[str, Any]] = []
         for worksheet_id, worksheet in enumerate(self._data_to_process):
             for row_id, row_of_cells in enumerate(
                 [list(cell) for cell in worksheet.iter_rows()]
@@ -84,11 +74,13 @@ class MavUpdater(SRUpdater, ExcelProcessorWithFormatting):
                         if len(row_of_cells) == 14:
                             row.append(None)
 
-                if _is_usable(row):
-                    metre_post_to = self._get_metre_post(row[6])
-                    reduced_speed, reduced_speed_for_mus = self._get_reduced_speeds(
+                if is_usable(row):
+                    metre_post_to = self.get_metre_post(row[6])
+                    reduced_speed, reduced_speed_for_mus = self.get_reduced_speeds(
                         row[8]
                     )
+                    time_from = self.get_utc_time(row[10])
+                    assert isinstance(time_from, datetime)
 
                     # TODO: make overload methods from this section
                     # future: make this an SR object
@@ -97,22 +89,22 @@ class MavUpdater(SRUpdater, ExcelProcessorWithFormatting):
                         company_code_uic=self.COMPANY_CODE_UIC,
                         internal_id=None,
                         decision_id=row[11],
-                        in_timetable=not _is_tsr(row_of_cells[0]),
+                        in_timetable=not is_tsr(row_of_cells[0]),
                         due_to_railway_features=NotImplemented,
-                        line=self._get_line(row[0], metre_post_to),
-                        metre_post_from=self._get_metre_post(row[5]),
+                        line=self.get_line(row[0], metre_post_to),
+                        metre_post_from=self.get_metre_post(row[5]),
                         metre_post_to=metre_post_to,
-                        station_from=self._remove_space_after_hyphen(row[1]),
+                        station_from=self.remove_space_after_hyphen(row[1]),
                         station_to=(
-                            self._remove_space_after_hyphen(row[2]) if row[2] else None
+                            self.remove_space_after_hyphen(row[2]) if row[2] else None
                         ),
-                        on_main_track=_on_main_track(row),
-                        main_track_side=self._get_track_side(row[3]),
+                        on_main_track=on_main_track(row),
+                        main_track_side=self.get_track_side(row[3]),
                         station_track_switch_source_text=row[4],
-                        station_track_from=self._get_station_track_switch_from(row[4]),
+                        station_track_from=self.get_station_track_switch_from(row[4]),
                         station_switch_from=NotImplemented,
                         station_switch_to=NotImplemented,
-                        operating_speed=self._get_operating_speed(row[8]),
+                        operating_speed=self.get_operating_speed(row[8]),
                         reduced_speed=reduced_speed,
                         reduced_speed_for_mus=reduced_speed_for_mus,
                         not_signalled_from_start_point=NotImplemented,
@@ -121,88 +113,31 @@ class MavUpdater(SRUpdater, ExcelProcessorWithFormatting):
                         cause_category_1=NotImplemented,
                         cause_category_2=NotImplemented,
                         cause_category_3=NotImplemented,
-                        time_from=self._get_utc_time(row[10]),
-                        maintenance_planned=None,
-                        time_to=(self._get_utc_time(row[14]) if row[14] else None),
+                        time_from=time_from,
                         work_to_be_done=None,
+                        time_to=self.get_utc_time(row[14]) if row[14] else None,
                         comment=row[15],
                     )
-                    row_to_add = {
-                        "country_code_iso": self.COUNTRY_CODE_ISO,
-                        "company_code_uic": self.COMPANY_CODE_UIC,
-                        "internal_id": None,
-                        "decision_id": row[11],
-                        "in_timetable": not _is_tsr(row_of_cells[0]),
-                        "due_to_railway_features": NotImplemented,
-                        "line": self._get_line(row[0], metre_post_to),
-                        "metre_post_from": self._get_metre_post(row[5]),
-                        "metre_post_to": metre_post_to,
-                        "station_from": self._remove_space_after_hyphen(row[1]),
-                        "station_to": (
-                            self._remove_space_after_hyphen(row[2]) if row[2] else None
-                        ),
-                        "on_main_track": _on_main_track(row),
-                        "main_track_side": self._get_track_side(row[3]),
-                        "station_track_switch_source_text": row[4],
-                        "station_track_from": self._get_station_track_switch_from(
-                            row[4]
-                        ),
-                        "station_switch_from": NotImplemented,
-                        "station_switch_to": NotImplemented,
-                        "operating_speed": self._get_operating_speed(row[8]),
-                        "reduced_speed": reduced_speed,
-                        "reduced_speed_for_mus": reduced_speed_for_mus,
-                        "not_signalled_from_start_point": NotImplemented,
-                        "not_signalled_from_end_point": NotImplemented,
-                        "cause_source_text": row[12],
-                        "cause_category_1": NotImplemented,
-                        "cause_category_2": NotImplemented,
-                        "cause_category_3": NotImplemented,
-                        "time_from": self._get_utc_time(row[10]),
-                        "maintenance_planned": None,
-                        "time_to": (self._get_utc_time(row[14]) if row[14] else None),
-                        "work_to_be_done": None,
-                        "comment": row[15],
-                    }
 
                     string_to_hash = "; ".join(
                         [
-                            str(row_to_add["company_code_uic"]),
-                            str(row_to_add["line"]),
-                            str(row_to_add["metre_post_from"]),
-                            str(row_to_add["metre_post_to"]),
-                            str(row_to_add["main_track_side"]),
-                            str(row_to_add["station_track_switch_source_text"]),
-                            str(row_to_add["time_from"]),
+                            str(sr_to_add.company_code_uic),
+                            str(sr_to_add.line),
+                            str(sr_to_add.metre_post_from),
+                            str(sr_to_add.metre_post_to),
+                            str(sr_to_add.main_track_side),
+                            str(sr_to_add.station_track_switch_source_text),
+                            str(sr_to_add.time_from),
                         ]
                     ).encode()
                     sr_to_add.id = md5(string_to_hash).hexdigest()
-                    current_sr_id = md5(string_to_hash).hexdigest()
-                    self.current_sr_ids.append(current_sr_id)
-                    row_to_add |= {
-                        "id": current_sr_id,
-                    }
+                    self.current_sr_ids.append(sr_to_add.id)
 
                     srs_to_add.append(sr_to_add)
-                    rows_to_add.append(row_to_add)
 
         self.data = srs_to_add
 
-    def _get_existing_sr_ids(self) -> list[str]:
-        with self.database.engine.connect() as connection:
-            query = """
-            select id
-            from speed_restrictions
-            """
-            try:
-                result = connection.execute(
-                    text(query),
-                ).fetchall()
-                return [row[0] for row in result]
-            except sqlalchemy.exc.ProgrammingError:
-                return []
-
-    def _get_metre_post(self, text_to_search: str | None) -> int:
+    def get_metre_post(self, text_to_search: str | None) -> int:
         try:
             assert text_to_search
             return int(float(text_to_search) * 100)
@@ -210,7 +145,7 @@ class MavUpdater(SRUpdater, ExcelProcessorWithFormatting):
             self.logger.critical(f"Metre post not found in {text_to_search}!")
             raise
 
-    def _get_reduced_speeds(
+    def get_reduced_speeds(
         self,
         text_to_search: str | None,
     ) -> tuple[int, int]:
@@ -231,7 +166,7 @@ class MavUpdater(SRUpdater, ExcelProcessorWithFormatting):
             self.logger.critical(f"Reduced speeds not found in {text_to_search}!")
             raise
 
-    def _get_line(self, line_source: str | None, metre_post_to: int) -> str:
+    def get_line(self, line_source: str | None, metre_post_to: int) -> str:
         try:
             assert line_source
             internal_to_vpe_line = {
@@ -314,7 +249,7 @@ class MavUpdater(SRUpdater, ExcelProcessorWithFormatting):
             self.logger.critical("Line not found!")
             raise
 
-    def _remove_space_after_hyphen(self, data: str | None) -> str:
+    def remove_space_after_hyphen(self, data: str | None) -> str:
         try:
             assert data
             return re.sub(r"(?<=\w)- (?=\w)", "-", str(data))
@@ -322,7 +257,7 @@ class MavUpdater(SRUpdater, ExcelProcessorWithFormatting):
             self.logger.critical(f"`station_from` is empty!")
             raise
 
-    def _get_track_side(self, text_to_search: str | None) -> str | None:
+    def get_track_side(self, text_to_search: str | None) -> str | None:
         try:
             assert text_to_search
             # future: convert this to an enum class
@@ -341,244 +276,19 @@ class MavUpdater(SRUpdater, ExcelProcessorWithFormatting):
             self.logger.critical(exception)
             raise
 
-    def _get_station_track_switch_from(self, text_to_search: str | None) -> str | None:
+    def get_station_track_switch_from(self, text_to_search: str | None) -> str | None:
         try:
             assert text_to_search
-            return str(self._extract_number(text_to_search))
+            return str(self.extract_number(text_to_search))
         except AssertionError:
             return None
         except roman.InvalidRomanNumeralError:
             return "InvalidRomanNumeralError"
 
-    def _get_operating_speed(self, text_to_search: str | None) -> int:
+    def get_operating_speed(self, text_to_search: str | None) -> int:
         try:
             assert text_to_search
-            return _get_number_between_brackets(text_to_search)
+            return get_number_between_brackets(text_to_search)
         except AssertionError:
             self.logger.critical(f"Operating speed not found in {text_to_search}!")
             raise
-
-    def _extract_number(self, text_to_search: str) -> int | str:
-        """
-        Initializes *regex search expressions* for arabic and roman numbers with several combinations that could be found in the database.
-
-        Searches for an _arabic number._
-        If found, returns it as an int.
-        If not found, searches for a _roman number._
-
-        If found, converts it to an _arabic number_ via `fromroman` and returns it as an int.
-        If this doesn't succeed, returns an `InvalidRomanNumeralError`.
-        If not found, searches for an _arabic number with letters._
-        """
-        arabic_regex = re.compile(
-            """
-            (
-            ^|(?<=[ .(])
-            )
-            
-            \\d+
-            
-            (?=\\D)
-            """,
-            re.VERBOSE | re.MULTILINE,
-        )
-        roman_mix_regex = re.compile(
-            """
-            (
-            ^|
-            (?<=[ .(])
-            )
-            
-            (
-            (M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3}))|
-            (M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3}))/[a-z]|
-            (M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3}))[a-z]
-            )
-            
-            (?=[ .])
-            """,
-            re.VERBOSE | re.MULTILINE,
-        )
-        arabic_letter_regex = re.compile(
-            """
-            (
-            ^|(?<=[ .(])
-            )
-            
-            \\w\\d+
-            (?=\\D)
-            """,
-            re.VERBOSE | re.MULTILINE,
-        )
-
-        try:
-            if arabic_regex.search(text_to_search):
-                result = arabic_regex.search(text_to_search)
-                assert result
-                return int(result[0])
-            else:
-                result = roman_mix_regex.search(text_to_search)
-                try:
-                    assert result
-                    return int(roman.fromRoman(result[0]))
-                except AssertionError:
-                    result = arabic_letter_regex.search(text_to_search)
-                    assert result
-                    return result[0]
-        except AssertionError:
-            self.logger.debug(f"Number not found in {text_to_search}!")
-            raise
-        except roman.InvalidRomanNumeralError:
-            self.logger.debug(f"Invalid roman numeral in {text_to_search}!")
-            raise
-
-    def _get_date(self, text_to_search: str | None) -> str:
-        try:
-            assert text_to_search
-            return text_to_search[:10]
-        except AssertionError:
-            self.logger.critical(f"`date_from` not found!")
-            raise
-
-    def _get_utc_time(self, text_to_search: str | None) -> datetime:
-        try:
-            assert text_to_search
-            if len(text_to_search) == 19:
-                return (
-                    datetime.fromisoformat(text_to_search)
-                    .replace(tzinfo=ZoneInfo(key="Europe/Budapest"))
-                    .astimezone(ZoneInfo(key="UTC"))
-                )
-            elif len(text_to_search) == 16:
-                return (
-                    datetime.strptime(text_to_search, "%Y.%m.%d %H:%M")
-                    .replace(tzinfo=ZoneInfo(key="Europe/Budapest"))
-                    .astimezone(ZoneInfo(key="UTC"))
-                )
-            elif len(text_to_search) in range(21, 22 + 1):
-                return self._get_utc_time(
-                    f"{self._get_date(text_to_search)} {_get_end_time(text_to_search)}"
-                )
-            else:
-                raise ValueError
-        except AssertionError:
-            self.logger.critical(f"`time_from` not found!")
-            raise
-        except ValueError:
-            self.logger.critical(f"Unrecognized date format: {text_to_search}!")
-            raise
-
-    def _correct_boolean_values(self) -> None:
-        pass
-
-    def _add_data(self) -> None:
-        with self.database.engine.begin() as connection:
-            queries = [
-                """
-                insert ignore into speed_restrictions (
-                    id,
-                    country_code_iso,
-                    company_code_uic,
-                    internal_id,
-                    decision_id,
-                    in_timetable,
-                    due_to_railway_features,
-                    line,
-                    metre_post_from,
-                    metre_post_to,
-                    station_from,
-                    station_to,
-                    on_main_track,
-                    main_track_side,
-                    station_track_switch_source_text,
-                    station_track_from,
-                    station_switch_from,
-                    station_switch_to,
-                    operating_speed,
-                    reduced_speed,
-                    reduced_speed_for_mus,
-                    not_signalled_from_start_point,
-                    not_signalled_from_end_point,
-                    cause_source_text,
-                    cause_category_1,
-                    cause_category_2,
-                    cause_category_3,
-                    time_from,
-                    maintenance_planned,
-                    time_to,
-                    work_to_be_done,
-                    comment
-                )
-                values (
-                    :id,
-                    :country_code_iso,
-                    :company_code_uic,
-                    :internal_id,
-                    :decision_id,
-                    :in_timetable,
-                    :due_to_railway_features,
-                    :line,
-                    :metre_post_from,
-                    :metre_post_to,
-                    :station_from,
-                    :station_to,
-                    :on_main_track,
-                    :main_track_side,
-                    :station_track_switch_source_text,
-                    :station_track_from,
-                    :station_switch_from,
-                    :station_switch_to,
-                    :operating_speed,
-                    :reduced_speed,
-                    :reduced_speed_for_mus,
-                    :not_signalled_from_start_point,
-                    :not_signalled_from_end_point,
-                    :cause_source_text,
-                    :cause_category_1,
-                    :cause_category_2,
-                    :cause_category_3,
-                    :time_from,
-                    :maintenance_planned,
-                    :time_to,
-                    :work_to_be_done,
-                    :comment
-                )
-                """,
-                """
-                update speed_restrictions
-                set
-                    maintenance_planned = :maintenance_planned,
-                    time_to = :time_to,
-                    work_to_be_done = :work_to_be_done,
-                    comment = :comment
-                where id = :id
-                """,
-            ]
-
-            for sr in self.data:
-                for query in queries:
-                    connection.execute(
-                        text(query),
-                        sr.__dict__,
-                    )
-
-        with self.database.engine.begin() as connection:
-            query = """
-            update speed_restrictions
-            set
-                time_to = :time_to
-            where id = :id and time_to is null
-            """
-
-            for terminated_sr_id in set(self.existing_sr_ids) - set(
-                [sr.id for sr in self.data]
-            ):
-                raise NotImplementedError
-                # noinspection PyUnreachableCode
-                connection.execute(
-                    text(query),
-                    {
-                        "id": terminated_sr_id,
-                        "time_to": self.TODAY,
-                    },
-                )

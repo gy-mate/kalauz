@@ -47,10 +47,10 @@ class TableUpdater(DataProcessor, ABC):
         pass
 
     def store_data(self) -> None:
-        self._create_table_if_not_exists()
-        self._add_data()
+        self.create_table_if_not_exists()
+        self.add_data()
 
-    def _create_table_if_not_exists(self) -> None:
+    def create_table_if_not_exists(self) -> None:
         self.table.create(
             bind=self.database.engine,
             checkfirst=True,
@@ -58,7 +58,7 @@ class TableUpdater(DataProcessor, ABC):
         self.logger.debug(f"Table `{self.TABLE_NAME}` sucessfully created (if needed)!")
 
     @abstractmethod
-    def _add_data(self) -> None:
+    def add_data(self) -> None:
         pass
 
 
@@ -87,30 +87,30 @@ class DataDownloader(TableUpdater, ABC):
             raise
 
     def process_data(self) -> None:
-        self._correct_column_names()
-        self._delete_data()
-        self._correct_data()
+        self.correct_column_names()
+        self.delete_data()
+        self.correct_data()
 
-    def _correct_column_names(self) -> None:
-        self._rename_columns_manually()
-
-    @abstractmethod
-    def _rename_columns_manually(self) -> None:
-        pass
-
-    def _delete_data(self) -> None:
-        pass
-
-    def _correct_data(self) -> None:
-        self._correct_data_manually()
-        self._correct_boolean_values()
+    def correct_column_names(self) -> None:
+        self.rename_columns_manually()
 
     @abstractmethod
-    def _correct_data_manually(self) -> None:
+    def rename_columns_manually(self) -> None:
+        pass
+
+    def delete_data(self) -> None:
+        pass
+
+    def correct_data(self) -> None:
+        self.correct_data_manually()
+        self.correct_boolean_values()
+
+    @abstractmethod
+    def correct_data_manually(self) -> None:
         pass
 
     @abstractmethod
-    def _correct_boolean_values(self) -> None:
+    def correct_boolean_values(self) -> None:
         pass
 
 
@@ -122,11 +122,11 @@ class UICTableUpdater(DataDownloader, ABC):
 
         self._data_to_process: bytes = NotImplemented
 
-    def _rename_columns_manually(self) -> None:
+    def rename_columns_manually(self) -> None:
         pass
 
-    def _correct_data_manually(self) -> None:
+    def correct_data_manually(self) -> None:
         pass
 
-    def _correct_boolean_values(self) -> None:
+    def correct_boolean_values(self) -> None:
         pass

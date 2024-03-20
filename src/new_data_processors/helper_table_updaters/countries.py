@@ -56,17 +56,17 @@ class CountriesUpdater(UICTableUpdater):
 
         try:
             self.xsd_to_process: Final = self.get_data(self.XSD_URL)
-            self._xsd: Final[etree.XMLSchema] = self._process_xsd()
+            self._xsd: Final[etree.XMLSchema] = self.process_xsd()
         except (HTTPError, IndexError) as exception:
             self.logger.warning(exception)
 
         self.logger.info(f"{self.__class__.__name__} initialized!")
 
-    def _process_xsd(self) -> XMLSchema:
-        xsd_unzipped = self._unzip(self.xsd_to_process)
+    def process_xsd(self) -> XMLSchema:
+        xsd_unzipped = self.unzip(self.xsd_to_process)
         return XMLSchema(etree.parse(xsd_unzipped))
 
-    def _unzip(self, xsd: bytes) -> BytesIO:
+    def unzip(self, xsd: bytes) -> BytesIO:
         with ZipFile(BytesIO(xsd), "r") as zipped_file:
             file_names = zipped_file.infolist()
             if len(file_names) > 1:
@@ -78,18 +78,18 @@ class CountriesUpdater(UICTableUpdater):
 
     def process_data(self) -> None:
         try:
-            self._validate_data()
+            self.validate_data()
         except ValueError as exception:
             self.logger.critical(exception)
             raise
 
-        self.data = self._read_data_from_xml()
+        self.data = self.read_data_from_xml()
 
-        self._rename_columns_manually()
-        self._drop_unnecessary_columns()
-        self._swap_names_separated_with_comma()
+        self.rename_columns_manually()
+        self.drop_unnecessary_columns()
+        self.swap_names_separated_with_comma()
 
-    def _validate_data(self) -> None:
+    def validate_data(self) -> None:
         try:
             parsed_data = etree.parse(BytesIO(self._data_to_process))
             self.logger.debug(
@@ -97,12 +97,12 @@ class CountriesUpdater(UICTableUpdater):
             )
             self._data_to_validate = parsed_data.getroot()
         except XMLSyntaxError:
-            self._data_to_process = self._remove_first_line(self._data_to_process)
-            self._validate_data()
+            self._data_to_process = self.remove_first_line(self._data_to_process)
+            self.validate_data()
 
         self.namespace = self._data_to_validate.nsmap
 
-        if not self._is_data_valid():
+        if not self.is_data_valid():
             raise ValueError(
                 f"The .xml file downloaded from {self.DATA_URL} is invalid "
                 f"according to the .xsd downloaded and unzipped from {self.XSD_URL}!"
@@ -111,7 +111,7 @@ class CountriesUpdater(UICTableUpdater):
             f"Data downloaded from {self.DATA_URL} successfully validated!"
         )
 
-    def _remove_first_line(self, data: bytes) -> bytes:
+    def remove_first_line(self, data: bytes) -> bytes:
         try:
             lines = data.split(b"\n", 1)
             return lines[1]
@@ -120,13 +120,13 @@ class CountriesUpdater(UICTableUpdater):
                 f"First line removed from data downloaded from {self.DATA_URL}!"
             )
 
-    def _is_data_valid(self) -> bool:
+    def is_data_valid(self) -> bool:
         if self._xsd and self._xsd.validate(self._data_to_validate):
             return True
         else:
             return False
 
-    def _read_data_from_xml(self) -> DataFrame:
+    def read_data_from_xml(self) -> DataFrame:
         # future: report wrong documentation URL of pd.read_xml() to JetBrains or pandas developers
         return pd.read_xml(
             path_or_buffer=BytesIO(self._data_to_process),
@@ -134,7 +134,7 @@ class CountriesUpdater(UICTableUpdater):
             namespaces=self.namespace,
         )
 
-    def _rename_columns_manually(self) -> None:
+    def rename_columns_manually(self) -> None:
         self.data.rename(
             columns={
                 "Country_ISO_Code": "code_iso",
@@ -146,13 +146,13 @@ class CountriesUpdater(UICTableUpdater):
             inplace=True,
         )
 
-    def _drop_unnecessary_columns(self) -> None:
+    def drop_unnecessary_columns(self) -> None:
         self.data.dropna(
             subset=["code_uic"],
             inplace=True,
         )
 
-    def _swap_names_separated_with_comma(self) -> None:
+    def swap_names_separated_with_comma(self) -> None:
         columns_to_swap = [
             "name_en",
             "name_fr",
@@ -164,7 +164,7 @@ class CountriesUpdater(UICTableUpdater):
                 lambda x: _swap_name(x)
             )
 
-    def _add_data(self) -> None:
+    def add_data(self) -> None:
         with self.database.engine.begin() as connection:
             for index, row in self.data.iterrows():
                 query = """
