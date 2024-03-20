@@ -1,8 +1,8 @@
 # 🛤️ kalauz
 
-![Lines of code](https://img.shields.io/tokei/lines/github/gy-mate/kalauz?label=lines%20of%20code)
+![Lines of code](https://img.shields.io/badge/lines_of_code-1k+-blue)
 [![Build status](https://scrutinizer-ci.com/g/gy-mate/kalauz/badges/build.png?b=master)](https://scrutinizer-ci.com/g/gy-mate/kalauz/build-status/master)
-[![Scrutinizer code quality](https://img.shields.io/scrutinizer/quality/g/gy-mate/kalauz/master)](https://scrutinizer-ci.com/g/cookiecutter/cookiecutter/?branch=master)
+[![Code quality](https://img.shields.io/scrutinizer/quality/g/gy-mate/kalauz/master)](https://scrutinizer-ci.com/g/gy-mate/kalauz/)
 [![Type hinting used](https://img.shields.io/badge/type_hinting-used-brightgreen)](https://docs.python.org/3/library/typing.html)
 [![Code style: Black](https://img.shields.io/badge/code_style-black-black.svg)](https://github.com/psf/black)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request)
@@ -19,7 +19,7 @@ A program for...
 ## 📋 Features
 
 * Processes the following companies' spreadsheets of SRs in the following formats:
-  * [MÁV Magyar Államvasutak Zrt.](https://www.mavcsoport.hu/mav/bemutatkozas) ([`.pdf`](data/01_received/MÁV_kje4v43hacb32.pdf) converted to [`.xlsx`](data/02_converted/MÁV_2024-01-18_ASR.xlsx) manually on [ilovepdf.com](https://www.ilovepdf.com))
+  * [MÁV Magyar Államvasutak Zrt.](https://www.mavcsoport.hu/mav/bemutatkozas) ([`.pdf`](data/01_received/MÁV_kje4v43hacb32.pdf) converted to `.xlsx`)
   * [GYSEV Zrt.](https://www2.gysev.hu/palyavasuti-uzletag) ([`.xlsx`](data/02_converted/GYSEV_2022-05-13_ASR.xlsx))
 * Stores them in a MySQL database with the following schema:
 
@@ -48,7 +48,7 @@ A program for...
 * [MySQL](https://dev.mysql.com/downloads/mysql/) `5.6+`
   * Store your database password in a `DATABASE_PASSWORD` variable 
     in a `.env` file in the root of the repository.
-* A [ConvertAPI](https://www.convertapi.com) account
+* A [ConvertAPI](https://www.convertapi.com) account ([pricing](https://www.convertapi.com/prices))
   * Store your API secret in a `CONVERTAPI_SECRET` variable 
     in a `.env` file in the root of the repository.
 
