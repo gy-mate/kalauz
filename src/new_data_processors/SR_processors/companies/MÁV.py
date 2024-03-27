@@ -11,7 +11,6 @@ from sqlalchemy import text
 
 # future: remove the comment below when stubs for the library below are available
 import roman  # type: ignore
-import sqlalchemy.exc
 
 from src.SR import SR
 from src.new_data_processors.SR_processors.common import SRUpdater
@@ -137,6 +136,113 @@ class MavUpdater(SRUpdater, ExcelProcessorWithFormatting):
 
         self.data = srs_to_add
 
+    def add_data(self) -> None:
+        with self.database.engine.begin() as connection:
+            queries = [
+                """
+                insert ignore into speed_restrictions (
+                    id,
+                    country_code_iso,
+                    company_code_uic,
+                    internal_id,
+                    decision_id,
+                    in_timetable,
+                    due_to_railway_features,
+                    line,
+                    metre_post_from,
+                    metre_post_to,
+                    station_from,
+                    station_to,
+                    on_main_track,
+                    main_track_side,
+                    station_track_switch_source_text,
+                    station_track_from,
+                    station_switch_from,
+                    station_switch_to,
+                    operating_speed,
+                    reduced_speed,
+                    reduced_speed_for_mus,
+                    not_signalled_from_start_point,
+                    not_signalled_from_end_point,
+                    cause_source_text,
+                    cause_category_1,
+                    cause_category_2,
+                    cause_category_3,
+                    time_from,
+                    work_to_be_done,
+                    time_to,
+                    comment
+                )
+                values (
+                    :id,
+                    :country_code_iso,
+                    :company_code_uic,
+                    :internal_id,
+                    :decision_id,
+                    :in_timetable,
+                    :due_to_railway_features,
+                    :line,
+                    :metre_post_from,
+                    :metre_post_to,
+                    :station_from,
+                    :station_to,
+                    :on_main_track,
+                    :main_track_side,
+                    :station_track_switch_source_text,
+                    :station_track_from,
+                    :station_switch_from,
+                    :station_switch_to,
+                    :operating_speed,
+                    :reduced_speed,
+                    :reduced_speed_for_mus,
+                    :not_signalled_from_start_point,
+                    :not_signalled_from_end_point,
+                    :cause_source_text,
+                    :cause_category_1,
+                    :cause_category_2,
+                    :cause_category_3,
+                    :time_from,
+                    :work_to_be_done,
+                    :time_to,
+                    :comment
+                )
+                """,
+                """
+                update speed_restrictions
+                set
+                    work_to_be_done = :work_to_be_done,
+                    time_to = :time_to,
+                    comment = :comment
+                where id = :id
+                """,
+            ]
+
+            for sr in self.data:
+                for query in queries:
+                    connection.execute(
+                        text(query),
+                        sr.__dict__,
+                    )
+
+        with self.database.engine.begin() as connection:
+            query = """
+            update speed_restrictions
+            set
+                time_to = :time_to
+            where id = :id and time_to is null
+            """
+
+            for terminated_sr_id in set(self.existing_sr_ids) - set(
+                [sr.id for sr in self.data]
+            ):
+                connection.execute(
+                    text(query),
+                    {
+                        "id": terminated_sr_id,
+                        "time_to": self.TODAY,
+                    },
+                )
+
     def get_metre_post(self, text_to_search: str | None) -> int:
         try:
             assert text_to_search
@@ -233,9 +339,6 @@ class MavUpdater(SRUpdater, ExcelProcessorWithFormatting):
             }
             if line_source in internal_to_vpe_line:
                 line_corrected = internal_to_vpe_line[line_source]
-                self.logger.debug(
-                    f"Line {line_source} replaced with {internal_to_vpe_line[line_source]}!"
-                )
 
                 if (
                     line_corrected == "75" and metre_post_to > 4800
