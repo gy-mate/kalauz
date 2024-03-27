@@ -19,6 +19,12 @@ from src.new_data_processors.SR_processors.common import (
 )
 
 
+def get_metre_post(text_to_search: str) -> int:
+    hectometres = int(text_to_search.split("+")[0])
+    metres = int(text_to_search.split("+")[1])
+    return hectometres * 100 + metres
+
+
 def get_bounding_stations(text_to_search: str) -> tuple[str, str | None]:
     if " - " in text_to_search:
         bounding_stations = text_to_search.split(" - ")
@@ -120,14 +126,14 @@ class GysevUpdater(SRUpdater):
 
             bounding_stations = get_bounding_stations(str(row.stations_between))
             reduced_speed = int(str(row.reduced_speed).replace(" km/h", ""))
-            
+
             with contextlib.suppress(AssertionError):
                 station_track_from = str(
                     self.extract_number(str(row.station_track_switch_source_text))
                     if row.station_track_switch_source_text
                     else None
                 )
-            
+
             time_from = self.get_utc_time(str(row.time_from))
             assert isinstance(time_from, datetime)
 
@@ -139,8 +145,8 @@ class GysevUpdater(SRUpdater):
                 in_timetable=True if row.in_timetable == "állandó" else False,
                 due_to_railway_features=NotImplemented,
                 line=self.get_line(str(row.line)),
-                metre_post_from=int(str(row.metre_post_from).replace("+", "")),
-                metre_post_to=int(str(row.metre_post_to).replace("+", "")),
+                metre_post_from=get_metre_post(str(row.metre_post_from)),
+                metre_post_to=get_metre_post(str(row.metre_post_to)),
                 station_from=bounding_stations[0],
                 station_to=bounding_stations[1],
                 on_main_track=on_main_track(str(row.on_main_track_source_text)),
@@ -165,7 +171,7 @@ class GysevUpdater(SRUpdater):
                 time_to=self.get_time_to(str(row.time_to), str(row.time_to_planned)),
                 comment=None,
             )
-            
+
             string_to_hash = "; ".join(
                 [
                     str(sr_to_add.company_code_uic),
@@ -179,11 +185,11 @@ class GysevUpdater(SRUpdater):
             ).encode()
             sr_to_add.id = md5(string_to_hash).hexdigest()
             self.current_sr_ids.append(sr_to_add.id)
-            
+
             srs_to_add.append(sr_to_add)
-            
+
         self.data = srs_to_add
-    
+
         with self.database.engine.begin() as connection:
             queries = [
                 """
@@ -263,14 +269,14 @@ class GysevUpdater(SRUpdater):
                 where id = :id
                 """,
             ]
-            
+
             for sr in self.data:
                 for query in queries:
                     connection.execute(
                         text(query),
                         sr.__dict__,
                     )
-        
+
         with self.database.engine.begin() as connection:
             query = """
             update speed_restrictions
@@ -278,12 +284,10 @@ class GysevUpdater(SRUpdater):
                 time_to = :time_to
             where id = :id and time_to is null
             """
-            
+
             for terminated_sr_id in set(self.existing_sr_ids) - set(
-                    [sr.id for sr in self.data]
+                [sr.id for sr in self.data]
             ):
-                raise NotImplementedError
-                # noinspection PyUnreachableCode
                 connection.execute(
                     text(query),
                     {
@@ -291,7 +295,7 @@ class GysevUpdater(SRUpdater):
                         "time_to": self.TODAY,
                     },
                 )
-    
+
     def get_line(self, line_source: str) -> str:
         try:
             assert line_source
@@ -300,9 +304,6 @@ class GysevUpdater(SRUpdater):
             }
             if line_source in internal_to_vpe_line:
                 line_corrected = internal_to_vpe_line[line_source]
-                self.logger.debug(
-                    f"Line {line_source} replaced with {internal_to_vpe_line[line_source]}!"
-                )
                 return line_corrected
             else:
                 return line_source
