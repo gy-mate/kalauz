@@ -1,4 +1,5 @@
 import contextlib
+from datetime import datetime
 
 # future: remove the comments below when stubs for the library below are available
 import geojson  # type: ignore
@@ -16,7 +17,20 @@ from src.SR import SR
 from src.new_data_processors.common import DataProcessor
 
 
-def _get_ids_of_layers(element: Element) -> dict[str, int | None]:
+def extract_operating_site_polygons(
+    operating_sites: Result,
+) -> tuple[list[dict[str, int | None]], list[dict[str, int | None]]]:
+    operating_site_areas = [
+        get_ids_of_layers(operating_site) for operating_site in operating_sites.ways
+    ]
+    operating_site_relations = [
+        get_ids_of_layers(operating_site)
+        for operating_site in operating_sites.relations
+    ]
+    return operating_site_areas, operating_site_relations
+
+
+def get_ids_of_layers(element: Element) -> dict[str, int | None]:
     # future: report bug (false positive) to JetBrains developers
     # noinspection PyUnresolvedReferences
     element_id = element.id
@@ -37,30 +51,10 @@ def _get_ids_of_layers(element: Element) -> dict[str, int | None]:
 class Mapper(DataProcessor):
     def __init__(self) -> None:
         super().__init__()
+        
+        self.TODAY_SIMULATED = datetime(2024, 1, 18, 21, 59, 59)
 
-        self.osm_data: Result = NotImplemented
-        self.sr_ways: list[int] = []
-
-    def run(self) -> None:
-        self.download_osm_data()
-        self.process_srs()
-        self.visualise_srs()
-
-    @retry(
-        retry=retry_if_exception_type(ConnectionResetError),
-        wait=wait_exponential(
-            multiplier=1,
-            min=4,
-            max=10,
-        ),
-        stop=stop_after_attempt(2),
-    )
-    def download_osm_data(self) -> None:
-        api = Overpass()
-
-        self.logger.debug(f"Short query started...")
-        result = api.query(
-            """
+        self.query_operating_sites: str = """
             [out:json];
             
             area["ISO3166-1"="HU"]
@@ -111,18 +105,8 @@ class Mapper(DataProcessor):
             (._;>;);
             out;
             """
-        )
-        self.logger.debug(f"...finished!")
-
-        operating_site_areas = [
-            _get_ids_of_layers(operating_site) for operating_site in result.ways
-        ]
-        operating_site_relations = [
-            _get_ids_of_layers(operating_site) for operating_site in result.relations
-        ]
-
         # future: replace query with uncommented lines below when https://github.com/drolbr/Overpass-API/issues/146 is closed
-        # query = """
+        # self.query_operating_sites: str = """
         # [out:json];
         #
         # area["ISO3166-1"="HU"]
@@ -136,7 +120,7 @@ class Mapper(DataProcessor):
         # out;
         #
         # """
-        query = """
+        self.query_final: str = """
         [out:json];
         
         area["ISO3166-1"="HU"]
@@ -150,21 +134,72 @@ class Mapper(DataProcessor):
         out;
         
         """
+
+        self.osm_data: Result = NotImplemented
+        self.sr_ways: list[int] = []
+
+    def run(self) -> None:
+        self.download_osm_data()
+        self.process_srs()
+        self.visualise_srs()
+
+    @retry(
+        retry=retry_if_exception_type(ConnectionResetError),
+        wait=wait_exponential(
+            multiplier=1,
+            min=4,
+            max=10,
+        ),
+        stop=stop_after_attempt(2),
+    )
+    def download_osm_data(self) -> None:
+        api = Overpass()
+
+        operating_sites = self.download_operating_sites(api)
+        self.download_final(
+            api=api,
+            operating_sites=operating_sites,
+        )
+
+    def download_operating_sites(self, api: Overpass) -> Result:
+        self.logger.debug(f"Short query started...")
+        result = api.query(self.query_operating_sites)
+        self.logger.debug(f"...finished!")
+        return result
+
+    def download_final(self, api: Overpass, operating_sites: Result) -> None:
+        operating_site_areas, operating_site_relations = (
+            extract_operating_site_polygons(operating_sites)
+        )
+        
         for operating_site_area in operating_site_areas:
-            if operating_site_area["layer"]:
-                query += f"""
-                way({operating_site_area["element_id"]}) -> .operatingSite;
+            self.query_final += f"""
+            way({operating_site_area["element_id"]}) -> .operatingSite;
+            """
+            self.add_operating_site_elements(operating_site_area)
+            
+        for operating_site_relation in operating_site_relations:
+            self.query_final += f"""
+            relation({operating_site_relation["element_id"]});
+            map_to_area -> .operatingSite;
+            """
+            self.add_operating_site_elements(operating_site_relation)
+            
+        self.logger.debug(f"Long query started...")
+        self.osm_data = api.query(self.query_final)
+        self.logger.debug(f"...finished!")
+    
+    def add_operating_site_elements(self, operating_site_area: dict[str, int | None]) -> None:
+        if operating_site_area["layer"]:
+            self.query_final += f"""
                 (
                     way["railway"="rail"]["layer"="{operating_site_area["layer"]}"](area.operatingSite);
                     way["disused:railway"="rail"]["layer"="{operating_site_area["layer"]}"](area.operatingSite);
                     way["abandoned:railway"="rail"]["layer"="{operating_site_area["layer"]}"](area.operatingSite);
                 );
-                (._;>;);
-                out;
                 """
-            else:
-                query += f"""
-                way({operating_site_area["element_id"]}) -> .operatingSite;
+        else:
+            self.query_final += f"""
                 (
                     way["railway"="rail"][!"layer"](area.operatingSite);
                     way["disused:railway"="rail"][!"layer"](area.operatingSite);
@@ -174,43 +209,12 @@ class Mapper(DataProcessor):
                     way["disused:railway"="rail"]["layer"="0"](area.operatingSite);
                     way["abandoned:railway"="rail"]["layer"="0"](area.operatingSite);
                 );
-                (._;>;);
-                out;
                 """
-        for operating_site_relation in operating_site_relations:
-            if operating_site_relation["layer"]:
-                query += f"""
-                relation({operating_site_relation["element_id"]});
-                map_to_area -> .operatingSite;
-                (
-                    way["railway"="rail"]["layer"="{operating_site_relation["layer"]}"](area.operatingSite);
-                    way["disused:railway"="rail"]["layer"="{operating_site_relation["layer"]}"](area.operatingSite);
-                    way["abandoned:railway"="rail"]["layer"="{operating_site_relation["layer"]}"](area.operatingSite);
-                );
-                (._;>;);
-                out;
-                """
-            else:
-                query += f"""
-                relation({operating_site_relation["element_id"]});
-                map_to_area -> .operatingSite;
-                (
-                    way["railway"="rail"][!"layer"](area.operatingSite);
-                    way["disused:railway"="rail"][!"layer"](area.operatingSite);
-                    way["abandoned:railway"="rail"][!"layer"](area.operatingSite);
-                    
-                    way["railway"="rail"]["layer"="0"](area.operatingSite);
-                    way["disused:railway"="rail"]["layer"="0"](area.operatingSite);
-                    way["abandoned:railway"="rail"]["layer"="0"](area.operatingSite);
-                );
-                (._;>;);
-                out;
-                """
-
-        self.logger.debug(f"Long query started...")
-        self.osm_data = api.query(query)
-        self.logger.debug(f"...finished!")
-
+        self.query_final += f"""
+            (._;>;);
+            out;
+            """
+    
     def process_srs(self) -> None:
         with self.database.engine.begin() as connection:
             # TODO: replace query with uncommented lines below in production
