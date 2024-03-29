@@ -10,7 +10,7 @@ import sqlalchemy
 from sqlalchemy import (
     Boolean,
     Column,
-    Date,
+    DateTime,
     ForeignKey,
     Integer,
     MetaData,
@@ -113,9 +113,9 @@ class SRUpdater(ExcelProcessor, ABC):
         Column(name="cause_category_1", type_=String(255)),
         Column(name="cause_category_2", type_=String(255)),
         Column(name="cause_category_3", type_=String(255)),
-        Column(name="time_from", type_=Date, nullable=False),
+        Column(name="time_from", type_=DateTime, nullable=False),
         Column(name="work_to_be_done", type_=String(255)),
-        Column(name="time_to", type_=Date),
+        Column(name="time_to", type_=DateTime),
         Column(name="comment", type_=String(255)),
     )
 
@@ -129,7 +129,7 @@ class SRUpdater(ExcelProcessor, ABC):
         self.SOURCE_EXTENSION = source_extension
 
         # TODO: implement company name detection from filename
-        # future: delete date mocking below in production
+        # future: delete date simulation below in production
         match self.COMPANY:
             case "MÁV":
                 self.TODAY = date(2024, 1, 18)
@@ -181,16 +181,20 @@ class SRUpdater(ExcelProcessor, ABC):
                 self.logger.critical(exception)
                 raise
             return result[0]
-    
+
     def get_existing_sr_ids(self) -> list[str]:
         with self.database.engine.connect() as connection:
             query = """
             select id
             from speed_restrictions
+            where company_code_uic = :company_code_uic
             """
             try:
                 result = connection.execute(
                     text(query),
+                    {
+                        "company_code_uic": self.COMPANY_CODE_UIC,
+                    },
                 ).fetchall()
                 return [row[0] for row in result]
             except sqlalchemy.exc.ProgrammingError:
