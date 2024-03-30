@@ -137,6 +137,7 @@ class Mapper(DataProcessor):
         """
 
         self.osm_data: Result = NotImplemented
+        self.srs: list[SR] = []
         self.sr_ways: list[int] = []
 
     def run(self) -> None:
@@ -219,37 +220,44 @@ class Mapper(DataProcessor):
             """
 
     def process_srs(self) -> None:
-        srs = self.get_all_srs_from_database()
+        self.get_all_srs_from_database()
 
         if self.show_lines_with_no_data:
-            self.get_id_of_sr_main_track_ways(srs)
+            self.get_id_of_sr_main_track_ways()
 
-    def get_all_srs_from_database(self) -> list[SR]:
+    def get_all_srs_from_database(self) -> None:
         with self.database.engine.begin() as connection:
             # TODO: replace query with uncommented lines below in production
             # query = """
             # select *
             # from speed_restrictions
-            # where (time_to > now() or time_to is null) and time_from <= now();
+            # where
+            #     time_from <= now() and (now() < time_to or time_to is null);
             # """
             query = """
             select *
             from speed_restrictions
+            where
+                line = 1 and
+                on_main_track = 1 and
+                time_from <= :now and (:now < time_to or time_to is null);
             """
-            result = connection.execute(text(query))
-        srs: list[SR] = []
+            result = connection.execute(
+                text(query),
+                {"now": self.TODAY_SIMULATED},
+            )
+
         for row in result:
-            srs.append(
+            self.srs.append(
                 # future: report bug (false positive) to mypy developers
                 SR(  # type: ignore
                     *row[1:],
                     sr_id=row[0],
                 )
             )
-        return srs
 
-    def get_id_of_sr_main_track_ways(self, srs):
-        for sr in srs:
+    def get_id_of_sr_main_track_ways(self) -> None:
+        for sr in self.srs:
             if sr.on_main_track:
                 try:
                     for relation in self.osm_data.relations:
@@ -295,6 +303,58 @@ class Mapper(DataProcessor):
                         properties=way.tags,
                     )
                 features.append(feature)
+        else:
+            for sr in self.srs:
+                relation = [
+                    relation
+                    for relation in self.osm_data.relations
+                    if relation.tags["ref"].upper() == sr.line.upper()
+                ][0]
+                way_ids = [way.ref for way in relation.members]
+                ways = [way for way in self.osm_data.ways if way.id in way_ids]
+                nodes = [node for way in ways for node in way.nodes]
+                milestones = [
+                    point
+                    for point in nodes
+                    if point.tags.get("railway", None) == "milestone"
+                    and point.tags.get("railway:position", None) is not None
+                ]
+                milestones.sort(
+                    key=lambda milestone: float(milestone.tags["railway:position"])
+                )
+
+                nearest_milestones: list = []
+                milestones_current = milestones.copy()
+                while len(nearest_milestones) < 2:
+                    nearest_milestone_current = min(
+                        milestones_current,
+                        key=lambda milestone: abs(
+                            float(milestone.tags["railway:position"]) * 1000
+                            - sr.metre_post_from
+                        ),
+                    )
+                    if nearest_milestones:
+                        if not (
+                            float(nearest_milestone_current.tags["railway:position"])
+                            * 1000
+                            < float(nearest_milestones[-1].tags["railway:position"])
+                            * 1000
+                            < sr.metre_post_from
+                            or sr.metre_post_from
+                            < float(nearest_milestones[-1].tags["railway:position"])
+                            * 1000
+                            < float(nearest_milestone_current.tags["railway:position"])
+                            * 1000
+                        ):
+                            if float(
+                                nearest_milestone_current.tags["railway:position"]
+                            ) != float(nearest_milestones[-1].tags["railway:position"]):
+                                nearest_milestones.append(nearest_milestone_current)
+                    else:
+                        nearest_milestones.append(nearest_milestone_current)
+                    milestones_current.remove(nearest_milestone_current)
+                pass
+
         feature_collection = geojson.FeatureCollection(features)
 
         geojson_layer = Layer(
