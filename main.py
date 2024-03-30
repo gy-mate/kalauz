@@ -17,19 +17,22 @@ from src.OSM_processors.mapper import Mapper
 # future: mark all packages as namespace packages in the IDE when https://youtrack.jetbrains.com/issue/PY-55212/ is fixed
 
 
-def main(demonstration=False) -> None:
+def main(
+    demonstration=False,
+    show_lines_with_no_data=False,
+) -> None:
     configure_logging(demonstration)
     load_dotenv()
 
-    CountriesUpdater().run()
-    CompaniesUpdater().run()
-    OperatingSitesUpdater().run()
-    
-    NewFilesRegistrar().run()
-    MavUpdater().run()
-    GysevUpdater().run()
-    
-    Mapper().run()
+    # CountriesUpdater().run()
+    # CompaniesUpdater().run()
+    # OperatingSitesUpdater().run()
+    #
+    # NewFilesRegistrar().run()
+    # MavUpdater().run()
+    # GysevUpdater().run()
+
+    Mapper(show_lines_with_no_data).run()
 
     logging.getLogger(__name__).info("All done!")
 

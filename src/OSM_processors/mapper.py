@@ -49,11 +49,12 @@ def get_ids_of_layers(element: Element) -> dict[str, int | None]:
 
 
 class Mapper(DataProcessor):
-    def __init__(self) -> None:
+    def __init__(self, show_lines_with_no_data: bool) -> None:
         super().__init__()
-        
+
         self.TODAY_SIMULATED = datetime(2024, 1, 18, 21, 59, 59)
 
+        self.show_lines_with_no_data = show_lines_with_no_data
         self.query_operating_sites: str = """
             [out:json];
             
@@ -171,25 +172,27 @@ class Mapper(DataProcessor):
         operating_site_areas, operating_site_relations = (
             extract_operating_site_polygons(operating_sites)
         )
-        
+
         for operating_site_area in operating_site_areas:
             self.query_final += f"""
             way({operating_site_area["element_id"]}) -> .operatingSite;
             """
             self.add_operating_site_elements(operating_site_area)
-            
+
         for operating_site_relation in operating_site_relations:
             self.query_final += f"""
             relation({operating_site_relation["element_id"]});
             map_to_area -> .operatingSite;
             """
             self.add_operating_site_elements(operating_site_relation)
-            
+
         self.logger.debug(f"Long query started...")
         self.osm_data = api.query(self.query_final)
         self.logger.debug(f"...finished!")
-    
-    def add_operating_site_elements(self, operating_site_area: dict[str, int | None]) -> None:
+
+    def add_operating_site_elements(
+        self, operating_site_area: dict[str, int | None]
+    ) -> None:
         if operating_site_area["layer"]:
             self.query_final += f"""
                 (
@@ -214,8 +217,14 @@ class Mapper(DataProcessor):
             (._;>;);
             out;
             """
-    
+
     def process_srs(self) -> None:
+        srs = self.get_all_srs_from_database()
+
+        if self.show_lines_with_no_data:
+            self.get_id_of_sr_main_track_ways(srs)
+
+    def get_all_srs_from_database(self) -> list[SR]:
         with self.database.engine.begin() as connection:
             # TODO: replace query with uncommented lines below in production
             # query = """
@@ -228,7 +237,6 @@ class Mapper(DataProcessor):
             from speed_restrictions
             """
             result = connection.execute(text(query))
-
         srs: list[SR] = []
         for row in result:
             srs.append(
@@ -238,11 +246,11 @@ class Mapper(DataProcessor):
                     sr_id=row[0],
                 )
             )
+        return srs
 
+    def get_id_of_sr_main_track_ways(self, srs):
         for sr in srs:
-            if (
-                sr.on_main_track
-            ):  # future: remove this line when I have time to visualize SRs on more stations
+            if sr.on_main_track:
                 try:
                     for relation in self.osm_data.relations:
                         with contextlib.suppress(KeyError):
@@ -268,23 +276,25 @@ class Mapper(DataProcessor):
                 properties=node.tags,
             )
             features.append(feature)
-        for i, way in enumerate(self.osm_data.ways):
-            line = geojson.LineString(
-                [(float(node.lon), float(node.lat)) for node in way.nodes]
-            )
-            if way.id in self.sr_ways:
-                way.tags |= {"line_color": [255, 255, 255]}
-                feature = geojson.Feature(
-                    geometry=line,
-                    properties=way.tags,
+
+        if self.show_lines_with_no_data:
+            for i, way in enumerate(self.osm_data.ways):
+                line = geojson.LineString(
+                    [(float(node.lon), float(node.lat)) for node in way.nodes]
                 )
-            else:
-                way.tags |= {"line_color": [255, 0, 0]}
-                feature = geojson.Feature(
-                    geometry=line,
-                    properties=way.tags,
-                )
-            features.append(feature)
+                if way.id in self.sr_ways:
+                    way.tags |= {"line_color": [255, 255, 255]}
+                    feature = geojson.Feature(
+                        geometry=line,
+                        properties=way.tags,
+                    )
+                else:
+                    way.tags |= {"line_color": [255, 0, 0]}
+                    feature = geojson.Feature(
+                        geometry=line,
+                        properties=way.tags,
+                    )
+                features.append(feature)
         feature_collection = geojson.FeatureCollection(features)
 
         geojson_layer = Layer(
