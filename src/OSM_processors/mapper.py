@@ -1,10 +1,20 @@
 import contextlib
 from datetime import datetime
 
-# future: remove the comments below when stubs for the library below are available
+# future: remove the comment below when stubs for the library below are available
 import geojson  # type: ignore
-from overpy import Element, Overpass, Result  # type: ignore
+
+# future: remove the comment below when stubs for the library below are available
+from overpy import Element, Node, Overpass, Relation, Result, Way  # type: ignore
+
+# future: remove the comment below when stubs for the library below are available
 from pydeck import Layer, Deck, ViewState  # type: ignore
+
+# future: remove the comment below when stubs for the library below are available
+import shapely  # type: ignore
+
+# future: remove the comment below when stubs for the library below are available
+from shapely.ops import split  # type: ignore
 from sqlalchemy.sql import text
 from tenacity import (
     retry,
@@ -46,6 +56,75 @@ def get_ids_of_layers(element: Element) -> dict[str, int | None]:
         "element_id": element_id,
         "layer": int(element_layer),
     }
+
+
+def get_milestones(nodes: list[Node]) -> list[Node]:
+    return [
+        node
+        for node in nodes
+        if node.tags.get("railway", None) == "milestone"
+        and node.tags.get("railway:position", None) is not None
+    ]
+
+
+def get_nearest_milestone(metre_post: int, milestones_current: list[Node]) -> Node:
+    return min(
+        milestones_current,
+        key=lambda milestone: abs(
+            float(milestone.tags["railway:position"]) * 1000 - metre_post
+        ),
+    )
+
+
+def further_than_current_nearest_milestone(
+    nearest_milestone_current: Node, nearest_milestones: list[Node], metre_post: int
+):
+    return (
+        float(nearest_milestone_current.tags["railway:position"]) * 1000
+        < float(nearest_milestones[-1].tags["railway:position"]) * 1000
+        < metre_post
+        or metre_post
+        < float(nearest_milestones[-1].tags["railway:position"]) * 1000
+        < float(nearest_milestone_current.tags["railway:position"]) * 1000
+    )
+
+
+def get_ways_of_milestones(
+    nearest_milestones: list[Node], ways: list[Way]
+) -> tuple[Way, Way]:
+    way_of_lower_milestone: Way | None = None
+    way_of_greater_milestone: Way | None = None
+
+    for way in ways:
+        for node in way.nodes:
+            if node == nearest_milestones[0]:
+                way_of_lower_milestone = way
+            elif node == nearest_milestones[-1]:
+                way_of_greater_milestone = way
+
+            if way_of_lower_milestone and way_of_greater_milestone:
+                return way_of_greater_milestone, way_of_lower_milestone
+
+    raise ValueError("Ways of milestones not found!")
+
+
+def get_distance_percentage_between_milestones(
+    nearest_milestones: list[Node], sr: SR
+) -> float:
+    nearest_milestones_locations = [
+        int(float(milestone.tags["railway:position"]) * 1000)
+        for milestone in nearest_milestones
+    ]
+    distance_between_nearest_milestones = abs(
+        nearest_milestones_locations[0] - nearest_milestones_locations[-1]
+    )
+    distance_between_sr_and_lower_milestone = abs(
+        nearest_milestones_locations[0] - sr.metre_post_from
+    )
+    distance_percentage_between_milestones = (
+        distance_between_sr_and_lower_milestone / distance_between_nearest_milestones
+    )
+    return distance_percentage_between_milestones
 
 
 class Mapper(DataProcessor):
@@ -238,7 +317,7 @@ class Mapper(DataProcessor):
             select *
             from speed_restrictions
             where
-                line = 1 and
+                line = 146 and
                 on_main_track = 1 and
                 time_from <= :now and (:now < time_to or time_to is null);
             """
@@ -276,7 +355,7 @@ class Mapper(DataProcessor):
 
     def visualise_srs(self) -> None:
         features = []
-        for i, node in enumerate(self.osm_data.nodes):
+        for node in self.osm_data.nodes:
             point = geojson.Point((float(node.lon), float(node.lat)))
             node.tags |= {"line_color": [0, 0, 0, 0]}
             feature = geojson.Feature(
@@ -286,77 +365,145 @@ class Mapper(DataProcessor):
             features.append(feature)
 
         if self.show_lines_with_no_data:
-            for i, way in enumerate(self.osm_data.ways):
-                line = geojson.LineString(
+            for way in self.osm_data.ways:
+                way = geojson.LineString(
                     [(float(node.lon), float(node.lat)) for node in way.nodes]
                 )
                 if way.id in self.sr_ways:
                     way.tags |= {"line_color": [255, 255, 255]}
                     feature = geojson.Feature(
-                        geometry=line,
+                        geometry=way,
                         properties=way.tags,
                     )
                 else:
                     way.tags |= {"line_color": [255, 0, 0]}
                     feature = geojson.Feature(
-                        geometry=line,
+                        geometry=way,
                         properties=way.tags,
                     )
                 features.append(feature)
         else:
             for sr in self.srs:
-                relation = [
-                    relation
-                    for relation in self.osm_data.relations
-                    if relation.tags["ref"].upper() == sr.line.upper()
-                ][0]
+                relation = self.get_corresponding_relation(sr)
                 way_ids = [way.ref for way in relation.members]
                 ways = [way for way in self.osm_data.ways if way.id in way_ids]
                 nodes = [node for way in ways for node in way.nodes]
-                milestones = [
-                    point
-                    for point in nodes
-                    if point.tags.get("railway", None) == "milestone"
-                    and point.tags.get("railway:position", None) is not None
-                ]
+                milestones = get_milestones(nodes)
                 milestones.sort(
                     key=lambda milestone: float(milestone.tags["railway:position"])
                 )
 
-                nearest_milestones: list = []
-                milestones_current = milestones.copy()
-                while len(nearest_milestones) < 2:
-                    nearest_milestone_current = min(
-                        milestones_current,
-                        key=lambda milestone: abs(
-                            float(milestone.tags["railway:position"]) * 1000
-                            - sr.metre_post_from
-                        ),
-                    )
-                    if nearest_milestones:
-                        if not (
-                            float(nearest_milestone_current.tags["railway:position"])
-                            * 1000
-                            < float(nearest_milestones[-1].tags["railway:position"])
-                            * 1000
-                            < sr.metre_post_from
-                            or sr.metre_post_from
-                            < float(nearest_milestones[-1].tags["railway:position"])
-                            * 1000
-                            < float(nearest_milestone_current.tags["railway:position"])
-                            * 1000
+                for i in range(2):
+                    nearest_milestones: list[Node] = []
+                    milestones_current = milestones.copy()
+                    while len(nearest_milestones) < 2:
+                        nearest_milestone_current = get_nearest_milestone(
+                            metre_post=(
+                                sr.metre_post_from if i == 0 else sr.metre_post_to
+                            ),
+                            milestones_current=milestones_current,
+                        )
+                        if nearest_milestones and not (
+                            further_than_current_nearest_milestone(
+                                nearest_milestone_current=nearest_milestone_current,
+                                nearest_milestones=nearest_milestones,
+                                metre_post=(
+                                    sr.metre_post_from if i == 0 else sr.metre_post_to
+                                ),
+                            )
                         ):
                             if float(
                                 nearest_milestone_current.tags["railway:position"]
-                            ) != float(nearest_milestones[-1].tags["railway:position"]):
+                            ) != float(
+                                nearest_milestones[-1].tags["railway:position"]
+                            ):  # TODO: remove this line when track side selection is implemented
                                 nearest_milestones.append(nearest_milestone_current)
+                        else:
+                            nearest_milestones.append(nearest_milestone_current)
+                        milestones_current.remove(nearest_milestone_current)
+                    nearest_milestones.sort(
+                        key=lambda milestone: float(milestone.tags["railway:position"])
+                    )
+
+                    distance_percentage_between_milestones = (
+                        get_distance_percentage_between_milestones(
+                            nearest_milestones, sr
+                        )
+                    )
+                    way_of_greater_milestone, way_of_lower_milestone = (
+                        get_ways_of_milestones(nearest_milestones, ways)
+                    )
+
+                    neighbouring_ways_of_lower_milestone: tuple[
+                        list[Way], list[Way]
+                    ] = ([], [])
+                    ways_between_milestones: list[Way] = NotImplemented
+                    for way in ways:
+                        if way is way_of_greater_milestone:
+                            if way_of_lower_milestone.nodes[0] in way.nodes:
+                                ways_between_milestones = (
+                                    neighbouring_ways_of_lower_milestone[0]
+                                )
+                            elif way_of_lower_milestone.nodes[-1] in way.nodes:
+                                ways_between_milestones = (
+                                    neighbouring_ways_of_lower_milestone[1]
+                                )
+
+                            break
+                        else:
+                            if way_of_lower_milestone.nodes[0] in way.nodes:
+                                neighbouring_ways_of_lower_milestone[0].append(way)
+                            elif way_of_lower_milestone.nodes[-1] in way.nodes:
+                                neighbouring_ways_of_lower_milestone[1].append(way)
+                    ways_between_milestones.append(way_of_greater_milestone)
+
+                    coordinates: list[tuple[float, float]] = []
+                    for way in ways_between_milestones:
+                        way_coordinates = [
+                            (float(node.lon), float(node.lat)) for node in way.nodes
+                        ]
+                        coordinates.extend(way_coordinates)
+                    merged_ways_between_milestones = shapely.LineString(coordinates)
+
+                    split_lines_at_lower_milestone = split(
+                        geom=merged_ways_between_milestones,
+                        splitter=shapely.Point(
+                            (
+                                float(nearest_milestones[0].lon),
+                                float(nearest_milestones[0].lat),
+                            )
+                        ),
+                    )
+                    split_lines_at_greater_milestone = split(
+                        geom=merged_ways_between_milestones,
+                        splitter=shapely.Point(
+                            (
+                                float(nearest_milestones[-1].lon),
+                                float(nearest_milestones[-1].lat),
+                            )
+                        ),
+                    )
+                    line_between_milestones = (
+                        split_lines_at_lower_milestone.intersection(
+                            split_lines_at_greater_milestone
+                        )
+                    )
+
+                    coordinate_of_metre_post = line_between_milestones.interpolate(
+                        distance=distance_percentage_between_milestones,
+                        normalized=True,
+                    )
+
+                    if i == 0:
+                        sr.metre_post_from_coordinates = coordinate_of_metre_post
                     else:
-                        nearest_milestones.append(nearest_milestone_current)
-                    milestones_current.remove(nearest_milestone_current)
+                        sr.metre_post_to_coordinates = coordinate_of_metre_post
                 pass
 
         feature_collection = geojson.FeatureCollection(features)
+        self.export_map(feature_collection)
 
+    def export_map(self, feature_collection):
         geojson_layer = Layer(
             "GeoJsonLayer",
             data=feature_collection,
@@ -374,7 +521,14 @@ class Mapper(DataProcessor):
             layers=[geojson_layer],
             initial_view_state=view_state,
         )
-
         self.logger.debug(f"Exporting map started...")
         deck.to_html(f"data/04_exported/map_pydeck_{self.TODAY}.html")
         self.logger.debug(f"...finished!")
+
+    def get_corresponding_relation(self, sr: SR) -> Relation:
+        relation = [
+            relation
+            for relation in self.osm_data.relations
+            if relation.tags["ref"].upper() == sr.line.upper()
+        ][0]
+        return relation
