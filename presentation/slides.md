@@ -10,7 +10,7 @@ transition: slide-left
 <div class="absolute top-10">
 	<span class="font-200" font-size="3.8 pt">
 		<b>Kutató:</b><br>
-		Gyöngyösi Máté szociológus (BA),<br>
+		Gyöngyösi Máté szociológus,<br>
 		üzemmérnök-informatikus BProf hallgató<br>
 		Villamosmérnöki és Informatikai Kar<br><br>
 		<b>Témavezető:</b><br>
