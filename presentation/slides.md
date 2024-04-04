@@ -8,7 +8,7 @@ transition: slide-left
 ---
 
 <div class="absolute top-10">
-	<span class="font-200" font-size="3.8 pt">
+	<span class="font-200">
 		<b>Kutató:</b><br>
 		Gyöngyösi Máté szociológus,<br>
 		üzemmérnök-informatikus BProf hallgató<br>
@@ -20,9 +20,8 @@ transition: slide-left
 	</span>
 </div>
 
-<!--suppress HtmlDeprecatedAttribute -->
-<div align="right">
-	<span class="font-200" font-size="3.8 pt">
+<div style="text-align: right">
+	<span class="font-200">
 		Szekció neve<br>
         2024. 05. 29. 1x:xx
 	</span>
@@ -52,6 +51,8 @@ url: https://gy-mate.github.io/kalauz/data/04_exported/map_pydeck_2024-03-26.htm
 # Teszt
 
 ```python
+import geojson
+
 def visualise_srs(self) -> None:
         features = []
         for i, node in enumerate(self.osm_data.nodes):
