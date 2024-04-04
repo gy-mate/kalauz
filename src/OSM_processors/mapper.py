@@ -103,13 +103,13 @@ def get_ways_of_milestones(
                 way_of_greater_milestone = way
 
             if way_of_lower_milestone and way_of_greater_milestone:
-                return way_of_greater_milestone, way_of_lower_milestone
+                return way_of_lower_milestone, way_of_greater_milestone
 
     raise ValueError("Ways of milestones not found!")
 
 
 def get_distance_percentage_between_milestones(
-    nearest_milestones: list[Node], sr: SR
+    nearest_milestones: list[Node], metre_post_boundary: int
 ) -> float:
     nearest_milestones_locations = [
         int(float(milestone.tags["railway:position"]) * 1000)
@@ -119,12 +119,36 @@ def get_distance_percentage_between_milestones(
         nearest_milestones_locations[0] - nearest_milestones_locations[-1]
     )
     distance_between_sr_and_lower_milestone = abs(
-        nearest_milestones_locations[0] - sr.metre_post_from
+        nearest_milestones_locations[0] - metre_post_boundary
     )
     distance_percentage_between_milestones = (
         distance_between_sr_and_lower_milestone / distance_between_nearest_milestones
     )
     return distance_percentage_between_milestones
+
+
+def get_nearest_milestones(
+    milestones_current, nearest_milestones, sr_metre_post_boundary
+):
+    while len(nearest_milestones) < 2:
+        nearest_milestone_current = get_nearest_milestone(
+            metre_post=sr_metre_post_boundary,
+            milestones_current=milestones_current,
+        )
+        if nearest_milestones and not (
+            further_than_current_nearest_milestone(
+                nearest_milestone_current=nearest_milestone_current,
+                nearest_milestones=nearest_milestones,
+                metre_post=sr_metre_post_boundary,
+            )
+        ):
+            if float(nearest_milestone_current.tags["railway:position"]) != float(
+                nearest_milestones[-1].tags["railway:position"]
+            ):  # TODO: remove this line when track side selection is implemented
+                nearest_milestones.append(nearest_milestone_current)
+        else:
+            nearest_milestones.append(nearest_milestone_current)
+        milestones_current.remove(nearest_milestone_current)
 
 
 class Mapper(DataProcessor):
@@ -317,7 +341,7 @@ class Mapper(DataProcessor):
             select *
             from speed_restrictions
             where
-                line = 146 and
+                line = 30 and
                 on_main_track = 1 and
                 time_from <= :now and (:now < time_to or time_to is null);
             """
@@ -384,6 +408,11 @@ class Mapper(DataProcessor):
                 features.append(feature)
         else:
             for sr in self.srs:
+                if sr.metre_post_from not in range(
+                    200400, 214400 + 1
+                ) or sr.metre_post_to not in range(200400, 214400 + 1):
+                    continue
+
                 relation = self.get_corresponding_relation(sr)
                 way_ids = [way.ref for way in relation.members]
                 ways = [way for way in self.osm_data.ways if way.id in way_ids]
@@ -393,44 +422,25 @@ class Mapper(DataProcessor):
                     key=lambda milestone: float(milestone.tags["railway:position"])
                 )
 
-                for i in range(2):
+                for i, sr_metre_post_boundary in enumerate(
+                    (sr.metre_post_from, sr.metre_post_to)
+                ):
                     nearest_milestones: list[Node] = []
                     milestones_current = milestones.copy()
-                    while len(nearest_milestones) < 2:
-                        nearest_milestone_current = get_nearest_milestone(
-                            metre_post=(
-                                sr.metre_post_from if i == 0 else sr.metre_post_to
-                            ),
-                            milestones_current=milestones_current,
-                        )
-                        if nearest_milestones and not (
-                            further_than_current_nearest_milestone(
-                                nearest_milestone_current=nearest_milestone_current,
-                                nearest_milestones=nearest_milestones,
-                                metre_post=(
-                                    sr.metre_post_from if i == 0 else sr.metre_post_to
-                                ),
-                            )
-                        ):
-                            if float(
-                                nearest_milestone_current.tags["railway:position"]
-                            ) != float(
-                                nearest_milestones[-1].tags["railway:position"]
-                            ):  # TODO: remove this line when track side selection is implemented
-                                nearest_milestones.append(nearest_milestone_current)
-                        else:
-                            nearest_milestones.append(nearest_milestone_current)
-                        milestones_current.remove(nearest_milestone_current)
+
+                    get_nearest_milestones(
+                        milestones_current, nearest_milestones, sr_metre_post_boundary
+                    )
                     nearest_milestones.sort(
                         key=lambda milestone: float(milestone.tags["railway:position"])
                     )
 
-                    distance_percentage_between_milestones = (
+                    metre_post_at_percentage_between_milestones = (
                         get_distance_percentage_between_milestones(
-                            nearest_milestones, sr
+                            nearest_milestones, sr_metre_post_boundary
                         )
                     )
-                    way_of_greater_milestone, way_of_lower_milestone = (
+                    way_of_lower_milestone, way_of_greater_milestone = (
                         get_ways_of_milestones(nearest_milestones, ways)
                     )
 
@@ -483,21 +493,21 @@ class Mapper(DataProcessor):
                             )
                         ),
                     )
-                    line_between_milestones = (
-                        split_lines_at_lower_milestone.intersection(
-                            split_lines_at_greater_milestone
-                        )
+                    line_between_milestones = shapely.intersection(
+                        split_lines_at_lower_milestone.geoms[1],
+                        split_lines_at_greater_milestone.geoms[0],
                     )
 
                     coordinate_of_metre_post = line_between_milestones.interpolate(
-                        distance=distance_percentage_between_milestones,
+                        distance=metre_post_at_percentage_between_milestones,
                         normalized=True,
                     )
 
-                    if i == 0:
+                    if sr_metre_post_boundary == sr.metre_post_from:
                         sr.metre_post_from_coordinates = coordinate_of_metre_post
                     else:
                         sr.metre_post_to_coordinates = coordinate_of_metre_post
+                    pass
                 pass
 
         feature_collection = geojson.FeatureCollection(features)
