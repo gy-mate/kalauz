@@ -59,8 +59,6 @@ class ExcelProcessorSimple(ExcelProcessor, ABC):
 
     def import_data(self) -> None:
         try:
-            # future: remove the line below when https://youtrack.jetbrains.com/issue/PY-70308/ is fixed
-            # noinspection PyTypeChecker
             self.data = pd.read_excel(BytesIO(self._data_to_process))
         except xlrd.compdoc.CompDocError:
             self.logger.debug("Excel data is corrupted, ignoring it...")
