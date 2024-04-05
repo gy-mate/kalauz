@@ -59,12 +59,14 @@ def get_ids_of_layers(element: Element) -> dict[str, int | None]:
 
 
 def get_milestones(nodes: list[Node]) -> list[Node]:
-    return [
+    milestones = [
         node
         for node in nodes
         if node.tags.get("railway", None) == "milestone"
         and node.tags.get("railway:position", None) is not None
     ]
+    milestones.sort(key=lambda milestone: float(milestone.tags["railway:position"]))
+    return milestones
 
 
 def get_nearest_milestone(metre_post: int, milestones_current: list[Node]) -> Node:
@@ -78,7 +80,7 @@ def get_nearest_milestone(metre_post: int, milestones_current: list[Node]) -> No
 
 def further_than_current_nearest_milestone(
     nearest_milestone_current: Node, nearest_milestones: list[Node], metre_post: int
-):
+) -> bool:
     return (
         float(nearest_milestone_current.tags["railway:position"]) * 1000
         < float(nearest_milestones[-1].tags["railway:position"]) * 1000
@@ -128,8 +130,8 @@ def get_distance_percentage_between_milestones(
 
 
 def get_nearest_milestones(
-    milestones_current, nearest_milestones, sr_metre_post_boundary
-):
+    milestones_current: list[Node], nearest_milestones: list[Node], sr_metre_post_boundary: int
+) -> None:
     while len(nearest_milestones) < 2:
         nearest_milestone_current = get_nearest_milestone(
             metre_post=sr_metre_post_boundary,
@@ -149,6 +151,57 @@ def get_nearest_milestones(
         else:
             nearest_milestones.append(nearest_milestone_current)
         milestones_current.remove(nearest_milestone_current)
+
+    nearest_milestones.sort(
+        key=lambda milestone: float(milestone.tags["railway:position"])
+    )
+
+
+def get_ways_between_milestones(
+    way_of_greater_milestone: Way,
+    way_of_lower_milestone: Way,
+    ways_of_line: list[Way],
+) -> list[Way]:
+    neighbouring_ways_of_lower_milestone: tuple[list[Way], list[Way]] = (
+        [],
+        [],
+    )
+    ways_between_milestones: list[Way] = NotImplemented
+    for way in ways_of_line:
+        if way is way_of_greater_milestone:
+            if way_of_lower_milestone.nodes[0] in way.nodes:
+                ways_between_milestones = neighbouring_ways_of_lower_milestone[0]
+            elif way_of_lower_milestone.nodes[-1] in way.nodes:
+                ways_between_milestones = neighbouring_ways_of_lower_milestone[1]
+
+            break
+        else:
+            if way_of_lower_milestone.nodes[0] in way.nodes:
+                neighbouring_ways_of_lower_milestone[0].append(way)
+            elif way_of_lower_milestone.nodes[-1] in way.nodes:
+                neighbouring_ways_of_lower_milestone[1].append(way)
+    ways_between_milestones.append(way_of_greater_milestone)
+    return ways_between_milestones
+
+
+def merge_ways(ways_between_milestones: list[Way]) -> shapely.LineString:
+    coordinates: list[tuple[float, float]] = []
+    for way in ways_between_milestones:
+        way_coordinates = [(float(node.lon), float(node.lat)) for node in way.nodes]
+        coordinates.extend(way_coordinates)
+    merged_ways_between_milestones = shapely.LineString(coordinates)
+    return merged_ways_between_milestones
+
+
+def split_lines(
+    merged_ways_between_milestones: shapely.LineString,
+    splitting_point: shapely.Point,
+) -> shapely.MultiLineString:
+    split_lines_at_lower_milestone = split(
+        geom=merged_ways_between_milestones,
+        splitter=splitting_point,
+    )
+    return split_lines_at_lower_milestone
 
 
 class Mapper(DataProcessor):
@@ -378,7 +431,102 @@ class Mapper(DataProcessor):
                     self.logger.debug(exception)
 
     def visualise_srs(self) -> None:
-        features = []
+        features_to_visualise: list[geojson.Feature] = []
+
+        self.add_all_nodes(features_to_visualise)
+        self.add_na_lines(features_to_visualise)
+
+        for sr in self.srs:
+            ways_of_line = self.get_ways_of_corresponding_line(sr)
+            nodes_of_line = [node for way in ways_of_line for node in way.nodes]
+            milestones = get_milestones(nodes=nodes_of_line)
+
+            for i, sr_metre_post_boundary in enumerate(
+                (sr.metre_post_from, sr.metre_post_to)
+            ):
+                nearest_milestones: list[Node] = []
+                milestones_current = milestones.copy()
+
+                get_nearest_milestones(
+                    milestones_current, nearest_milestones, sr_metre_post_boundary
+                )
+                metre_post_at_percentage_between_milestones = (
+                    get_distance_percentage_between_milestones(
+                        nearest_milestones, sr_metre_post_boundary
+                    )
+                )
+                way_of_lower_milestone, way_of_greater_milestone = (
+                    get_ways_of_milestones(nearest_milestones, ways_of_line)
+                )
+                ways_between_milestones = get_ways_between_milestones(
+                    way_of_greater_milestone,
+                    way_of_lower_milestone,
+                    ways_of_line,
+                )
+                merged_ways_between_milestones = merge_ways(ways_between_milestones)
+
+                split_lines_at_lower_milestone = split_lines(
+                    merged_ways_between_milestones,
+                    shapely.Point(
+                        (
+                            float(nearest_milestones[0].lon),
+                            float(nearest_milestones[0].lat),
+                        )
+                    ),
+                )
+                split_lines_at_greater_milestone = split_lines(
+                    merged_ways_between_milestones,
+                    shapely.Point(
+                        (
+                            float(nearest_milestones[-1].lon),
+                            float(nearest_milestones[-1].lat),
+                        )
+                    ),
+                )
+                line_between_milestones = shapely.intersection(
+                    split_lines_at_lower_milestone.geoms[1],
+                    split_lines_at_greater_milestone.geoms[0],
+                )
+
+                coordinate_of_metre_post = line_between_milestones.interpolate(
+                    distance=metre_post_at_percentage_between_milestones,
+                    normalized=True,
+                )
+
+                # future: make this prettier
+                if sr_metre_post_boundary == sr.metre_post_from:
+                    sr.metre_post_from_coordinates = coordinate_of_metre_post
+                else:
+                    sr.metre_post_to_coordinates = coordinate_of_metre_post
+
+                pass
+            pass
+
+        feature_collection_to_visualise = geojson.FeatureCollection(
+            features_to_visualise
+        )
+        self.export_map(feature_collection_to_visualise)
+
+    def get_ways_of_corresponding_line(self, sr: SR) -> list[Way]:
+        relation = self.get_corresponding_relation(sr)
+        way_ids = [way.ref for way in relation.members]
+        ways = [way for way in self.osm_data.ways if way.id in way_ids]
+        return ways
+
+    def add_na_lines(self, features_to_visualise: list[geojson.Feature]) -> None:
+        for way in self.osm_data.ways:
+            way = geojson.LineString(
+                [(float(node.lon), float(node.lat)) for node in way.nodes]
+            )
+            if way.id not in self.sr_ways:
+                way.tags |= {"line_color": [255, 255, 255, 0.5]}
+                feature = geojson.Feature(
+                    geometry=way,
+                    properties=way.tags,
+                )
+                features_to_visualise.append(feature)
+
+    def add_all_nodes(self, features_to_visualise: list[geojson.Feature]) -> None:
         for node in self.osm_data.nodes:
             point = geojson.Point((float(node.lon), float(node.lat)))
             node.tags |= {"line_color": [0, 0, 0, 0]}
@@ -386,134 +534,9 @@ class Mapper(DataProcessor):
                 geometry=point,
                 properties=node.tags,
             )
-            features.append(feature)
+            features_to_visualise.append(feature)
 
-        if self.show_lines_with_no_data:
-            for way in self.osm_data.ways:
-                way = geojson.LineString(
-                    [(float(node.lon), float(node.lat)) for node in way.nodes]
-                )
-                if way.id in self.sr_ways:
-                    way.tags |= {"line_color": [255, 255, 255]}
-                    feature = geojson.Feature(
-                        geometry=way,
-                        properties=way.tags,
-                    )
-                else:
-                    way.tags |= {"line_color": [255, 0, 0]}
-                    feature = geojson.Feature(
-                        geometry=way,
-                        properties=way.tags,
-                    )
-                features.append(feature)
-        else:
-            for sr in self.srs:
-                if sr.metre_post_from not in range(
-                    200400, 214400 + 1
-                ) or sr.metre_post_to not in range(200400, 214400 + 1):
-                    continue
-
-                relation = self.get_corresponding_relation(sr)
-                way_ids = [way.ref for way in relation.members]
-                ways = [way for way in self.osm_data.ways if way.id in way_ids]
-                nodes = [node for way in ways for node in way.nodes]
-                milestones = get_milestones(nodes)
-                milestones.sort(
-                    key=lambda milestone: float(milestone.tags["railway:position"])
-                )
-
-                for i, sr_metre_post_boundary in enumerate(
-                    (sr.metre_post_from, sr.metre_post_to)
-                ):
-                    nearest_milestones: list[Node] = []
-                    milestones_current = milestones.copy()
-
-                    get_nearest_milestones(
-                        milestones_current, nearest_milestones, sr_metre_post_boundary
-                    )
-                    nearest_milestones.sort(
-                        key=lambda milestone: float(milestone.tags["railway:position"])
-                    )
-
-                    metre_post_at_percentage_between_milestones = (
-                        get_distance_percentage_between_milestones(
-                            nearest_milestones, sr_metre_post_boundary
-                        )
-                    )
-                    way_of_lower_milestone, way_of_greater_milestone = (
-                        get_ways_of_milestones(nearest_milestones, ways)
-                    )
-
-                    neighbouring_ways_of_lower_milestone: tuple[
-                        list[Way], list[Way]
-                    ] = ([], [])
-                    ways_between_milestones: list[Way] = NotImplemented
-                    for way in ways:
-                        if way is way_of_greater_milestone:
-                            if way_of_lower_milestone.nodes[0] in way.nodes:
-                                ways_between_milestones = (
-                                    neighbouring_ways_of_lower_milestone[0]
-                                )
-                            elif way_of_lower_milestone.nodes[-1] in way.nodes:
-                                ways_between_milestones = (
-                                    neighbouring_ways_of_lower_milestone[1]
-                                )
-
-                            break
-                        else:
-                            if way_of_lower_milestone.nodes[0] in way.nodes:
-                                neighbouring_ways_of_lower_milestone[0].append(way)
-                            elif way_of_lower_milestone.nodes[-1] in way.nodes:
-                                neighbouring_ways_of_lower_milestone[1].append(way)
-                    ways_between_milestones.append(way_of_greater_milestone)
-
-                    coordinates: list[tuple[float, float]] = []
-                    for way in ways_between_milestones:
-                        way_coordinates = [
-                            (float(node.lon), float(node.lat)) for node in way.nodes
-                        ]
-                        coordinates.extend(way_coordinates)
-                    merged_ways_between_milestones = shapely.LineString(coordinates)
-
-                    split_lines_at_lower_milestone = split(
-                        geom=merged_ways_between_milestones,
-                        splitter=shapely.Point(
-                            (
-                                float(nearest_milestones[0].lon),
-                                float(nearest_milestones[0].lat),
-                            )
-                        ),
-                    )
-                    split_lines_at_greater_milestone = split(
-                        geom=merged_ways_between_milestones,
-                        splitter=shapely.Point(
-                            (
-                                float(nearest_milestones[-1].lon),
-                                float(nearest_milestones[-1].lat),
-                            )
-                        ),
-                    )
-                    line_between_milestones = shapely.intersection(
-                        split_lines_at_lower_milestone.geoms[1],
-                        split_lines_at_greater_milestone.geoms[0],
-                    )
-
-                    coordinate_of_metre_post = line_between_milestones.interpolate(
-                        distance=metre_post_at_percentage_between_milestones,
-                        normalized=True,
-                    )
-
-                    if sr_metre_post_boundary == sr.metre_post_from:
-                        sr.metre_post_from_coordinates = coordinate_of_metre_post
-                    else:
-                        sr.metre_post_to_coordinates = coordinate_of_metre_post
-                    pass
-                pass
-
-        feature_collection = geojson.FeatureCollection(features)
-        self.export_map(feature_collection)
-
-    def export_map(self, feature_collection):
+    def export_map(self, feature_collection: geojson.FeatureCollection) -> None:
         geojson_layer = Layer(
             "GeoJsonLayer",
             data=feature_collection,
