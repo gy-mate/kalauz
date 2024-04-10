@@ -2,81 +2,77 @@
 theme: apple-basic
 
 layout: intro-image
-image: '/SRs_Hegyeshalom.jpeg'
+image: './MTR_MAV.png'
 
-transition: slide-left
+transition: fade
 ---
 
 <div class="absolute top-10">
-	<span class="font-200">
-		<b>Kutató:</b><br>
-		Gyöngyösi Máté szociológus,<br>
-		üzemmérnök-informatikus BProf hallgató<br>
-		Villamosmérnöki és Informatikai Kar<br><br>
-		<b>Témavezető:</b><br>
-		Dr. Orosz Csaba egyetemi docens<br>
-		Építőmérnöki Kar<br>
-		Út és Vasútépítési Tanszék
+	<span class="font-700">
+		Gyöngyösi Máté – @gymate<br>
 	</span>
-</div>
-
-<div style="text-align: right">
-	<span class="font-200">
-		Szekció neve<br>
-        2024. 05. 29. 1x:xx
-	</span>
+    <span class="font-200">
+        NNG Kft. Audmax<br>
+        2024. 04. 15. 19:00
+    </span>
 </div>
 
 <div class="absolute bottom-10">
-	<h1>Sebességkorlátozások</h1>
-	<p>jellemzőinek elemzése a magyarországi vasúthálózaton<br>
-mesterséges intelligenciával és geoinformatikai módszerekkel</p>
+	<h1>Vasúti térinformatikai adatok</h1>
+    <p>minősége, felvitele és használata</p>
 </div>
 
+
 ---
+src: "slides_OSM/lassujelek.md"
+---
+
+---
+src: "slides_OSM/allomasok.md"
+---
+
+---
+src: "slides_OSM/vonalak.md"
+---
+
+
+---
+layout: intro-image-right
+image: './MAV_1_felujitas.jpeg'
+
 transition: slide-left
 ---
 
-# Kutatási terv
+# Haladás
 
-rövid összefoglalás
 
 ---
-transition: slide-up
-
 layout: iframe
 url: https://gy-mate.github.io/kalauz/data/04_exported/map_pydeck_2024-03-26.html
+
+transition: slide-up
 ---
 
-# Teszt
-
-```python
-import geojson
-
-def visualise_srs(self) -> None:
-        features = []
-        for i, node in enumerate(self.osm_data.nodes):
-            point = geojson.Point((float(node.lon), float(node.lat)))
-            node.tags |= {"line_color": [0, 0, 0, 0]}
-            feature = geojson.Feature(
-                geometry=point,
-                properties=node.tags,
-            )
-            features.append(feature)
-```
 
 ---
-transition: fade-out
+layout: image
+image: './OSM_szerkeszteseim.png'
+
+transition: slide-left
 ---
 
-# Eredmények
-
-és azok összevetése a vállalásokkal
 
 ---
-layout: quote
+layout: image
+image: './megallj-jelzo.jpg'
+
+transition: slide-left
 ---
 
-A kutatás a Kulturális és Innovációs Minisztérium *ÚNKP-23-1-I-BME-354* kódszámú Új Nemzeti Kiválóság Programjának a Nemzeti Kutatási, Fejlesztési és Innovációs Alapból finanszírozott szakmai támogatásával készült.
 
-![ÚNKP-, NKFI- & KIM-logo](/funding.svg)
+---
+layout: iframe
+url: https://wiki.openstreetmap.org/wiki/Tag:railway%3Dstation
+
+transition: slide-up
+---
