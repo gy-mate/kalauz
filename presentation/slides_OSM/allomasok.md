@@ -117,6 +117,14 @@ transition: slide-left
 
 
 ---
+layout: iframe
+url: https://wiki.openstreetmap.org/w/index.php?title=Tag:railway%3Dstation&oldid=2594058
+
+transition: slide-up
+---
+
+
+---
 transition: slide-up
 ---
 
@@ -130,6 +138,16 @@ transition: slide-up
 
 
 ---
+layout: intro-image-right
+image: './OSM_forum-discussion_QR.png'
+
+transition: slide-left
+---
+
+https://community.openstreetmap.org/t/railway-station-as-an-area/104839/
+
+
+---
 layout: iframe
 url: https://wiki.openstreetmap.org/wiki/Tag:railway=facility
 
@@ -138,13 +156,11 @@ transition: slide-up
 
 
 ---
-layout: intro-image-right
-image: './OSM_forum-discussion_QR.png'
+layout: iframe
+url: https://wiki.openstreetmap.org/wiki/Tag:railway%3Dstation
 
-transition: slide-left
+transition: slide-up
 ---
-
-https://community.openstreetmap.org/t/railway-station-as-an-area/104839/
 
 
 ---

@@ -68,11 +68,3 @@ image: './megallj-jelzo.jpg'
 
 transition: slide-left
 ---
-
-
----
-layout: iframe
-url: https://wiki.openstreetmap.org/wiki/Tag:railway%3Dstation
-
-transition: slide-up
----
