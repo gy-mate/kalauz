@@ -1,6 +1,6 @@
 ---
 layout: intro-image-right
-image: './vonalak_terkep_1956.jpg'
+image: '/MAV_vonalak_terkep_1956.jpg'
 
 transition: slide-left
 ---
@@ -14,7 +14,7 @@ transition: slide-left
 
 ---
 layout: image
-image: './MAV-Start_4.png'
+image: '/MAV-Start_4.png'
 backgroundSize: contain
 
 transition: slide-left
@@ -31,7 +31,7 @@ transition: slide-up
 
 ---
 layout: intro-image-right
-image: './OSM_Hungary_vasut_QR.png'
+image: '/OSM_Hungary_vasut_QR.png'
 
 transition: slide-left
 ---
@@ -49,7 +49,7 @@ transition: slide-up
 
 ---
 layout: intro-image-right
-image: './OSM_1AK.png'
+image: '/OSM_1AK.png'
 
 transition: slide-up
 ---
@@ -66,7 +66,7 @@ transition: slide-up
 
 ---
 layout: intro-image-right
-image: './VPE_Kapella_QR.png'
+image: '/VPE_Kapella_QR.png'
 
 transition: slide-left
 ---
@@ -76,7 +76,7 @@ https://www.kapella2.hu/ehuszfelulet/vonalak
 
 ---
 layout: intro-image-right
-image: './OSM_113.png'
+image: '/OSM_113.png'
 
 transition: slide-up
 ---
@@ -98,7 +98,7 @@ transition: slide-up
 
 ---
 layout: intro-image-right
-image: './VPE_HUSZ_QR.png'
+image: '/VPE_HUSZ_QR.png'
 
 transition: slide-left
 ---
@@ -110,7 +110,7 @@ https://www.vpe.hu/halozati-uzletszabalyzat-husz/husz-2023-2024
 
 ---
 layout: image
-image: './VPE_HUSZ.png'
+image: '/VPE_HUSZ.png'
 backgroundSize: contain
 
 transition: slide-up
@@ -137,7 +137,7 @@ transition: slide-left
 
 ---
 layout: intro-image-right
-image: './MAV_Gyor_Desiro.jpeg'
+image: '/MAV_Gyor_Desiro.jpeg'
 
 transition: slide-left
 ---
@@ -147,7 +147,7 @@ transition: slide-left
 
 ---
 layout: intro-image-right
-image: './OSM_30_Kelenfold.png'
+image: '/OSM_30_Kelenfold.png'
 
 transition: slide-up
 ---
@@ -157,7 +157,7 @@ transition: slide-up
 
 ---
 layout: image
-image: './OSM_30_Kelenfold_edit.png'
+image: '/OSM_30_Kelenfold_edit.png'
 backgroundSize: contain
 
 transition: slide-left

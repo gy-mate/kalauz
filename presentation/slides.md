@@ -2,7 +2,7 @@
 theme: apple-basic
 
 layout: intro-image
-image: './MTR_MAV.png'
+image: '/MAV_MTR.png'
 
 transition: fade
 ---
@@ -38,7 +38,7 @@ src: "slides_OSM/vonalak.md"
 
 ---
 layout: intro-image-right
-image: './MAV_1_felujitas.jpeg'
+image: '/MAV_1_felujitas.jpeg'
 
 transition: slide-left
 ---
@@ -56,7 +56,7 @@ transition: slide-up
 
 ---
 layout: image
-image: './OSM_szerkeszteseim.png'
+image: '/OSM_szerkeszteseim.png'
 
 transition: slide-left
 ---
@@ -64,7 +64,7 @@ transition: slide-left
 
 ---
 layout: image
-image: './megallj-jelzo.jpg'
+image: '/megallj-jelzo.jpg'
 
 transition: slide-left
 ---

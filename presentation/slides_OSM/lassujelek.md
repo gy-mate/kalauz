@@ -1,6 +1,6 @@
 ---
 layout: intro-image-right
-image: './SRs_Hegyeshalom.jpeg'
+image: '/SRs_Hegyeshalom.jpeg'
 
 transition: slide-up
 ---
@@ -23,7 +23,7 @@ transition: slide-up
 
 ---
 layout: image
-image: './KOZOP_lassujelterkep.gif'
+image: '/KOZOP_lassujelterkep.gif'
 backgroundSize: contain
 
 transition: slide-left
