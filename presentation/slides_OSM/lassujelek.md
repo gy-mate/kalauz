@@ -13,7 +13,7 @@ transition: slide-up
 ---
 
 <!--suppress HtmlUnknownTag, HtmlUnknownTarget -->
-<SlidevVideo controls="true" autoPlay="true" autoPause="slide" autoReset="slide">
+<SlidevVideo controls=true autoPlay=true autoPause="slide" autoReset="slide">
   <source src="/GYSEV_Rajka-Szolnok_lassujelek.mp4" type="video/mp4"/>
   <p>
     Your browser does not support videos.

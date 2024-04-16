@@ -129,7 +129,7 @@ transition: slide-up
 ---
 
 <!--suppress HtmlUnknownTag, HtmlUnknownTarget -->
-<SlidevVideo controls="true" autoPlay="true" autoPause="slide" autoReset="slide">
+<SlidevVideo controls=true autoPlay=true autoPause="slide" autoReset="slide">
   <source src="/OSM_forum-discussion.mp4" type="video/mp4"/>
   <p>
     Your browser does not support videos.
@@ -159,7 +159,7 @@ transition: slide-up
 layout: iframe
 url: https://wiki.openstreetmap.org/wiki/Tag:railway%3Dstation
 
-transition: slide-up
+transition: slide-left
 ---
 
 
@@ -176,8 +176,6 @@ transition: slide-left
 layout: image
 image: '/OSM_switch.png'
 backgroundSize: contain
-
-transition: fade
 ---
 
 
@@ -186,5 +184,19 @@ layout: image
 image: '/OSM_track.png'
 backgroundSize: contain
 
-transition: slide-left
+transition: slide-up
 ---
+
+
+---
+transition: slide-up
+---
+
+# Számok felvitele
+
+- Arab számként (`VIII` ➡️ `8`)
+- A bevezető nullákat elhagyni (`R01` ➡️ `R1`)
+- A perjeleket elhagyni (`A/1` ➡️ `A1`) – kivéve, ha a perjel mindkét oldalán szám van (`1/1` 🚫 `11`)
+- Ha egy vágánynak van száma / betűje, és más olyan számú / betűjelű vágány nincs az állomáson:
+    - A szöveget elhagyni, és csak a számot / betűt beírni (`10. csonkavágány` ➡️ `10`)
+- Egy átszelési kitérő (angol váltó) egy darab váltónak minősül, és `a`, `b` vagy `ab` nélkül megjelölni

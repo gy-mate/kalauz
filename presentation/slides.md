@@ -1,10 +1,11 @@
 ---
+author: Máté Gyöngyösi
+exportFilename: 'OSM.pdf'
+
 theme: apple-basic
 
 layout: intro-image
 image: '/MAV_MTR.png'
-
-transition: fade
 ---
 
 <div class="absolute top-10">
@@ -51,14 +52,6 @@ layout: iframe
 url: https://gy-mate.github.io/kalauz/data/04_exported/map_pydeck_2024-03-26.html
 
 transition: slide-up
----
-
-
----
-layout: image
-image: '/OSM_szerkeszteseim.png'
-
-transition: slide-left
 ---
 
 
