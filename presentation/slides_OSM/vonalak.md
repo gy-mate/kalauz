@@ -36,8 +36,6 @@ image: '/OSM_Hungary_vasut_QR.png'
 transition: slide-left
 ---
 
-# https://wiki.openstreetmap.org/wiki/Hungary/Vasútvonalak
-## https://wiki.openstreetmap.org/wiki/Hungary/Vasútvonalak
 https://wiki.openstreetmap.org/wiki/Hungary/Vasútvonalak
 
 
