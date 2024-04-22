@@ -1,6 +1,6 @@
 ---
 layout: intro-image-right
-image: '/MAV_MTR_window.png'
+image: '/OSM/MAV_MTR_window.png'
 
 transition: slide-left
 ---
@@ -14,7 +14,7 @@ transition: slide-left
 
 ---
 layout: intro-image-right
-image: '/MAV_Szekesfehervar_torony.jpg'
+image: '/OSM/MAV_Szekesfehervar_torony.jpg'
 
 transition: slide-left
 ---
@@ -45,7 +45,7 @@ transition: slide-up
 
 ---
 layout: intro-image-right
-image: '/VPE_map_QR.png'
+image: '/OSM/VPE_map_QR.png'
 
 transition: slide-left
 ---
@@ -63,7 +63,7 @@ transition: slide-up
 
 ---
 layout: intro-image-right
-image: '/MAV_AVU_QR.png'
+image: '/OSM/MAV_AVU_QR.png'
 
 transition: slide-left
 ---
@@ -81,7 +81,7 @@ transition: slide-left
 
 ---
 layout: image
-image: '/KTI_utvonalkonyv_30.png'
+image: '/OSM/KTI_utvonalkonyv_30.png'
 backgroundSize: contain
 
 transition: slide-up
@@ -90,7 +90,7 @@ transition: slide-up
 
 ---
 layout: image
-image: '/GYSEV_Szombathely.heic'
+image: '/OSM/GYSEV_Szombathely.heic'
 backgroundSize: contain
 
 transition: slide-up
@@ -99,7 +99,7 @@ transition: slide-up
 
 ---
 layout: intro-image-right
-image: '/Kimittud_QR.png'
+image: '/OSM/Kimittud_QR.png'
 
 transition: slide-left
 ---
@@ -139,7 +139,7 @@ transition: slide-up
 
 ---
 layout: intro-image-right
-image: '/OSM_forum-discussion_QR.png'
+image: '/OSM/OSM_forum-discussion_QR.png'
 
 transition: slide-left
 ---
@@ -165,7 +165,7 @@ transition: slide-left
 
 ---
 layout: image
-image: '/OpenRailwayMap_slow.png'
+image: '/OSM/OpenRailwayMap_slow.png'
 backgroundSize: contain
 
 transition: slide-left
@@ -174,14 +174,14 @@ transition: slide-left
 
 ---
 layout: image
-image: '/OSM_switch.png'
+image: '/OSM/OSM_switch.png'
 backgroundSize: contain
 ---
 
 
 ---
 layout: image
-image: '/OSM_track.png'
+image: '/OSM/OSM_track.png'
 backgroundSize: contain
 
 transition: slide-up
