@@ -61,6 +61,7 @@ A program for...
 | TSR          | temporary speed restriction |
 | ASR          | all speed restrictions      |
 | MU           | multiple unit               |
+| MP           | multipolygon                |
 
 
 ## 📜 License
