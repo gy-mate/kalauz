@@ -212,15 +212,44 @@ class Mapper(DataProcessor):
 
         self.TODAY_SIMULATED = datetime(2024, 1, 18, 21, 59, 59)
         self.COLOR_TAG = "line_color"
-
-        self.show_lines_with_no_data = show_lines_with_no_data
-        self.query_operating_sites: str = """
+        self.QUERY_MAIN_PARAMETERS = """
             [out:json];
             
             area["ISO3166-1"="HU"]
               -> .country;
             
-            
+        """
+
+        self.show_lines_with_no_data = show_lines_with_no_data
+        self.query_operating_site_nodes: str = self.QUERY_MAIN_PARAMETERS + """
+            (
+                node["operator"="MÁV"]["railway"="station"]["name"](area.country);
+                node["operator"="GYSEV"]["railway"="station"]["name"](area.country);
+                
+                node["operator"="MÁV"]["railway"="halt"]["name"](area.country);
+                node["operator"="GYSEV"]["railway"="halt"]["name"](area.country);
+                
+                node["operator"="MÁV"]["railway"="yard"]["name"](area.country);
+                node["operator"="GYSEV"]["railway"="yard"]["name"](area.country);
+                
+                node["operator"="MÁV"]["railway"="service_station"]["name"](area.country);
+                node["operator"="GYSEV"]["railway"="service_station"]["name"](area.country);
+                
+                node["operator"="MÁV"]["railway"="junction"]["name"](area.country);
+                node["operator"="GYSEV"]["railway"="junction"]["name"](area.country);
+                
+                node["operator"="MÁV"]["railway"="crossover"]["name"](area.country);
+                node["operator"="GYSEV"]["railway"="crossover"]["name"](area.country);
+                
+                node["operator"="MÁV"]["railway"="spur_junction"]["name"](area.country);
+                node["operator"="GYSEV"]["railway"="spur_junction"]["name"](area.country);
+                
+                node["operator"="MÁV"]["railway"="site"]["name"](area.country);
+                node["operator"="GYSEV"]["railway"="site"]["name"](area.country);
+            );
+            out;
+        """
+        self.query_operating_site_areas: str = self.QUERY_MAIN_PARAMETERS + """
             (
                 area["operator"="MÁV"]["railway"="station"]["name"](area.country);
                 area["operator"="GYSEV"]["railway"="station"]["name"](area.country);
@@ -264,15 +293,6 @@ class Mapper(DataProcessor):
             );
             (._;>;);
             out;
-            
-            node(1547493571) -> .budaors;
-            area["landuse"="railway"](around.budaors:100);
-            (._;>;);
-            out;
-            
-            node(6712170720) -> .rakos;
-            relation["type"="multipolygon"]["landuse"="railway"](around.rakos:100);
-            out geom;
         """
         # future: replace query with uncommented lines below when https://github.com/drolbr/Overpass-API/issues/146 is closed
         # self.query_operating_sites: str = """
@@ -333,7 +353,7 @@ class Mapper(DataProcessor):
 
     def download_operating_sites(self, api: Overpass) -> Result:
         self.logger.debug(f"Short query started...")
-        result = api.query(self.query_operating_sites)
+        result = api.query(self.query_operating_site_areas)
         self.logger.debug(f"...finished!")
         return result
 
