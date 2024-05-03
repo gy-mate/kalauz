@@ -19,7 +19,7 @@ from src.OSM_processors.mapper import Mapper
 
 def main(
     demonstration=False,
-    show_lines_with_no_data=False,
+    show_lines_with_no_data=True,
 ) -> None:
     configure_logging(demonstration)
     load_dotenv()

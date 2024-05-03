@@ -130,7 +130,9 @@ def get_distance_percentage_between_milestones(
 
 
 def get_nearest_milestones(
-    milestones_current: list[Node], nearest_milestones: list[Node], sr_metre_post_boundary: int
+    milestones_current: list[Node],
+    nearest_milestones: list[Node],
+    sr_metre_post_boundary: int,
 ) -> None:
     while len(nearest_milestones) < 2:
         nearest_milestone_current = get_nearest_milestone(
@@ -166,7 +168,7 @@ def get_ways_between_milestones(
         [],
         [],
     )
-    ways_between_milestones: list[Way] = NotImplemented
+    ways_between_milestones: list[Way] = []
     for way in ways_of_line:
         if way is way_of_greater_milestone:
             if way_of_lower_milestone.nodes[0] in way.nodes:
@@ -209,6 +211,7 @@ class Mapper(DataProcessor):
         super().__init__()
 
         self.TODAY_SIMULATED = datetime(2024, 1, 18, 21, 59, 59)
+        self.COLOR_TAG = "line_color"
 
         self.show_lines_with_no_data = show_lines_with_no_data
         self.query_operating_sites: str = """
@@ -219,49 +222,58 @@ class Mapper(DataProcessor):
             
             
             (
-                area["operator"="MÁV"]["railway"="station"]["uic_ref"](area.country);
-                area["operator"="GYSEV"]["railway"="station"]["uic_ref"](area.country);
-                relation["type"="multipolygon"]["operator"="MÁV"]["railway"="station"]["uic_ref"](area.country);
-                relation["type"="multipolygon"]["operator"="GYSEV"]["railway"="station"]["uic_ref"](area.country);
+                area["operator"="MÁV"]["railway"="station"]["name"](area.country);
+                area["operator"="GYSEV"]["railway"="station"]["name"](area.country);
+                relation["type"="multipolygon"]["operator"="MÁV"]["railway"="station"]["name"](area.country);
+                relation["type"="multipolygon"]["operator"="GYSEV"]["railway"="station"]["name"](area.country);
                 
-                area["operator"="MÁV"]["railway"="halt"]["uic_ref"](area.country);
-                area["operator"="GYSEV"]["railway"="halt"]["uic_ref"](area.country);
-                relation["type"="multipolygon"]["operator"="MÁV"]["railway"="halt"]["uic_ref"](area.country);
-                relation["type"="multipolygon"]["operator"="GYSEV"]["railway"="halt"]["uic_ref"](area.country);
+                area["operator"="MÁV"]["railway"="halt"]["name"](area.country);
+                area["operator"="GYSEV"]["railway"="halt"]["name"](area.country);
+                relation["type"="multipolygon"]["operator"="MÁV"]["railway"="halt"]["name"](area.country);
+                relation["type"="multipolygon"]["operator"="GYSEV"]["railway"="halt"]["name"](area.country);
                 
-                area["operator"="MÁV"]["railway"="yard"]["uic_ref"](area.country);
-                area["operator"="GYSEV"]["railway"="yard"]["uic_ref"](area.country);
-                relation["type"="multipolygon"]["operator"="MÁV"]["railway"="yard"]["uic_ref"](area.country);
-                relation["type"="multipolygon"]["operator"="GYSEV"]["railway"="yard"]["uic_ref"](area.country);
+                area["operator"="MÁV"]["railway"="yard"]["name"](area.country);
+                area["operator"="GYSEV"]["railway"="yard"]["name"](area.country);
+                relation["type"="multipolygon"]["operator"="MÁV"]["railway"="yard"]["name"](area.country);
+                relation["type"="multipolygon"]["operator"="GYSEV"]["railway"="yard"]["name"](area.country);
                 
-                area["operator"="MÁV"]["railway"="service_station"]["uic_ref"](area.country);
-                area["operator"="GYSEV"]["railway"="service_station"]["uic_ref"](area.country);
-                relation["type"="multipolygon"]["operator"="MÁV"]["railway"="service_station"]["uic_ref"](area.country);
-                relation["type"="multipolygon"]["operator"="GYSEV"]["railway"="service_station"]["uic_ref"](area.country);
+                area["operator"="MÁV"]["railway"="service_station"]["name"](area.country);
+                area["operator"="GYSEV"]["railway"="service_station"]["name"](area.country);
+                relation["type"="multipolygon"]["operator"="MÁV"]["railway"="service_station"]["name"](area.country);
+                relation["type"="multipolygon"]["operator"="GYSEV"]["railway"="service_station"]["name"](area.country);
                 
-                area["operator"="MÁV"]["railway"="junction"]["uic_ref"](area.country);
-                area["operator"="GYSEV"]["railway"="junction"]["uic_ref"](area.country);
-                relation["type"="multipolygon"]["operator"="MÁV"]["railway"="junction"]["uic_ref"](area.country);
-                relation["type"="multipolygon"]["operator"="GYSEV"]["railway"="junction"]["uic_ref"](area.country);
+                area["operator"="MÁV"]["railway"="junction"]["name"](area.country);
+                area["operator"="GYSEV"]["railway"="junction"]["name"](area.country);
+                relation["type"="multipolygon"]["operator"="MÁV"]["railway"="junction"]["name"](area.country);
+                relation["type"="multipolygon"]["operator"="GYSEV"]["railway"="junction"]["name"](area.country);
                 
-                area["operator"="MÁV"]["railway"="crossover"]["uic_ref"](area.country);
-                area["operator"="GYSEV"]["railway"="crossover"]["uic_ref"](area.country);
-                relation["type"="multipolygon"]["operator"="MÁV"]["railway"="crossover"]["uic_ref"](area.country);
-                relation["type"="multipolygon"]["operator"="GYSEV"]["railway"="crossover"]["uic_ref"](area.country);
+                area["operator"="MÁV"]["railway"="crossover"]["name"](area.country);
+                area["operator"="GYSEV"]["railway"="crossover"]["name"](area.country);
+                relation["type"="multipolygon"]["operator"="MÁV"]["railway"="crossover"]["name"](area.country);
+                relation["type"="multipolygon"]["operator"="GYSEV"]["railway"="crossover"]["name"](area.country);
                 
-                area["operator"="MÁV"]["railway"="spur_junction"]["uic_ref"](area.country);
-                area["operator"="GYSEV"]["railway"="spur_junction"]["uic_ref"](area.country);
-                relation["type"="multipolygon"]["operator"="MÁV"]["railway"="spur_junction"]["uic_ref"](area.country);
-                relation["type"="multipolygon"]["operator"="GYSEV"]["railway"="spur_junction"]["uic_ref"](area.country);
+                area["operator"="MÁV"]["railway"="spur_junction"]["name"](area.country);
+                area["operator"="GYSEV"]["railway"="spur_junction"]["name"](area.country);
+                relation["type"="multipolygon"]["operator"="MÁV"]["railway"="spur_junction"]["name"](area.country);
+                relation["type"="multipolygon"]["operator"="GYSEV"]["railway"="spur_junction"]["name"](area.country);
                 
-                area["operator"="MÁV"]["railway"="site"]["uic_ref"](area.country);
-                area["operator"="GYSEV"]["railway"="site"]["uic_ref"](area.country);
-                relation["type"="multipolygon"]["operator"="MÁV"]["railway"="site"]["uic_ref"](area.country);
-                relation["type"="multipolygon"]["operator"="GYSEV"]["railway"="site"]["uic_ref"](area.country);
+                area["operator"="MÁV"]["railway"="site"]["name"](area.country);
+                area["operator"="GYSEV"]["railway"="site"]["name"](area.country);
+                relation["type"="multipolygon"]["operator"="MÁV"]["railway"="site"]["name"](area.country);
+                relation["type"="multipolygon"]["operator"="GYSEV"]["railway"="site"]["name"](area.country);
             );
             (._;>;);
             out;
-            """
+            
+            node(1547493571) -> .budaors;
+            area["landuse"="railway"](around.budaors:100);
+            (._;>;);
+            out;
+            
+            node(6712170720) -> .rakos;
+            relation["type"="multipolygon"]["landuse"="railway"](around.rakos:100);
+            out geom;
+        """
         # future: replace query with uncommented lines below when https://github.com/drolbr/Overpass-API/issues/146 is closed
         # self.query_operating_sites: str = """
         # [out:json];
@@ -278,18 +290,18 @@ class Mapper(DataProcessor):
         #
         # """
         self.query_final: str = """
-        [out:json];
-        
-        area["ISO3166-1"="HU"]
-            -> .country;
-        
-        (
-            relation["route"="railway"]["ref"]["operator"~"MÁV"](area.country);
-            relation["route"="railway"]["ref"]["operator"~"GYSEV"](area.country);
-        );
-        >>;
-        out;
-        
+            [out:json];
+            
+            area["ISO3166-1"="HU"]
+                -> .country;
+            
+            (
+                relation["route"="railway"]["ref"]["operator"~"MÁV"](area.country);
+                relation["route"="railway"]["ref"]["operator"~"GYSEV"](area.country);
+            );
+            >>;
+            out;
+            
         """
 
         self.osm_data: Result = NotImplemented
@@ -326,7 +338,7 @@ class Mapper(DataProcessor):
         return result
 
     def download_final(self, api: Overpass, operating_sites: Result) -> None:
-        operating_site_areas, operating_site_relations = (
+        operating_site_areas, operating_site_mp_relations = (
             extract_operating_site_polygons(operating_sites)
         )
 
@@ -336,7 +348,7 @@ class Mapper(DataProcessor):
             """
             self.add_operating_site_elements(operating_site_area)
 
-        for operating_site_relation in operating_site_relations:
+        for operating_site_relation in operating_site_mp_relations:
             self.query_final += f"""
             relation({operating_site_relation["element_id"]});
             map_to_area -> .operatingSite;
@@ -394,7 +406,6 @@ class Mapper(DataProcessor):
             select *
             from speed_restrictions
             where
-                line = 30 and
                 on_main_track = 1 and
                 time_from <= :now and (:now < time_to or time_to is null);
             """
@@ -436,71 +447,98 @@ class Mapper(DataProcessor):
         self.add_all_nodes(features_to_visualise)
         self.add_na_lines(features_to_visualise)
 
-        for sr in self.srs:
-            ways_of_line = self.get_ways_of_corresponding_line(sr)
-            nodes_of_line = [node for way in ways_of_line for node in way.nodes]
-            milestones = get_milestones(nodes=nodes_of_line)
-
-            for i, sr_metre_post_boundary in enumerate(
-                (sr.metre_post_from, sr.metre_post_to)
-            ):
-                nearest_milestones: list[Node] = []
-                milestones_current = milestones.copy()
-
-                get_nearest_milestones(
-                    milestones_current, nearest_milestones, sr_metre_post_boundary
-                )
-                metre_post_at_percentage_between_milestones = (
-                    get_distance_percentage_between_milestones(
-                        nearest_milestones, sr_metre_post_boundary
-                    )
-                )
-                way_of_lower_milestone, way_of_greater_milestone = (
-                    get_ways_of_milestones(nearest_milestones, ways_of_line)
-                )
-                ways_between_milestones = get_ways_between_milestones(
-                    way_of_greater_milestone,
-                    way_of_lower_milestone,
-                    ways_of_line,
-                )
-                merged_ways_between_milestones = merge_ways(ways_between_milestones)
-
-                split_lines_at_lower_milestone = split_lines(
-                    merged_ways_between_milestones,
-                    shapely.Point(
-                        (
-                            float(nearest_milestones[0].lon),
-                            float(nearest_milestones[0].lat),
-                        )
-                    ),
-                )
-                split_lines_at_greater_milestone = split_lines(
-                    merged_ways_between_milestones,
-                    shapely.Point(
-                        (
-                            float(nearest_milestones[-1].lon),
-                            float(nearest_milestones[-1].lat),
-                        )
-                    ),
-                )
-                line_between_milestones = shapely.intersection(
-                    split_lines_at_lower_milestone.geoms[1],
-                    split_lines_at_greater_milestone.geoms[0],
-                )
-
-                coordinate_of_metre_post = line_between_milestones.interpolate(
-                    distance=metre_post_at_percentage_between_milestones,
-                    normalized=True,
-                )
-
-                # future: make this prettier
-                if sr_metre_post_boundary == sr.metre_post_from:
-                    sr.metre_post_from_coordinates = coordinate_of_metre_post
-                else:
-                    sr.metre_post_to_coordinates = coordinate_of_metre_post
-
-                pass
-            pass
+        # for sr in self.srs:
+        #     try:
+        #         ways_of_line = self.get_ways_of_corresponding_line(sr)
+        #         nodes_of_line = [node for way in ways_of_line for node in way.nodes]
+        #         milestones = get_milestones(nodes=nodes_of_line)
+        #
+        #         for i, sr_metre_post_boundary in enumerate(
+        #             (sr.metre_post_from, sr.metre_post_to)
+        #         ):
+        #             nearest_milestones: list[Node] = []
+        #             milestones_current = milestones.copy()
+        #
+        #             get_nearest_milestones(
+        #                 milestones_current, nearest_milestones, sr_metre_post_boundary
+        #             )
+        #             metre_post_at_percentage_between_milestones = (
+        #                 get_distance_percentage_between_milestones(
+        #                     nearest_milestones, sr_metre_post_boundary
+        #                 )
+        #             )
+        #             way_of_lower_milestone, way_of_greater_milestone = (
+        #                 get_ways_of_milestones(nearest_milestones, ways_of_line)
+        #             )
+        #             ways_between_milestones = get_ways_between_milestones(
+        #                 way_of_greater_milestone,
+        #                 way_of_lower_milestone,
+        #                 ways_of_line,
+        #             )
+        #             merged_ways_between_milestones = merge_ways(ways_between_milestones)
+        #
+        #             split_lines_at_lower_milestone = split_lines(
+        #                 merged_ways_between_milestones,
+        #                 shapely.Point(
+        #                     (
+        #                         float(nearest_milestones[0].lon),
+        #                         float(nearest_milestones[0].lat),
+        #                     )
+        #                 ),
+        #             )
+        #             split_lines_at_greater_milestone = split_lines(
+        #                 merged_ways_between_milestones,
+        #                 shapely.Point(
+        #                     (
+        #                         float(nearest_milestones[-1].lon),
+        #                         float(nearest_milestones[-1].lat),
+        #                     )
+        #                 ),
+        #             )
+        #             line_between_milestones = shapely.intersection(
+        #                 split_lines_at_lower_milestone.geoms[1],
+        #                 split_lines_at_greater_milestone.geoms[0],
+        #             )
+        #
+        #             coordinate_of_metre_post = line_between_milestones.interpolate(
+        #                 distance=metre_post_at_percentage_between_milestones,
+        #                 normalized=True,
+        #             )
+        #
+        #             # future: make this prettier
+        #             if sr_metre_post_boundary == sr.metre_post_from:
+        #                 sr.metre_post_from_coordinates = coordinate_of_metre_post
+        #             else:
+        #                 sr.metre_post_to_coordinates = coordinate_of_metre_post
+        #
+        #             pass
+        #     except IndexError as exception:
+        #         prepared_lines = [
+        #             "1",
+        #             "1U",
+        #             "303",
+        #             "1T",
+        #             "1Q",
+        #             "1P",
+        #             "146",
+        #             "146L",
+        #             "113",
+        #             "30",
+        #             "8",
+        #             "8G",
+        #             "8GR",
+        #             "8E",
+        #             "524",
+        #             "18",
+        #             "17",
+        #             "9",
+        #         ]
+        #         if sr.line not in prepared_lines:
+        #             pass
+        #         else:
+        #             self.logger.debug(exception)
+        #             raise
+        #     pass
 
         feature_collection_to_visualise = geojson.FeatureCollection(
             features_to_visualise
@@ -515,21 +553,26 @@ class Mapper(DataProcessor):
 
     def add_na_lines(self, features_to_visualise: list[geojson.Feature]) -> None:
         for way in self.osm_data.ways:
-            way = geojson.LineString(
+            way_line = geojson.LineString(
                 [(float(node.lon), float(node.lat)) for node in way.nodes]
             )
-            if way.id not in self.sr_ways:
-                way.tags |= {"line_color": [255, 255, 255, 0.5]}
-                feature = geojson.Feature(
-                    geometry=way,
-                    properties=way.tags,
+            way.tags |= {
+                self.COLOR_TAG: (
+                    [255, 255, 255] if way.id in self.sr_ways else [65, 65, 65]
                 )
-                features_to_visualise.append(feature)
+            }
+
+            feature = geojson.Feature(
+                geometry=way_line,
+                properties=way.tags,
+            )
+            features_to_visualise.append(feature)
 
     def add_all_nodes(self, features_to_visualise: list[geojson.Feature]) -> None:
         for node in self.osm_data.nodes:
             point = geojson.Point((float(node.lon), float(node.lat)))
-            node.tags |= {"line_color": [0, 0, 0, 0]}
+            node.tags |= {self.COLOR_TAG: [0, 0, 0, 0]}
+
             feature = geojson.Feature(
                 geometry=point,
                 properties=node.tags,
@@ -542,7 +585,7 @@ class Mapper(DataProcessor):
             data=feature_collection,
             pickable=True,
             line_width_min_pixels=2,
-            get_line_color="line_color",
+            get_line_color=self.COLOR_TAG,
             get_fill_color=[0, 0, 0],
         )
         view_state = ViewState(
