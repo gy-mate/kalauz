@@ -6,17 +6,19 @@ from typing import Any, Final
 import geojson  # type: ignore
 
 # future: remove the comment below when stubs for the library below are available
-from overpy import Element, Node, Overpass, Relation, Result, Way  # type: ignore
+from overpy import Area, Element, Node, Overpass, Relation, Result, Way  # type: ignore
 
 # future: remove the comment below when stubs for the library below are available
-from pydeck import Layer, Deck, ViewState  # type: ignore
+from pydeck import Deck, Layer, ViewState  # type: ignore
 import requests
 from requests import HTTPError
 
 # future: remove the comment below when stubs for the library below are available
 import shapely  # type: ignore
-from shapely import GeometryCollection, from_geojson, get_coordinates
-from shapely.geometry import shape
+from shapely import from_geojson, get_coordinates
+
+# future: remove the comment below when stubs for the library below are available
+from shapely.geometry import shape  # type: ignore
 
 # future: remove the comment below when stubs for the library below are available
 from shapely.ops import split  # type: ignore
@@ -33,14 +35,13 @@ from src.new_data_processors.common import DataProcessor
 
 
 def extract_operating_site_polygons(
-    operating_sites: Result,
+    areas: list[Area], multipolygons: list[Relation]
 ) -> tuple[list[dict[str, int | None]], list[dict[str, int | None]]]:
     operating_site_areas = [
-        get_ids_of_layers(operating_site) for operating_site in operating_sites.ways
+        get_ids_of_layers(operating_site) for operating_site in areas
     ]
     operating_site_relations = [
-        get_ids_of_layers(operating_site)
-        for operating_site in operating_sites.relations
+        get_ids_of_layers(operating_site) for operating_site in multipolygons
     ]
     return operating_site_areas, operating_site_relations
 
@@ -240,7 +241,7 @@ class Mapper(DataProcessor):
 
         self.show_lines_with_no_data = show_lines_with_no_data
 
-        self.query_operating_site_nodes = (
+        self.query_operating_site_elements = (
             self.QUERY_MAIN_PARAMETERS
             + """
             (
@@ -248,32 +249,24 @@ class Mapper(DataProcessor):
         )
         for value in self.OPERATING_SITE_TAG_VALUES:
             for operator in self.OPERATORS:
-                self.query_operating_site_nodes += f"""
-                    node["operator"="{operator}"]["railway"="{value}"]["name"](area.country);"""
-            self.query_operating_site_nodes += "\n"
-        self.query_operating_site_nodes += """
+                self.query_operating_site_elements += f"""
+                    node["operator"="{operator}"]["railway"="{value}"]["name"](area.country);
+                    area["operator"="{operator}"]["railway"="{value}"]["name"](area.country);
+                    relation["type"="multipolygon"]["operator"="{operator}"]["railway"="{value}"]["name"](area.country);
+                """
+            self.query_operating_site_elements += "\n"
+        self.query_operating_site_elements += """
             );
             out;
         """
 
-        # future: replace query with uncommented lines below when https://github.com/drolbr/Overpass-API/issues/146 is closed
-        # self.query_operating_sites: str = """
-        # [out:json];
-        #
-        # area["ISO3166-1"="HU"]
-        #     -> .country;
-        #
-        # (
-        #     relation["route"="railway"]["ref"]["operator"~"(^MÁV(?=;))|((?<=;)MÁV(?=;))|((?<=;)MÁV$)"](area.country);
-        #     relation["route"="railway"]["ref"]["operator"~"(^GYSEV(?=;))|((?<=;)GYSEV(?=;))|((?<=;)GYSEV$)"](area.country);
-        # );
-        # >>;
-        # out;
-        #
-        # """
         self.query_final: str = (
             self.QUERY_MAIN_PARAMETERS
+            # future: replace lines below when https://github.com/drolbr/Overpass-API/issues/146 is closed
+            #     relation["route"="railway"]["ref"]["operator"~"(^MÁV(?=;))|((?<=;)MÁV(?=;))|((?<=;)MÁV$)"](area.country);
+            #     relation["route"="railway"]["ref"]["operator"~"(^GYSEV(?=;))|((?<=;)GYSEV(?=;))|((?<=;)GYSEV$)"](area.country);
             + """
+            (
                 relation["route"="railway"]["ref"]["operator"~"MÁV"](area.country);
                 relation["route"="railway"]["ref"]["operator"~"GYSEV"](area.country);
             );
@@ -304,13 +297,13 @@ class Mapper(DataProcessor):
     def download_osm_data(self) -> None:
         api = Overpass()
 
-        operating_site_nodes = self.run_query(
+        operating_site_elements = self.run_query(
             api=api,
-            query_text=self.query_operating_site_nodes,
+            query_text=self.query_operating_site_elements,
         )
 
         node_polygons_query = self.QUERY_MAIN_PARAMETERS
-        for node in operating_site_nodes.nodes:
+        for node in operating_site_elements.nodes:
             node_polygons_query += f"""
                 node({node.id}) -> .station;
                 node.station;
@@ -329,6 +322,8 @@ class Mapper(DataProcessor):
         self.download_final(
             api=api,
             node_polygons=operating_site_node_polygons,
+            areas=operating_site_elements.areas,
+            multipolygons=operating_site_elements.relations,
         )
 
     def run_query(self, api: Overpass, query_text: str) -> Result:
@@ -354,45 +349,54 @@ class Mapper(DataProcessor):
             self.logger.critical(f"Failed to download file from {url}!")
             raise
 
-    def download_final(self, api: Overpass, node_polygons: Any) -> None:
+    def download_final(
+        self,
+        api: Overpass,
+        node_polygons: Any,
+        areas: list[Area],
+        multipolygons: list[Relation],
+    ) -> None:
         for i, element in enumerate(node_polygons["elements"]):
             try:
                 assert element["geometry"]
-                operating_site_polygon_array = get_coordinates(from_geojson(str(element["geometry"])))
+                operating_site_polygon_array = get_coordinates(
+                    from_geojson(str(element["geometry"]))
+                )
                 operating_site_polygon = ""
                 for coordinate in operating_site_polygon_array:
                     operating_site_polygon += f"{coordinate[1]} {coordinate[0]} "
-                pass
-                self.query_final += f"""
-                    (poly:"{operating_site_polygon}") -> .operatingSite;
-                """
+                operating_site_polygon = operating_site_polygon.strip()
                 try:
-                    layer = node_polygons["elements"][i-1]["tags"]["layer"]
+                    layer = node_polygons["elements"][i - 1]["tags"]["layer"]
                     self.query_final += f"""
                         (
-                            way["railway"="rail"]["layer"="{layer}"](area.operatingSite);
-                            way["disused:railway"="rail"]["layer"="{layer}"](area.operatingSite);
-                            way["abandoned:railway"="rail"]["layer"="{layer}"](area.operatingSite);
+                            way["railway"="rail"]["layer"="{layer}"](poly:"{operating_site_polygon}");
+                            way["disused:railway"="rail"]["layer"="{layer}"](poly:"{operating_site_polygon}");
+                            way["abandoned:railway"="rail"]["layer"="{layer}"](poly:"{operating_site_polygon}");
                         );"""
                 except KeyError:
                     self.query_final += f"""
                         (
-                            way["railway"="rail"][!"layer"](area.operatingSite);
-                            way["disused:railway"="rail"][!"layer"](area.operatingSite);
-                            way["abandoned:railway"="rail"][!"layer"](area.operatingSite);
+                            way["railway"="rail"][!"layer"](poly:"{operating_site_polygon}");
+                            way["disused:railway"="rail"][!"layer"](poly:"{operating_site_polygon}");
+                            way["abandoned:railway"="rail"][!"layer"](poly:"{operating_site_polygon}");
                             
-                            way["railway"="rail"]["layer"="0"](area.operatingSite);
-                            way["disused:railway"="rail"]["layer"="0"](area.operatingSite);
-                            way["abandoned:railway"="rail"]["layer"="0"](area.operatingSite);
+                            way["railway"="rail"]["layer"="0"](poly:"{operating_site_polygon}");
+                            way["disused:railway"="rail"]["layer"="0"](poly:"{operating_site_polygon}");
+                            way["abandoned:railway"="rail"]["layer"="0"](poly:"{operating_site_polygon}");
                         );"""
                 self.query_final += f"""
+                    (._;>;);
                     out;
                 """
             except KeyError:
                 pass
 
         operating_site_areas, operating_site_mp_relations = (
-            extract_operating_site_polygons(operating_sites)
+            extract_operating_site_polygons(
+                areas=areas,
+                multipolygons=multipolygons,
+            )
         )
 
         for operating_site_area in operating_site_areas:
