@@ -1,5 +1,6 @@
 import contextlib
 from datetime import datetime
+from typing import Final
 
 # future: remove the comment below when stubs for the library below are available
 import geojson  # type: ignore
@@ -210,18 +211,17 @@ class Mapper(DataProcessor):
     def __init__(self, show_lines_with_no_data: bool) -> None:
         super().__init__()
 
-        self.TODAY_SIMULATED = datetime(2024, 1, 18, 21, 59, 59)
-        self.COLOR_TAG = "line_color"
-        self.QUERY_MAIN_PARAMETERS = """
+        self.TODAY_SIMULATED: Final = datetime(2024, 1, 18, 21, 59, 59)
+        self.COLOR_TAG: Final = "line_color"
+        self.QUERY_MAIN_PARAMETERS: Final = """
             [out:json];
             
             area["ISO3166-1"="HU"]
               -> .country;
-            
-            
-            ("""
-        self.OPERATORS = ["MÁV", "GYSEV"]
-        self.OPERATING_SITE_TAG_VALUES = [
+              
+        """
+        self.OPERATORS: Final = ["MÁV", "GYSEV"]
+        self.OPERATING_SITE_TAG_VALUES: Final = [
             "station",
             "halt",
             "yard",
@@ -234,26 +234,16 @@ class Mapper(DataProcessor):
 
         self.show_lines_with_no_data = show_lines_with_no_data
 
-        self.query_operating_site_areas = self.query_operating_site_nodes = (
-            self.QUERY_MAIN_PARAMETERS
-        )
+        self.query_operating_site_nodes = self.QUERY_MAIN_PARAMETERS + """
+            (
+        """
         for value in self.OPERATING_SITE_TAG_VALUES:
             for operator in self.OPERATORS:
                 self.query_operating_site_nodes += f"""
-                    node["operator"="{operator}"]["railway"="{value}"]["name"](area.country);
-                """
-
-                self.query_operating_site_areas += f"""
-                    area["operator"="{operator}"]["railway"="{value}"]["name"](area.country);
-                    relation["type"="multipolygon"]["operator"="{operator}"]["railway"="{value}"]["name"](area.country);
-                """
+                    node["operator"="{operator}"]["railway"="{value}"]["name"](area.country);"""
+            self.query_operating_site_nodes += "\n"
         self.query_operating_site_nodes += """
             );
-            out;
-        """
-        self.query_operating_site_areas += """
-            );
-            (._;>;);
             out;
         """
 
@@ -305,21 +295,38 @@ class Mapper(DataProcessor):
     def download_osm_data(self) -> None:
         api = Overpass()
 
-        operating_site_nodes = self.download_operating_sites(
+        operating_site_nodes = self.run_query(
             api=api,
             query_text=self.query_operating_site_nodes,
         )
-        operating_site_areas = self.download_operating_sites(
+        
+        node_polygons_query = self.QUERY_MAIN_PARAMETERS
+        for node in operating_site_nodes.nodes:
+            node_polygons_query += f"""
+                node({node.id}) -> .station;
+                node.station;
+                out;
+                nwr(around.station:100)["landuse"="railway"];
+                convert item ::geom=geom();
+                out geom;
+            """
+        operating_site_node_polygons = self.run_query(
+            api=api,
+            query_text=node_polygons_query
+        )
+        
+        self.query_final
+        operating_site_areas = self.run_query(
             api=api,
             query_text=self.query_operating_site_areas,
         )
-        
+
         self.download_final(
             api=api,
             operating_sites=operating_site_areas,
         )
 
-    def download_operating_sites(self, api: Overpass, query_text: str) -> Result:
+    def run_query(self, api: Overpass, query_text: str) -> Result:
         self.logger.debug(f"Short query started...")
         result = api.query(query_text)
         self.logger.debug(f"...finished!")
