@@ -1,6 +1,6 @@
 import contextlib
 from datetime import datetime
-from typing import Final
+from typing import Any, Final
 
 # future: remove the comment below when stubs for the library below are available
 import geojson  # type: ignore
@@ -10,9 +10,13 @@ from overpy import Element, Node, Overpass, Relation, Result, Way  # type: ignor
 
 # future: remove the comment below when stubs for the library below are available
 from pydeck import Layer, Deck, ViewState  # type: ignore
+import requests
+from requests import HTTPError
 
 # future: remove the comment below when stubs for the library below are available
 import shapely  # type: ignore
+from shapely import GeometryCollection, from_geojson, get_coordinates
+from shapely.geometry import shape
 
 # future: remove the comment below when stubs for the library below are available
 from shapely.ops import split  # type: ignore
@@ -232,11 +236,16 @@ class Mapper(DataProcessor):
             "site",
         ]
 
+        self._dowload_session = requests.Session()
+
         self.show_lines_with_no_data = show_lines_with_no_data
 
-        self.query_operating_site_nodes = self.QUERY_MAIN_PARAMETERS + """
+        self.query_operating_site_nodes = (
+            self.QUERY_MAIN_PARAMETERS
+            + """
             (
         """
+        )
         for value in self.OPERATING_SITE_TAG_VALUES:
             for operator in self.OPERATORS:
                 self.query_operating_site_nodes += f"""
@@ -299,7 +308,7 @@ class Mapper(DataProcessor):
             api=api,
             query_text=self.query_operating_site_nodes,
         )
-        
+
         node_polygons_query = self.QUERY_MAIN_PARAMETERS
         for node in operating_site_nodes.nodes:
             node_polygons_query += f"""
@@ -310,20 +319,16 @@ class Mapper(DataProcessor):
                 convert item ::geom=geom();
                 out geom;
             """
-        operating_site_node_polygons = self.run_query(
-            api=api,
-            query_text=node_polygons_query
-        )
-        
-        self.query_final
-        operating_site_areas = self.run_query(
-            api=api,
-            query_text=self.query_operating_site_areas,
+        operating_site_node_polygons = geojson.loads(
+            self.get_data(
+                url=api.url,
+                body=node_polygons_query,
+            )
         )
 
         self.download_final(
             api=api,
-            operating_sites=operating_site_areas,
+            node_polygons=operating_site_node_polygons,
         )
 
     def run_query(self, api: Overpass, query_text: str) -> Result:
@@ -332,7 +337,60 @@ class Mapper(DataProcessor):
         self.logger.debug(f"...finished!")
         return result
 
-    def download_final(self, api: Overpass, operating_sites: Result) -> None:
+    def get_data(self, url: str, body: str) -> bytes:
+        try:
+            response = self._dowload_session.get(
+                url=url,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                    "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1.2 Safari/605.1.15"
+                },
+                data=body,
+            )
+            response.raise_for_status()
+            self.logger.debug(f"File successfully downloaded from {url}!")
+            return bytes(response.content)
+        except HTTPError:
+            self.logger.critical(f"Failed to download file from {url}!")
+            raise
+
+    def download_final(self, api: Overpass, node_polygons: Any) -> None:
+        for i, element in enumerate(node_polygons["elements"]):
+            try:
+                assert element["geometry"]
+                operating_site_polygon_array = get_coordinates(from_geojson(str(element["geometry"])))
+                operating_site_polygon = ""
+                for coordinate in operating_site_polygon_array:
+                    operating_site_polygon += f"{coordinate[1]} {coordinate[0]} "
+                pass
+                self.query_final += f"""
+                    (poly:"{operating_site_polygon}") -> .operatingSite;
+                """
+                try:
+                    layer = node_polygons["elements"][i-1]["tags"]["layer"]
+                    self.query_final += f"""
+                        (
+                            way["railway"="rail"]["layer"="{layer}"](area.operatingSite);
+                            way["disused:railway"="rail"]["layer"="{layer}"](area.operatingSite);
+                            way["abandoned:railway"="rail"]["layer"="{layer}"](area.operatingSite);
+                        );"""
+                except KeyError:
+                    self.query_final += f"""
+                        (
+                            way["railway"="rail"][!"layer"](area.operatingSite);
+                            way["disused:railway"="rail"][!"layer"](area.operatingSite);
+                            way["abandoned:railway"="rail"][!"layer"](area.operatingSite);
+                            
+                            way["railway"="rail"]["layer"="0"](area.operatingSite);
+                            way["disused:railway"="rail"]["layer"="0"](area.operatingSite);
+                            way["abandoned:railway"="rail"]["layer"="0"](area.operatingSite);
+                        );"""
+                self.query_final += f"""
+                    out;
+                """
+            except KeyError:
+                pass
+
         operating_site_areas, operating_site_mp_relations = (
             extract_operating_site_polygons(operating_sites)
         )
