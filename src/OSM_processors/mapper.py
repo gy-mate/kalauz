@@ -218,82 +218,45 @@ class Mapper(DataProcessor):
             area["ISO3166-1"="HU"]
               -> .country;
             
-        """
+            
+            ("""
+        self.OPERATORS = ["MÁV", "GYSEV"]
+        self.OPERATING_SITE_TAG_VALUES = [
+            "station",
+            "halt",
+            "yard",
+            "service_station",
+            "junction",
+            "crossover",
+            "spur_junction",
+            "site",
+        ]
 
         self.show_lines_with_no_data = show_lines_with_no_data
-        self.query_operating_site_nodes: str = self.QUERY_MAIN_PARAMETERS + """
-            (
-                node["operator"="MÁV"]["railway"="station"]["name"](area.country);
-                node["operator"="GYSEV"]["railway"="station"]["name"](area.country);
-                
-                node["operator"="MÁV"]["railway"="halt"]["name"](area.country);
-                node["operator"="GYSEV"]["railway"="halt"]["name"](area.country);
-                
-                node["operator"="MÁV"]["railway"="yard"]["name"](area.country);
-                node["operator"="GYSEV"]["railway"="yard"]["name"](area.country);
-                
-                node["operator"="MÁV"]["railway"="service_station"]["name"](area.country);
-                node["operator"="GYSEV"]["railway"="service_station"]["name"](area.country);
-                
-                node["operator"="MÁV"]["railway"="junction"]["name"](area.country);
-                node["operator"="GYSEV"]["railway"="junction"]["name"](area.country);
-                
-                node["operator"="MÁV"]["railway"="crossover"]["name"](area.country);
-                node["operator"="GYSEV"]["railway"="crossover"]["name"](area.country);
-                
-                node["operator"="MÁV"]["railway"="spur_junction"]["name"](area.country);
-                node["operator"="GYSEV"]["railway"="spur_junction"]["name"](area.country);
-                
-                node["operator"="MÁV"]["railway"="site"]["name"](area.country);
-                node["operator"="GYSEV"]["railway"="site"]["name"](area.country);
+
+        self.query_operating_site_areas = self.query_operating_site_nodes = (
+            self.QUERY_MAIN_PARAMETERS
+        )
+        for value in self.OPERATING_SITE_TAG_VALUES:
+            for operator in self.OPERATORS:
+                self.query_operating_site_nodes += f"""
+                    node["operator"="{operator}"]["railway"="{value}"]["name"](area.country);
+                """
+
+                self.query_operating_site_areas += f"""
+                    area["operator"="{operator}"]["railway"="{value}"]["name"](area.country);
+                    relation["type"="multipolygon"]["operator"="{operator}"]["railway"="{value}"]["name"](area.country);
+                """
+        self.query_operating_site_nodes += """
             );
             out;
         """
-        self.query_operating_site_areas: str = self.QUERY_MAIN_PARAMETERS + """
-            (
-                area["operator"="MÁV"]["railway"="station"]["name"](area.country);
-                area["operator"="GYSEV"]["railway"="station"]["name"](area.country);
-                relation["type"="multipolygon"]["operator"="MÁV"]["railway"="station"]["name"](area.country);
-                relation["type"="multipolygon"]["operator"="GYSEV"]["railway"="station"]["name"](area.country);
-                
-                area["operator"="MÁV"]["railway"="halt"]["name"](area.country);
-                area["operator"="GYSEV"]["railway"="halt"]["name"](area.country);
-                relation["type"="multipolygon"]["operator"="MÁV"]["railway"="halt"]["name"](area.country);
-                relation["type"="multipolygon"]["operator"="GYSEV"]["railway"="halt"]["name"](area.country);
-                
-                area["operator"="MÁV"]["railway"="yard"]["name"](area.country);
-                area["operator"="GYSEV"]["railway"="yard"]["name"](area.country);
-                relation["type"="multipolygon"]["operator"="MÁV"]["railway"="yard"]["name"](area.country);
-                relation["type"="multipolygon"]["operator"="GYSEV"]["railway"="yard"]["name"](area.country);
-                
-                area["operator"="MÁV"]["railway"="service_station"]["name"](area.country);
-                area["operator"="GYSEV"]["railway"="service_station"]["name"](area.country);
-                relation["type"="multipolygon"]["operator"="MÁV"]["railway"="service_station"]["name"](area.country);
-                relation["type"="multipolygon"]["operator"="GYSEV"]["railway"="service_station"]["name"](area.country);
-                
-                area["operator"="MÁV"]["railway"="junction"]["name"](area.country);
-                area["operator"="GYSEV"]["railway"="junction"]["name"](area.country);
-                relation["type"="multipolygon"]["operator"="MÁV"]["railway"="junction"]["name"](area.country);
-                relation["type"="multipolygon"]["operator"="GYSEV"]["railway"="junction"]["name"](area.country);
-                
-                area["operator"="MÁV"]["railway"="crossover"]["name"](area.country);
-                area["operator"="GYSEV"]["railway"="crossover"]["name"](area.country);
-                relation["type"="multipolygon"]["operator"="MÁV"]["railway"="crossover"]["name"](area.country);
-                relation["type"="multipolygon"]["operator"="GYSEV"]["railway"="crossover"]["name"](area.country);
-                
-                area["operator"="MÁV"]["railway"="spur_junction"]["name"](area.country);
-                area["operator"="GYSEV"]["railway"="spur_junction"]["name"](area.country);
-                relation["type"="multipolygon"]["operator"="MÁV"]["railway"="spur_junction"]["name"](area.country);
-                relation["type"="multipolygon"]["operator"="GYSEV"]["railway"="spur_junction"]["name"](area.country);
-                
-                area["operator"="MÁV"]["railway"="site"]["name"](area.country);
-                area["operator"="GYSEV"]["railway"="site"]["name"](area.country);
-                relation["type"="multipolygon"]["operator"="MÁV"]["railway"="site"]["name"](area.country);
-                relation["type"="multipolygon"]["operator"="GYSEV"]["railway"="site"]["name"](area.country);
+        self.query_operating_site_areas += """
             );
             (._;>;);
             out;
         """
+
         # future: replace query with uncommented lines below when https://github.com/drolbr/Overpass-API/issues/146 is closed
         # self.query_operating_sites: str = """
         # [out:json];
@@ -309,13 +272,9 @@ class Mapper(DataProcessor):
         # out;
         #
         # """
-        self.query_final: str = """
-            [out:json];
-            
-            area["ISO3166-1"="HU"]
-                -> .country;
-            
-            (
+        self.query_final: str = (
+            self.QUERY_MAIN_PARAMETERS
+            + """
                 relation["route"="railway"]["ref"]["operator"~"MÁV"](area.country);
                 relation["route"="railway"]["ref"]["operator"~"GYSEV"](area.country);
             );
@@ -323,6 +282,7 @@ class Mapper(DataProcessor):
             out;
             
         """
+        )
 
         self.osm_data: Result = NotImplemented
         self.srs: list[SR] = []
@@ -345,15 +305,23 @@ class Mapper(DataProcessor):
     def download_osm_data(self) -> None:
         api = Overpass()
 
-        operating_sites = self.download_operating_sites(api)
+        operating_site_nodes = self.download_operating_sites(
+            api=api,
+            query_text=self.query_operating_site_nodes,
+        )
+        operating_site_areas = self.download_operating_sites(
+            api=api,
+            query_text=self.query_operating_site_areas,
+        )
+        
         self.download_final(
             api=api,
-            operating_sites=operating_sites,
+            operating_sites=operating_site_areas,
         )
 
-    def download_operating_sites(self, api: Overpass) -> Result:
+    def download_operating_sites(self, api: Overpass, query_text: str) -> Result:
         self.logger.debug(f"Short query started...")
-        result = api.query(self.query_operating_site_areas)
+        result = api.query(query_text)
         self.logger.debug(f"...finished!")
         return result
 
