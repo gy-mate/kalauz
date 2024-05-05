@@ -223,7 +223,7 @@ class Mapper(DataProcessor):
             [out:json];
             
             // area["ISO3166-1"="HU"]
-            area["place"="city"]["name"="Budapest"]
+            area["admin_level"="8"]["name"="Hegyeshalom"]
               -> .country;
               
         """
@@ -279,7 +279,7 @@ class Mapper(DataProcessor):
         """
         )
 
-        self.osm_data_raw: bytes = NotImplemented
+        self.osm_data_raw: dict = NotImplemented
         self.osm_data: Result = NotImplemented
         self.srs: list[SR] = []
         self.sr_ways: list[int] = []
@@ -379,12 +379,17 @@ class Mapper(DataProcessor):
             self.add_area_or_mp_relation_elements(operating_site_relation)
 
         self.logger.debug(f"Long query started...")
-        self.osm_data_raw = self.run_query_raw(
-            api=self._api,
-            query_text=self.query_final,
+        self.osm_data_raw = json.loads(
+            self.run_query_raw(
+                api=self._api,
+                query_text=self.query_final,
+            )
         )
-        self.osm_data = Result.from_json(json.loads(self.osm_data_raw.decode("utf-8")))
+        self.osm_data = Result.from_json(
+            self.osm_data_raw
+        )
         self.logger.debug(f"...finished!")
+        pass
 
     def add_node_poly_elements(self, node_polygons: Any) -> None:
         for i, element in enumerate(node_polygons["elements"]):
@@ -419,6 +424,8 @@ class Mapper(DataProcessor):
                 self.query_final += f"""
                     (._;>;);
                     out;
+                    node(1);
+                    out ids;
                 """
             except KeyError:
                 pass
@@ -449,6 +456,8 @@ class Mapper(DataProcessor):
         self.query_final += f"""
             (._;>;);
             out;
+            node(1);
+            out ids;
         """
 
     def process_srs(self) -> None:
@@ -634,14 +643,15 @@ class Mapper(DataProcessor):
 
     def add_all_nodes(self, features_to_visualise: list[geojson.Feature]) -> None:
         for node in self.osm_data.nodes:
-            point = geojson.Point((float(node.lon), float(node.lat)))
-            node.tags |= {self.COLOR_TAG: [0, 0, 0, 0]}
-
-            feature = geojson.Feature(
-                geometry=point,
-                properties=node.tags,
-            )
-            features_to_visualise.append(feature)
+            if node.id != 1:
+                point = geojson.Point((float(node.lon), float(node.lat)))
+                node.tags |= {self.COLOR_TAG: [0, 0, 0, 0]}
+    
+                feature = geojson.Feature(
+                    geometry=point,
+                    properties=node.tags,
+                )
+                features_to_visualise.append(feature)
 
     def export_map(self, feature_collection: geojson.FeatureCollection) -> None:
         geojson_layer = Layer(
