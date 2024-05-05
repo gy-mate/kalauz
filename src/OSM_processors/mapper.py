@@ -1,5 +1,6 @@
 import contextlib
 from datetime import datetime
+import json
 from typing import Any, Final
 
 # future: remove the comment below when stubs for the library below are available
@@ -221,7 +222,8 @@ class Mapper(DataProcessor):
         self.QUERY_MAIN_PARAMETERS: Final = """
             [out:json];
             
-            area["ISO3166-1"="HU"]
+            // area["ISO3166-1"="HU"]
+            area["place"="city"]["name"="Budapest"]
               -> .country;
               
         """
@@ -237,7 +239,8 @@ class Mapper(DataProcessor):
             "site",
         ]
 
-        self._dowload_session = requests.Session()
+        self._api: Final = Overpass()
+        self._dowload_session: Final = requests.Session()
 
         self.show_lines_with_no_data = show_lines_with_no_data
 
@@ -276,6 +279,7 @@ class Mapper(DataProcessor):
         """
         )
 
+        self.osm_data_raw: bytes = NotImplemented
         self.osm_data: Result = NotImplemented
         self.srs: list[SR] = []
         self.sr_ways: list[int] = []
@@ -295,10 +299,8 @@ class Mapper(DataProcessor):
         stop=stop_after_attempt(2),
     )
     def download_osm_data(self) -> None:
-        api = Overpass()
-
         operating_site_elements = self.run_query(
-            api=api,
+            api=self._api,
             query_text=self.query_operating_site_elements,
         )
 
@@ -306,21 +308,19 @@ class Mapper(DataProcessor):
         for node in operating_site_elements.nodes:
             node_polygons_query += f"""
                 node({node.id}) -> .station;
-                node.station;
-                out;
+                .station out;
                 nwr(around.station:100)["landuse"="railway"];
                 convert item ::geom=geom();
                 out geom;
             """
         operating_site_node_polygons = geojson.loads(
-            self.get_data(
-                url=api.url,
-                body=node_polygons_query,
+            self.run_query_raw(
+                api=self._api,
+                query_text=node_polygons_query,
             )
         )
 
         self.download_final(
-            api=api,
             node_polygons=operating_site_node_polygons,
             areas=operating_site_elements.areas,
             multipolygons=operating_site_elements.relations,
@@ -332,7 +332,8 @@ class Mapper(DataProcessor):
         self.logger.debug(f"...finished!")
         return result
 
-    def get_data(self, url: str, body: str) -> bytes:
+    def run_query_raw(self, api: Overpass, query_text: str) -> bytes:
+        url = api.url
         try:
             response = self._dowload_session.get(
                 url=url,
@@ -340,7 +341,7 @@ class Mapper(DataProcessor):
                     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
                     "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1.2 Safari/605.1.15"
                 },
-                data=body,
+                data=query_text,
             )
             response.raise_for_status()
             self.logger.debug(f"File successfully downloaded from {url}!")
@@ -351,11 +352,41 @@ class Mapper(DataProcessor):
 
     def download_final(
         self,
-        api: Overpass,
         node_polygons: Any,
         areas: list[Area],
         multipolygons: list[Relation],
     ) -> None:
+        self.add_node_poly_elements(node_polygons)
+
+        operating_site_areas, operating_site_mp_relations = (
+            extract_operating_site_polygons(
+                areas=areas,
+                multipolygons=multipolygons,
+            )
+        )
+
+        for operating_site_area in operating_site_areas:
+            self.query_final += f"""
+            way({operating_site_area["element_id"]}) -> .operatingSite;
+            """
+            self.add_area_or_mp_relation_elements(operating_site_area)
+
+        for operating_site_relation in operating_site_mp_relations:
+            self.query_final += f"""
+            relation({operating_site_relation["element_id"]});
+            map_to_area -> .operatingSite;
+            """
+            self.add_area_or_mp_relation_elements(operating_site_relation)
+
+        self.logger.debug(f"Long query started...")
+        self.osm_data_raw = self.run_query_raw(
+            api=self._api,
+            query_text=self.query_final,
+        )
+        self.osm_data = Result.from_json(json.loads(self.osm_data_raw.decode("utf-8")))
+        self.logger.debug(f"...finished!")
+
+    def add_node_poly_elements(self, node_polygons: Any) -> None:
         for i, element in enumerate(node_polygons["elements"]):
             try:
                 assert element["geometry"]
@@ -392,31 +423,7 @@ class Mapper(DataProcessor):
             except KeyError:
                 pass
 
-        operating_site_areas, operating_site_mp_relations = (
-            extract_operating_site_polygons(
-                areas=areas,
-                multipolygons=multipolygons,
-            )
-        )
-
-        for operating_site_area in operating_site_areas:
-            self.query_final += f"""
-            way({operating_site_area["element_id"]}) -> .operatingSite;
-            """
-            self.add_operating_site_elements(operating_site_area)
-
-        for operating_site_relation in operating_site_mp_relations:
-            self.query_final += f"""
-            relation({operating_site_relation["element_id"]});
-            map_to_area -> .operatingSite;
-            """
-            self.add_operating_site_elements(operating_site_relation)
-
-        self.logger.debug(f"Long query started...")
-        self.osm_data = api.query(self.query_final)
-        self.logger.debug(f"...finished!")
-
-    def add_operating_site_elements(
+    def add_area_or_mp_relation_elements(
         self, operating_site_area: dict[str, int | None]
     ) -> None:
         if operating_site_area["layer"]:
@@ -442,7 +449,7 @@ class Mapper(DataProcessor):
         self.query_final += f"""
             (._;>;);
             out;
-            """
+        """
 
     def process_srs(self) -> None:
         self.get_all_srs_from_database()
