@@ -76,13 +76,21 @@ def get_milestones(nodes: list[Node]) -> list[Node]:
     return milestones
 
 
-def get_nearest_milestone(exact_location: int, milestones: list[Node]) -> Node:
-    return min(
-        milestones,
-        key=lambda milestone: abs(
-            get_milestone_location(milestone) - exact_location
-        ),
+# noinspection PyShadowingNames
+def get_nearest_milestone(exact_location: int, milestones: list[Node], sr: SR) -> Node:
+    milestones.sort(
+        key=lambda milestone: abs(get_milestone_location(milestone) - exact_location)
     )
+    for i, milestone in enumerate(milestones):
+        if sr.on_main_track:
+            try:
+                if milestone.tags["railway:track_side"] == sr.main_track_side:
+                    return milestone
+            except KeyError:
+                continue
+        else:
+            return milestone
+    raise ValueError("Nearest milestone not found!")
 
 
 def get_milestone_location(milestone: Node) -> float:
@@ -144,12 +152,17 @@ def get_nearest_milestones(
     milestones: list[Node],
     nearest_milestones: list[Node],
     metre_post: int,
+    sr: SR,
 ) -> None:
     while len(nearest_milestones) < 2:
-        nearest_milestone_current = get_nearest_milestone(
-            exact_location=metre_post,
-            milestones=milestones,
-        )
+        try:
+            nearest_milestone_current = get_nearest_milestone(
+                exact_location=metre_post,
+                milestones=milestones,
+                sr=sr,
+            )
+        except ValueError:
+            raise
         if nearest_milestones and not (
             further_than_current_nearest_milestone(
                 nearest_milestone_current=nearest_milestone_current,
@@ -157,11 +170,6 @@ def get_nearest_milestones(
                 metre_post=metre_post,
             )
         ):
-            if float(nearest_milestone_current.tags["railway:position"]) != float(
-                nearest_milestones[-1].tags["railway:position"]
-            ):  # TODO: remove this line when track side selection is implemented
-                nearest_milestones.append(nearest_milestone_current)
-        else:
             nearest_milestones.append(nearest_milestone_current)
         milestones.remove(nearest_milestone_current)
 
@@ -533,6 +541,7 @@ class Mapper(DataProcessor):
                         milestones=milestones_of_line_copy,
                         nearest_milestones=nearest_milestones,
                         metre_post=sr_metre_post_boundary,
+                        sr=sr,
                     )
                     metre_post_at_percentage_between_milestones = (
                         get_distance_percentage_between_milestones(
@@ -584,23 +593,15 @@ class Mapper(DataProcessor):
                         sr.metre_post_to_coordinates = coordinate_of_metre_post  # type: ignore
 
                     pass
-            except IndexError as exception:
+            except (IndexError, ValueError) as exception:
                 prepared_lines = [
                     "1",
-                    "1U",
-                    "303",
-                    "1T",
-                    "1Q",
-                    "1P",
+                    "1d",
                     "146",
-                    "146L",
-                    "113",
+                    "113 (1)",
+                    "113 (2)",
                     "30",
                     "8",
-                    "8G",
-                    "8GR",
-                    "8E",
-                    "524",
                     "18",
                     "17",
                     "9",
