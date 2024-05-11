@@ -75,6 +75,10 @@ class MavUpdater(SRUpdater, ExcelProcessorWithFormatting):
 
                 if is_usable(row):
                     metre_post_to = self.get_metre_post(row[6])
+                    station_from = self.remove_space_after_hyphen(row[1])
+                    station_to = (
+                        self.remove_space_after_hyphen(row[2]) if row[2] else None
+                    )
                     reduced_speed, reduced_speed_for_mus = self.get_reduced_speeds(
                         row[8]
                     )
@@ -90,13 +94,16 @@ class MavUpdater(SRUpdater, ExcelProcessorWithFormatting):
                         decision_id=row[11],
                         in_timetable=not is_tsr(row_of_cells[0]),
                         due_to_railway_features=NotImplemented,
-                        line=self.get_line(row[0], metre_post_to),
+                        line=self.get_line(
+                            line_source=row[0],
+                            station_from=station_from,
+                            station_to=station_to,
+                            metre_post_to=metre_post_to,
+                        ),
                         metre_post_from=self.get_metre_post(row[5]),
                         metre_post_to=metre_post_to,
-                        station_from=self.remove_space_after_hyphen(row[1]),
-                        station_to=(
-                            self.remove_space_after_hyphen(row[2]) if row[2] else None
-                        ),
+                        station_from=station_from,
+                        station_to=station_to,
                         on_main_track=on_main_track(row),
                         main_track_side=self.get_track_side(row[3]),
                         station_track_switch_source_text=row[4],
@@ -272,11 +279,16 @@ class MavUpdater(SRUpdater, ExcelProcessorWithFormatting):
             self.logger.critical(f"Reduced speeds not found in {text_to_search}!")
             raise
 
-    def get_line(self, line_source: str | None, metre_post_to: int) -> str:
+    def get_line(
+        self,
+        line_source: str | None,
+        station_to: str | None,
+        station_from: str | None,
+        metre_post_to: int,
+    ) -> str:
         try:
             assert line_source
             internal_to_vpe_line = {
-                "3": "1T",
                 "5a": "5K",
                 "5b": "5L",
                 "5c": "935a",
@@ -347,6 +359,19 @@ class MavUpdater(SRUpdater, ExcelProcessorWithFormatting):
 
                 return line_corrected
             else:
+                if line_source == "113":
+                    first_part_of_the_line = (station_to or station_from) in [
+                        "Nyíregyháza",
+                        "Nagykálló",
+                        "Nagykállói elágazás",  # sic!
+                        "Kállósemjén",
+                        "Máriapócs",  # sic!
+                        "Nyírbátor",
+                    ]
+                    if first_part_of_the_line:
+                        return "113 (1)"
+                    else:
+                        return "113 (2)"
                 return line_source
         except AssertionError:
             self.logger.critical("Line not found!")
