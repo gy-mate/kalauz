@@ -76,13 +76,17 @@ def get_milestones(nodes: list[Node]) -> list[Node]:
     return milestones
 
 
-def get_nearest_milestone(metre_post: int, milestones_current: list[Node]) -> Node:
+def get_nearest_milestone(exact_location: int, milestones: list[Node]) -> Node:
     return min(
-        milestones_current,
+        milestones,
         key=lambda milestone: abs(
-            float(milestone.tags["railway:position"]) * 1000 - metre_post
+            get_milestone_location(milestone) - exact_location
         ),
     )
+
+
+def get_milestone_location(milestone: Node) -> float:
+    return float(milestone.tags["railway:position"]) * 1000
 
 
 def further_than_current_nearest_milestone(
@@ -137,20 +141,20 @@ def get_distance_percentage_between_milestones(
 
 
 def get_nearest_milestones(
-    milestones_current: list[Node],
+    milestones: list[Node],
     nearest_milestones: list[Node],
-    sr_metre_post_boundary: int,
+    metre_post: int,
 ) -> None:
     while len(nearest_milestones) < 2:
         nearest_milestone_current = get_nearest_milestone(
-            metre_post=sr_metre_post_boundary,
-            milestones_current=milestones_current,
+            exact_location=metre_post,
+            milestones=milestones,
         )
         if nearest_milestones and not (
             further_than_current_nearest_milestone(
                 nearest_milestone_current=nearest_milestone_current,
                 nearest_milestones=nearest_milestones,
-                metre_post=sr_metre_post_boundary,
+                metre_post=metre_post,
             )
         ):
             if float(nearest_milestone_current.tags["railway:position"]) != float(
@@ -159,7 +163,7 @@ def get_nearest_milestones(
                 nearest_milestones.append(nearest_milestone_current)
         else:
             nearest_milestones.append(nearest_milestone_current)
-        milestones_current.remove(nearest_milestone_current)
+        milestones.remove(nearest_milestone_current)
 
     nearest_milestones.sort(
         key=lambda milestone: float(milestone.tags["railway:position"])
@@ -222,8 +226,8 @@ class Mapper(DataProcessor):
         self.QUERY_MAIN_PARAMETERS: Final = """
             [out:json];
             
-            // area["ISO3166-1"="HU"]
-            area["admin_level"="8"]["name"="Hegyeshalom"]
+            area["ISO3166-1"="HU"]
+            // area["admin_level"="8"]["name"="Hegyeshalom"]
               -> .country;
               
         """
@@ -291,11 +295,7 @@ class Mapper(DataProcessor):
 
     @retry(
         retry=retry_if_exception_type(ConnectionResetError),
-        wait=wait_exponential(
-            multiplier=1,
-            min=4,
-            max=10,
-        ),
+        wait=wait_exponential(multiplier=1, min=4, max=10),
         stop=stop_after_attempt(2),
     )
     def download_osm_data(self) -> None:
@@ -385,9 +385,7 @@ class Mapper(DataProcessor):
                 query_text=self.query_final,
             )
         )
-        self.osm_data = Result.from_json(
-            self.osm_data_raw
-        )
+        self.osm_data = Result.from_json(self.osm_data_raw)
         self.logger.debug(f"...finished!")
         pass
 
@@ -520,98 +518,99 @@ class Mapper(DataProcessor):
         self.add_all_nodes(features_to_visualise)
         self.add_na_lines(features_to_visualise)
 
-        # for sr in self.srs:
-        #     try:
-        #         ways_of_line = self.get_ways_of_corresponding_line(sr)
-        #         nodes_of_line = [node for way in ways_of_line for node in way.nodes]
-        #         milestones = get_milestones(nodes=nodes_of_line)
-        #
-        #         for i, sr_metre_post_boundary in enumerate(
-        #             (sr.metre_post_from, sr.metre_post_to)
-        #         ):
-        #             nearest_milestones: list[Node] = []
-        #             milestones_current = milestones.copy()
-        #
-        #             get_nearest_milestones(
-        #                 milestones_current, nearest_milestones, sr_metre_post_boundary
-        #             )
-        #             metre_post_at_percentage_between_milestones = (
-        #                 get_distance_percentage_between_milestones(
-        #                     nearest_milestones, sr_metre_post_boundary
-        #                 )
-        #             )
-        #             way_of_lower_milestone, way_of_greater_milestone = (
-        #                 get_ways_of_milestones(nearest_milestones, ways_of_line)
-        #             )
-        #             ways_between_milestones = get_ways_between_milestones(
-        #                 way_of_greater_milestone,
-        #                 way_of_lower_milestone,
-        #                 ways_of_line,
-        #             )
-        #             merged_ways_between_milestones = merge_ways(ways_between_milestones)
-        #
-        #             split_lines_at_lower_milestone = split_lines(
-        #                 merged_ways_between_milestones,
-        #                 shapely.Point(
-        #                     (
-        #                         float(nearest_milestones[0].lon),
-        #                         float(nearest_milestones[0].lat),
-        #                     )
-        #                 ),
-        #             )
-        #             split_lines_at_greater_milestone = split_lines(
-        #                 merged_ways_between_milestones,
-        #                 shapely.Point(
-        #                     (
-        #                         float(nearest_milestones[-1].lon),
-        #                         float(nearest_milestones[-1].lat),
-        #                     )
-        #                 ),
-        #             )
-        #             line_between_milestones = shapely.intersection(
-        #                 split_lines_at_lower_milestone.geoms[1],
-        #                 split_lines_at_greater_milestone.geoms[0],
-        #             )
-        #
-        #             coordinate_of_metre_post = line_between_milestones.interpolate(
-        #                 distance=metre_post_at_percentage_between_milestones,
-        #                 normalized=True,
-        #             )
-        #
-        #             # future: make this prettier
-        #             if sr_metre_post_boundary == sr.metre_post_from:
-        #                 sr.metre_post_from_coordinates = coordinate_of_metre_post
-        #             else:
-        #                 sr.metre_post_to_coordinates = coordinate_of_metre_post
-        #
-        #             pass
-        #     except IndexError as exception:
-        #         prepared_lines = [
-        #             "1",
-        #             "1U",
-        #             "303",
-        #             "1T",
-        #             "1Q",
-        #             "1P",
-        #             "146",
-        #             "146L",
-        #             "113",
-        #             "30",
-        #             "8",
-        #             "8G",
-        #             "8GR",
-        #             "8E",
-        #             "524",
-        #             "18",
-        #             "17",
-        #             "9",
-        #         ]
-        #         if sr.line not in prepared_lines:
-        #             pass
-        #         else:
-        #             self.logger.debug(exception)
-        #             raise
-        #     pass
+        for sr in self.srs:
+            try:
+                ways_of_line = self.get_ways_of_corresponding_line(sr)
+                nodes_of_line = [node for way in ways_of_line for node in way.nodes]
+                milestones_of_line = get_milestones(nodes=nodes_of_line)
+
+                for i, sr_metre_post_boundary in enumerate(
+                    (sr.metre_post_from, sr.metre_post_to)
+                ):
+                    nearest_milestones: list[Node] = []
+                    milestones_of_line_copy = milestones_of_line.copy()
+                    get_nearest_milestones(
+                        milestones=milestones_of_line_copy,
+                        nearest_milestones=nearest_milestones,
+                        metre_post=sr_metre_post_boundary,
+                    )
+                    metre_post_at_percentage_between_milestones = (
+                        get_distance_percentage_between_milestones(
+                            nearest_milestones, sr_metre_post_boundary
+                        )
+                    )
+                    way_of_lower_milestone, way_of_greater_milestone = (
+                        get_ways_of_milestones(nearest_milestones, ways_of_line)
+                    )
+                    ways_between_milestones = get_ways_between_milestones(
+                        way_of_greater_milestone,
+                        way_of_lower_milestone,
+                        ways_of_line,
+                    )
+                    merged_ways_between_milestones = merge_ways(ways_between_milestones)
+
+                    split_lines_at_lower_milestone = split_lines(
+                        merged_ways_between_milestones,
+                        shapely.Point(
+                            (
+                                float(nearest_milestones[0].lon),
+                                float(nearest_milestones[0].lat),
+                            )
+                        ),
+                    )
+                    split_lines_at_greater_milestone = split_lines(
+                        merged_ways_between_milestones,
+                        shapely.Point(
+                            (
+                                float(nearest_milestones[-1].lon),
+                                float(nearest_milestones[-1].lat),
+                            )
+                        ),
+                    )
+                    line_between_milestones = shapely.intersection(
+                        split_lines_at_lower_milestone.geoms[1],
+                        split_lines_at_greater_milestone.geoms[0],
+                    )
+
+                    coordinate_of_metre_post = line_between_milestones.interpolate(
+                        distance=metre_post_at_percentage_between_milestones,
+                        normalized=True,
+                    )
+
+                    # future: init `metre_post_from_coordinates` and `metre_post_to_coordinates` in the constructor
+                    if sr_metre_post_boundary == sr.metre_post_from:
+                        sr.metre_post_from_coordinates = coordinate_of_metre_post  # type: ignore
+                    else:
+                        sr.metre_post_to_coordinates = coordinate_of_metre_post  # type: ignore
+
+                    pass
+            except IndexError as exception:
+                prepared_lines = [
+                    "1",
+                    "1U",
+                    "303",
+                    "1T",
+                    "1Q",
+                    "1P",
+                    "146",
+                    "146L",
+                    "113",
+                    "30",
+                    "8",
+                    "8G",
+                    "8GR",
+                    "8E",
+                    "524",
+                    "18",
+                    "17",
+                    "9",
+                ]
+                if sr.line not in prepared_lines:
+                    pass
+                else:
+                    self.logger.debug(exception)
+                    raise
+            pass
 
         feature_collection_to_visualise = geojson.FeatureCollection(
             features_to_visualise
@@ -646,7 +645,7 @@ class Mapper(DataProcessor):
             if node.id != 1:
                 point = geojson.Point((float(node.lon), float(node.lat)))
                 node.tags |= {self.COLOR_TAG: [0, 0, 0, 0]}
-    
+
                 feature = geojson.Feature(
                     geometry=point,
                     properties=node.tags,
