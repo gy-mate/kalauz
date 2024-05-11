@@ -21,6 +21,8 @@ def main(
     demonstration=False,
     show_lines_with_no_data=True,
 ) -> None:
+    logging.getLogger(__name__).info("Program started...")
+    
     configure_logging(demonstration)
     load_dotenv()
 
@@ -34,7 +36,7 @@ def main(
 
     Mapper(show_lines_with_no_data).run()
 
-    logging.getLogger(__name__).info("All done!")
+    logging.getLogger(__name__).info("...program finished!")
 
 
 def configure_logging(demonstration: bool) -> None:
