@@ -155,14 +155,11 @@ def get_nearest_milestones(
     sr: SR,
 ) -> None:
     while len(nearest_milestones) < 2:
-        try:
-            nearest_milestone_current = get_nearest_milestone(
-                exact_location=metre_post,
-                milestones=milestones,
-                sr=sr,
-            )
-        except ValueError:
-            raise
+        nearest_milestone_current = get_nearest_milestone(
+            exact_location=metre_post,
+            milestones=milestones,
+            sr=sr,
+        )
         if nearest_milestones and not (
             further_than_current_nearest_milestone(
                 nearest_milestone_current=nearest_milestone_current,
