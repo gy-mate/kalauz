@@ -21,9 +21,9 @@ def main(
     demonstration=False,
     show_lines_with_no_data=True,
 ) -> None:
+    configure_logging(demonstration)
     logging.getLogger(__name__).info("Program started...")
     
-    configure_logging(demonstration)
     load_dotenv()
 
     # CountriesUpdater().run()
@@ -57,7 +57,7 @@ def configure_logging(demonstration: bool) -> None:
                 logging.StreamHandler(),
                 logging.FileHandler("kalauz.log"),
             ],
-            format="%(asctime)s \t %(levelname)s \t %(name)s.%(funcName)s(): %(message)s",
+            format="%(asctime)s  %(levelname)s \t \"%(pathname)s:%(lineno)d\": %(message)s",
             level=logging.DEBUG,
         )
 
