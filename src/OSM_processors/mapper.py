@@ -190,37 +190,44 @@ def get_ways_between_milestones(
     if way_of_lower_milestone is way_of_greater_milestone:
         return [way_of_lower_milestone]
 
+    ways_of_line_copy = ways_of_line.copy()
+    ways_of_line.remove(way_of_lower_milestone)
     neighbouring_ways_of_lower_milestone: tuple[list[Way], list[Way]] = (
-        [],
-        [],
+        [way_of_lower_milestone],
+        [way_of_lower_milestone],
     )
-    ways_between_milestones: list[Way] = []
-    for way in ways_of_line:
-        if way is way_of_greater_milestone:
-            if (
-                way_of_lower_milestone.nodes[-1 if sr.main_track_side == "left" else 0]
-                in way_of_greater_milestone.nodes
-            ):
-                ways_between_milestones = neighbouring_ways_of_lower_milestone[0]
-            elif (
-                way_of_lower_milestone.nodes[0 if sr.main_track_side == "left" else -1]
-                in way_of_greater_milestone.nodes
-            ):
-                ways_between_milestones = neighbouring_ways_of_lower_milestone[1]
-            break
-        else:
-            if (
-                way_of_lower_milestone.nodes[-1 if sr.main_track_side == "left" else 0]
-                in way.nodes
-            ):
-                neighbouring_ways_of_lower_milestone[0].append(way)
-            elif (
-                way_of_lower_milestone.nodes[0 if sr.main_track_side == "left" else -1]
-                in way.nodes
-            ):
-                neighbouring_ways_of_lower_milestone[1].append(way)
-    ways_between_milestones.append(way_of_greater_milestone)
-    return ways_between_milestones
+
+    toggle = False
+    return add_neighboring_ways(
+        collection=neighbouring_ways_of_lower_milestone,
+        source_way=way_of_lower_milestone,
+        ways_to_search_in=ways_of_line_copy,
+        destination_way=way_of_greater_milestone,
+        toggle=toggle,
+    )
+
+
+def add_neighboring_ways(
+    collection: tuple[list[Way], list[Way]], source_way: Way, ways_to_search_in: list[Way], destination_way: Way, toggle: bool
+) -> list[Way]:
+    for way in ways_to_search_in:
+        found_neighbor_way = (source_way.nodes[0] in way.nodes) or (
+            source_way.nodes[-1] in way.nodes
+        )
+        if found_neighbor_way:
+            collection[toggle].append(way)
+            if way is destination_way:
+                return collection[toggle]
+            ways_to_search_in.remove(way)
+            ways_to_search_in.reverse()
+            toggle = not toggle
+            add_neighboring_ways(
+                collection,
+                source_way,
+                ways_to_search_in,
+                destination_way,
+                toggle,
+            )
 
 
 def merge_ways(ways_between_milestones: list[Way]) -> shapely.LineString:
