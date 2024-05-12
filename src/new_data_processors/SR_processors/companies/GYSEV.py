@@ -144,7 +144,7 @@ class GysevUpdater(SRUpdater):
                 decision_id=None,
                 in_timetable=True if row.in_timetable == "állandó" else False,
                 due_to_railway_features=NotImplemented,
-                line=self.get_line(str(row.line)),
+                line=str(row.line),
                 metre_post_from=get_metre_post(str(row.metre_post_from)),
                 metre_post_to=get_metre_post(str(row.metre_post_to)),
                 station_from=bounding_stations[0],
@@ -295,21 +295,6 @@ class GysevUpdater(SRUpdater):
                         "time_to": self.TODAY,
                     },
                 )
-
-    def get_line(self, line_source: str) -> str:
-        try:
-            assert line_source
-            internal_to_vpe_line = {
-                "1D": "1",
-            }
-            if line_source in internal_to_vpe_line:
-                line_corrected = internal_to_vpe_line[line_source]
-                return line_corrected
-            else:
-                return line_source
-        except AssertionError:
-            self.logger.critical("Line not found!")
-            raise
 
     def get_time_to(self, exact_time: str, estimated_time: str) -> datetime | None:
         if exact_time:
