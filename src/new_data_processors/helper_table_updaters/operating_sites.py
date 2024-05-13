@@ -105,7 +105,8 @@ class OperatingSitesUpdater(ExcelProcessorSimple, DataDownloader):
                 attrs={"name": "infra_id"},
             )
             if not select_tag:
-                raise ValueError(f"No `select` tag found on the splash page at {url}!")
+                self.logger.critical(f"No `select` tag found on the splash page at {url}!")
+                raise ValueError
         except ValueError as exception:
             self.logger.critical(exception)
             raise

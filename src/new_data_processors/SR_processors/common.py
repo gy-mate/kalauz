@@ -136,7 +136,8 @@ class SRUpdater(ExcelProcessor, ABC):
             case "GYSEV":
                 self.TODAY = date(2022, 5, 13)
             case _:
-                raise ValueError(f"Unknown company: {self.COMPANY}!")
+                self.logger.critical(f"Unknown company: {self.COMPANY}!")
+                raise ValueError
 
         self._file_to_be_imported = f"data/02_converted/{self.COMPANY}_{self.TODAY}_{self.LIST_TYPE}.{self.SOURCE_EXTENSION}"
 

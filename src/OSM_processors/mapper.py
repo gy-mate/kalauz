@@ -76,27 +76,6 @@ def get_milestones(nodes: list[Node]) -> list[Node]:
     return milestones
 
 
-# noinspection PyShadowingNames
-def get_nearest_milestone(
-    exact_location: int, milestones: list[Node], sr: SR, on_ways: list[Way]
-) -> Node:
-    milestones.sort(
-        key=lambda milestone: abs(get_milestone_location(milestone) - exact_location)
-    )
-    for milestone in milestones:
-        for way in on_ways:
-            if milestone in way.nodes:
-                if sr.main_track_side:
-                    try:
-                        if way.tags["railway:track_side"] == sr.main_track_side:
-                            return milestone
-                    except KeyError:
-                        continue
-                else:
-                    return milestone
-    raise ValueError("Nearest milestone not found!")
-
-
 def get_milestone_location(milestone: Node) -> float:
     try:
         return float(milestone.tags["railway:position"]) * 1000
@@ -120,25 +99,6 @@ def further_in_same_direction(
     )
 
 
-def get_ways_of_milestones(
-    nearest_milestones: list[Node], ways: list[Way]
-) -> tuple[Way, Way]:
-    way_of_lower_milestone: Way | None = None
-    way_of_greater_milestone: Way | None = None
-
-    for way in ways:
-        for node in way.nodes:
-            if node == nearest_milestones[0]:
-                way_of_lower_milestone = way
-            elif node == nearest_milestones[-1]:
-                way_of_greater_milestone = way
-
-            if way_of_lower_milestone and way_of_greater_milestone:
-                return way_of_lower_milestone, way_of_greater_milestone
-
-    raise ValueError("Ways of milestones not found!")
-
-
 def get_distance_percentage_between_milestones(
     nearest_milestones: list[Node], metre_post_boundary: int
 ) -> float:
@@ -156,99 +116,6 @@ def get_distance_percentage_between_milestones(
         distance_between_sr_and_lower_milestone / distance_between_nearest_milestones
     )
     return distance_percentage_between_milestones
-
-
-def get_nearest_milestones(
-    milestones: list[Node],
-    nearest_milestones: list[Node],
-    metre_post: int,
-    sr: SR,
-    on_ways: list[Way],
-) -> None:
-    while len(nearest_milestones) < 2:
-        seemingly_nearest_milestone = get_nearest_milestone(
-            exact_location=metre_post,
-            milestones=milestones,
-            sr=sr,
-            on_ways=on_ways,
-        )
-        if not nearest_milestones or not (
-            further_in_same_direction(
-                milestone=seemingly_nearest_milestone,
-                current_nearest_milestones=nearest_milestones,
-                metre_post=metre_post,
-            )
-        ):
-            nearest_milestones.append(seemingly_nearest_milestone)
-        milestones.remove(seemingly_nearest_milestone)
-
-    nearest_milestones.sort(
-        key=lambda milestone: float(milestone.tags["railway:position"])
-    )
-
-
-def get_ways_between_milestones(
-    way_of_greater_milestone: Way,
-    way_of_lower_milestone: Way,
-    ways_of_line: list[Way],
-) -> list[Way]:
-    if way_of_lower_milestone is way_of_greater_milestone:
-        return [way_of_lower_milestone]
-
-    ways_of_line_copy = ways_of_line.copy()
-    ways_of_line_copy.remove(way_of_lower_milestone)
-    neighbouring_ways_of_lower_milestone: tuple[list[Way], list[Way]] = (
-        [way_of_lower_milestone],
-        [way_of_lower_milestone],
-    )
-
-    toggle = False
-    return add_neighboring_ways(
-        collection=neighbouring_ways_of_lower_milestone,
-        ways_to_search_in=ways_of_line_copy,
-        destination_way=way_of_greater_milestone,
-        toggle=toggle,
-    )
-
-
-def add_neighboring_ways(
-    collection: tuple[list[Way], list[Way]],
-    ways_to_search_in: list[Way],
-    destination_way: Way,
-    toggle: bool,
-    one_side_is_dead_end: bool = False,
-) -> list[Way]:
-    for way in ways_to_search_in:
-        found_neighbor_way = (collection[toggle][-1].nodes[0] in way.nodes) or (
-            collection[toggle][-1].nodes[-1] in way.nodes
-        )
-        if found_neighbor_way:
-            collection[toggle].append(way)
-            if way is destination_way:
-                return collection[toggle]
-            ways_to_search_in.remove(way)
-            if not one_side_is_dead_end:
-                ways_to_search_in.reverse()
-                toggle = not toggle
-            return add_neighboring_ways(
-                collection,
-                ways_to_search_in,
-                destination_way,
-                toggle,
-            )
-    if one_side_is_dead_end:
-        raise ValueError("Couldn't reach destination_way from way_of_lower_milestone!")
-    else:
-        one_side_is_dead_end = True
-        ways_to_search_in.reverse()
-        toggle = not toggle
-        return add_neighboring_ways(
-            collection,
-            ways_to_search_in,
-            destination_way,
-            toggle,
-            one_side_is_dead_end,
-        )
 
 
 def merge_ways(ways_between_milestones: list[Way]) -> shapely.LineString:
@@ -588,7 +455,8 @@ class Mapper(DataProcessor):
                                     self.sr_ways.append(member.ref)
                                 break
                     else:
-                        raise ValueError(f"Relation with `ref={sr.line}` not found!")
+                        self.logger.critical(f"Relation with `ref={sr.line}` not found!")
+                        raise ValueError
                 except ValueError as exception:
                     self.logger.debug(exception)
 
@@ -606,6 +474,7 @@ class Mapper(DataProcessor):
                 len(self.srs) * (notification_percentage_interval / 100) * i
             )
             notify_at_indexes.append(notify_at_index + 1)
+        # future: implement multithreading for the loop below
         for sr_index, sr in enumerate(self.srs):
             try:
                 ways_of_line = self.get_ways_of_corresponding_line(sr)
@@ -617,7 +486,7 @@ class Mapper(DataProcessor):
                 ):
                     nearest_milestones: list[Node] = []
                     milestones_of_line_copy = milestones_of_line.copy()
-                    get_nearest_milestones(
+                    self.get_nearest_milestones(
                         milestones=milestones_of_line_copy,
                         nearest_milestones=nearest_milestones,
                         metre_post=sr_metre_post_boundary,
@@ -630,9 +499,9 @@ class Mapper(DataProcessor):
                         )
                     )
                     way_of_lower_milestone, way_of_greater_milestone = (
-                        get_ways_of_milestones(nearest_milestones, ways_of_line)
+                        self.get_ways_of_milestones(nearest_milestones, ways_of_line)
                     )
-                    ways_between_milestones = get_ways_between_milestones(
+                    ways_between_milestones = self.get_ways_between_milestones(
                         way_of_greater_milestone,
                         way_of_lower_milestone,
                         ways_of_line,
@@ -707,6 +576,98 @@ class Mapper(DataProcessor):
         way_ids = [way.ref for way in relation.members]
         ways = [way for way in self.osm_data.ways if way.id in way_ids]
         return ways
+    
+    def get_ways_of_milestones(
+            self, nearest_milestones: list[Node], ways: list[Way]
+    ) -> tuple[Way, Way]:
+        way_of_lower_milestone: Way | None = None
+        way_of_greater_milestone: Way | None = None
+        
+        for way in ways:
+            for node in way.nodes:
+                if node == nearest_milestones[0]:
+                    way_of_lower_milestone = way
+                elif node == nearest_milestones[-1]:
+                    way_of_greater_milestone = way
+                
+                if way_of_lower_milestone and way_of_greater_milestone:
+                    return way_of_lower_milestone, way_of_greater_milestone
+        self.logger.critical("Ways of milestones not found!")
+        raise ValueError
+    
+    def get_ways_between_milestones(
+            self,
+            way_of_greater_milestone: Way,
+            way_of_lower_milestone: Way,
+            ways_of_line: list[Way],
+    ) -> list[Way]:
+        if way_of_lower_milestone is way_of_greater_milestone:
+            return [way_of_lower_milestone]
+    
+        ways_of_line_copy = ways_of_line.copy()
+        ways_of_line_copy.remove(way_of_lower_milestone)
+        neighbouring_ways_of_lower_milestone: tuple[list[Way], list[Way]] = (
+            [way_of_lower_milestone],
+            [way_of_lower_milestone],
+        )
+        
+        toggle = False
+        return self.add_neighboring_ways(
+            collection=neighbouring_ways_of_lower_milestone,
+            ways_to_search_in=ways_of_line_copy,
+            destination_way=way_of_greater_milestone,
+            toggle=toggle,
+        )
+    
+    def get_nearest_milestones(
+            self,
+            milestones: list[Node],
+            nearest_milestones: list[Node],
+            metre_post: int,
+            sr: SR,
+            on_ways: list[Way],
+    ) -> None:
+        while len(nearest_milestones) < 2:
+            seemingly_nearest_milestone = self.get_nearest_milestone(
+                exact_location=metre_post,
+                milestones=milestones,
+                sr=sr,
+                on_ways=on_ways,
+            )
+            if not nearest_milestones or not (
+                    further_in_same_direction(
+                        milestone=seemingly_nearest_milestone,
+                        current_nearest_milestones=nearest_milestones,
+                        metre_post=metre_post,
+                    )
+            ):
+                nearest_milestones.append(seemingly_nearest_milestone)
+            milestones.remove(seemingly_nearest_milestone)
+    
+        nearest_milestones.sort(
+            key=lambda milestone: float(milestone.tags["railway:position"])
+        )
+    
+    # noinspection PyShadowingNames
+    def get_nearest_milestone(
+            self, exact_location: int, milestones: list[Node], sr: SR, on_ways: list[Way]
+    ) -> Node:
+        milestones.sort(
+            key=lambda milestone: abs(get_milestone_location(milestone) - exact_location)
+        )
+        for milestone in milestones:
+            for way in on_ways:
+                if milestone in way.nodes:
+                    if sr.main_track_side:
+                        try:
+                            if way.tags["railway:track_side"] == sr.main_track_side:
+                                return milestone
+                        except KeyError:
+                            continue
+                    else:
+                        return milestone
+        self.logger.critical("Nearest milestone not found!")
+        raise ValueError
 
     def add_na_lines(self, features_to_visualise: list[geojson.Feature]) -> None:
         self.logger.debug(f"Adding N/A lines started...")
@@ -740,6 +701,47 @@ class Mapper(DataProcessor):
                 )
                 features_to_visualise.append(feature)
         self.logger.debug(f"...finished!")
+    
+    def add_neighboring_ways(
+            self,
+            collection: tuple[list[Way], list[Way]],
+            ways_to_search_in: list[Way],
+            destination_way: Way,
+            toggle: bool,
+            one_side_is_dead_end: bool = False,
+    ) -> list[Way]:
+        for way in ways_to_search_in:
+            found_neighbor_way = (collection[toggle][-1].nodes[0] in way.nodes) or (
+                    collection[toggle][-1].nodes[-1] in way.nodes
+            )
+            if found_neighbor_way:
+                collection[toggle].append(way)
+                if way is destination_way:
+                    return collection[toggle]
+                ways_to_search_in.remove(way)
+                if not one_side_is_dead_end:
+                    ways_to_search_in.reverse()
+                    toggle = not toggle
+                return self.add_neighboring_ways(
+                    collection,
+                    ways_to_search_in,
+                    destination_way,
+                    toggle,
+                )
+        if one_side_is_dead_end:
+            self.logger.critical("Couldn't reach destination_way from way_of_lower_milestone!")
+            raise ValueError
+        else:
+            one_side_is_dead_end = True
+            ways_to_search_in.reverse()
+            toggle = not toggle
+            return self.add_neighboring_ways(
+                collection,
+                ways_to_search_in,
+                destination_way,
+                toggle,
+                one_side_is_dead_end,
+            )
 
     def export_map(self, feature_collection: geojson.FeatureCollection) -> None:
         geojson_layer = Layer(
@@ -764,9 +766,13 @@ class Mapper(DataProcessor):
         self.logger.debug(f"...finished!")
 
     def get_corresponding_relation(self, sr: SR) -> Relation:
-        relation = [
-            relation
-            for relation in self.osm_data.relations
-            if relation.tags["ref"].upper() == sr.line.upper()
-        ][0]
-        return relation
+        try:
+            relation = [
+                relation
+                for relation in self.osm_data.relations
+                if relation.tags["ref"].upper() == sr.line.upper()
+            ][0]
+            return relation
+        except IndexError:
+            self.logger.critical(f"Relation with `ref={sr.line}` not found!")
+            raise
