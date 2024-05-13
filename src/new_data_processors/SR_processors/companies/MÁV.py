@@ -288,69 +288,11 @@ class MavUpdater(SRUpdater, ExcelProcessorWithFormatting):
     ) -> str:
         try:
             assert line_source
-            internal_to_vpe_line = {
-                "5a": "5K",
-                "5b": "5L",
-                "5c": "935a",
-                "11a": "11B",
-                "31": "30M",
-                "51": "50K",
-                "74": "78L",
-                "125a": "125",
-                "200": "1AK",  # future: '1AV' from 'Angyalföld elágazás'
-                "202": "1AK",
-                "203": "1AR",
-                "204": "1BL",
-                "205": "1AN",
-                "206": "1AL",
-                "207": "1AM",
-                "209": "70",
-                "210": "1AT",
-                "215": "1CK",
-                "216": "1AO",
-                "217": "1AQ",
-                "218": "1AU",
-                "219": "1AW",
-                "220": "1AY",
-                "221": "1CM",
-                "222": "1AL",
-                "224": "1AKO",
-                "225": "1AKN",
-                "227": "1BLA",
-                "261": "120S",
-                "262": "80R",
-                "263": "140N",
-                "264a": "100S",
-                "264b": "100R",
-                "264c": "120Q",
-                "264d": "120O",
-                "264f": "100T",
-                "264g": "100N",
-                "264j": "100EL",
-                "265": "154N",
-                "268": "4K",
-                "269": "146K",
-                "275c": "93",
-                "280": "66",
-                "281": "25",
-                "284a": "100FQ",
-                "284c": "100FM",
-                "284d": "100FP",
-                "291": "25K",
-                "341": "42M",
-                "342": "42L",
-                "350": "20P",
-                "351": "919b",
-                "352": "26K",
-                "354": "37K",
-                "370": "94L",
-                "372": "80S",
-                "390": "154M",
-                "4001": "100FO",
-                "4002": "100FL",
+            lines_to_be_manually_corrected = {
+                "17": "17 (2)"
             }
-            if line_source in internal_to_vpe_line:
-                line_corrected = internal_to_vpe_line[line_source]
+            if line_source in lines_to_be_manually_corrected:
+                line_corrected = lines_to_be_manually_corrected[line_source]
 
                 if (
                     line_corrected == "75" and metre_post_to > 4800
@@ -397,7 +339,8 @@ class MavUpdater(SRUpdater, ExcelProcessorWithFormatting):
                 case "local":
                     return "local"
                 case _:
-                    raise ValueError(f"Unrecognized track side: {text_to_search}!")
+                    self.logger.critical(f"Unrecognized track side: {text_to_search}!")
+                    raise ValueError
         except AssertionError:
             return None
         except ValueError as exception:
