@@ -78,39 +78,45 @@ def get_milestones(nodes: list[Node]) -> list[Node]:
 
 # noinspection PyShadowingNames
 def get_nearest_milestone(
-    exact_location: int, milestones: list[Node], sr: SR, ways: list[Way]
+    exact_location: int, milestones: list[Node], sr: SR, on_ways: list[Way]
 ) -> Node:
     milestones.sort(
         key=lambda milestone: abs(get_milestone_location(milestone) - exact_location)
     )
-    for i, milestone in enumerate(milestones):
-        if sr.on_main_track:
-            for way in ways:
-                if milestone in way.nodes:
+    for milestone in milestones:
+        for way in on_ways:
+            if milestone in way.nodes:
+                if sr.main_track_side:
                     try:
                         if way.tags["railway:track_side"] == sr.main_track_side:
                             return milestone
                     except KeyError:
                         continue
-        else:
-            return milestone
+                else:
+                    return milestone
     raise ValueError("Nearest milestone not found!")
 
 
 def get_milestone_location(milestone: Node) -> float:
-    return float(milestone.tags["railway:position"]) * 1000
+    try:
+        return float(milestone.tags["railway:position"]) * 1000
+    except ValueError:
+        raise ValueError(
+            f"Milestone position ('{milestone.tags["railway:position"]}') couldn't be converted to float! "
+            f"Edit it here: https://www.openstreetmap.org/edit?node={milestone.id}"
+        )
 
 
-def further_than_current_nearest_milestone(
-    milestone_current: Node, nearest_milestones: list[Node], metre_post: int
+def further_in_same_direction(
+    milestone: Node, current_nearest_milestones: list[Node], metre_post: int
 ) -> bool:
     return (
-        float(milestone_current.tags["railway:position"]) * 1000
-        < float(nearest_milestones[-1].tags["railway:position"]) * 1000
+        float(milestone.tags["railway:position"]) * 1000
+        < float(current_nearest_milestones[-1].tags["railway:position"]) * 1000
         < metre_post
         or metre_post
-        < float(nearest_milestones[-1].tags["railway:position"]) * 1000
-        < float(milestone_current.tags["railway:position"]) * 1000
+        < float(current_nearest_milestones[-1].tags["railway:position"]) * 1000
+        < float(milestone.tags["railway:position"]) * 1000
     )
 
 
@@ -157,19 +163,19 @@ def get_nearest_milestones(
     nearest_milestones: list[Node],
     metre_post: int,
     sr: SR,
-    ways: list[Way],
+    on_ways: list[Way],
 ) -> None:
     while len(nearest_milestones) < 2:
         seemingly_nearest_milestone = get_nearest_milestone(
             exact_location=metre_post,
             milestones=milestones,
             sr=sr,
-            ways=ways,
+            on_ways=on_ways,
         )
         if not nearest_milestones or not (
-            further_than_current_nearest_milestone(
-                milestone_current=seemingly_nearest_milestone,
-                nearest_milestones=nearest_milestones,
+            further_in_same_direction(
+                milestone=seemingly_nearest_milestone,
+                current_nearest_milestones=nearest_milestones,
                 metre_post=metre_post,
             )
         ):
@@ -593,13 +599,13 @@ class Mapper(DataProcessor):
         self.add_na_lines(features_to_visualise)
 
         self.logger.info(f"Visualising {len(self.srs)} speed restrictions started...")
-        notification_percentage_interval = 1
+        notification_percentage_interval = 2
         notify_at_indexes: list[int] = []
         for i in range(1, int(100 / notification_percentage_interval) - 1):
             notify_at_index = int(
                 len(self.srs) * (notification_percentage_interval / 100) * i
             )
-            notify_at_indexes.append(notify_at_index)
+            notify_at_indexes.append(notify_at_index + 1)
         for sr_index, sr in enumerate(self.srs):
             try:
                 ways_of_line = self.get_ways_of_corresponding_line(sr)
@@ -616,9 +622,9 @@ class Mapper(DataProcessor):
                         nearest_milestones=nearest_milestones,
                         metre_post=sr_metre_post_boundary,
                         sr=sr,
-                        ways=ways_of_line,
+                        on_ways=ways_of_line,
                     )
-                    metre_post_at_percentage_between_milestones = (
+                    at_percentage_between_milestones = (
                         get_distance_percentage_between_milestones(
                             nearest_milestones, sr_metre_post_boundary
                         )
@@ -652,12 +658,12 @@ class Mapper(DataProcessor):
                         ),
                     )
                     line_between_milestones = shapely.intersection(
-                        split_lines_at_lower_milestone.geoms[1],
+                        split_lines_at_lower_milestone.geoms[-1],
                         split_lines_at_greater_milestone.geoms[0],
                     )
 
                     coordinate_of_metre_post = line_between_milestones.interpolate(
-                        distance=metre_post_at_percentage_between_milestones,
+                        distance=at_percentage_between_milestones,
                         normalized=True,
                     )
 
@@ -668,7 +674,7 @@ class Mapper(DataProcessor):
                         sr.metre_post_to_coordinates = coordinate_of_metre_post  # type: ignore
 
                     pass
-            except (IndexError, ValueError) as exception:
+            except (IndexError, ValueError, ZeroDivisionError) as exception:
                 prepared_lines = [
                     "1",
                     "1d",
@@ -687,7 +693,7 @@ class Mapper(DataProcessor):
                     self.logger.debug(exception)
                     raise
             if sr_index in notify_at_indexes:
-                self.logger.info(f"{int(sr_index / len(self.srs) * 100)}% done")
+                self.logger.info(f"⏳ {int(sr_index / len(self.srs) * 100)}% done...")
             pass
         self.logger.info(f"...finished visualising speed restrictions!")
 
