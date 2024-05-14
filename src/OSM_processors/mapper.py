@@ -166,6 +166,30 @@ def split_lines(
         )
 
 
+# noinspection PyShadowingNames
+def get_nearest_milestone(
+    exact_location: int, milestones: list[Node], sr: SR, on_ways: list[Way]
+) -> Node:
+    milestones.sort(
+        key=lambda milestone: abs(get_milestone_location(milestone) - exact_location)
+    )
+    for milestone in milestones:
+        for way in on_ways:
+            if milestone in way.nodes:
+                if sr.main_track_side:
+                    try:
+                        if way.tags["railway:track_side"] == sr.main_track_side:
+                            return milestone
+                    except KeyError:
+                        continue
+                else:
+                    return milestone
+    assert sr.id
+    raise ValueError(
+        f"Nearest milestone not found for SR #{sr.id[-8:]} on line {sr.line}!"
+    )
+
+
 class Mapper(DataProcessor):
     def __init__(self, show_lines_with_no_data: bool) -> None:
         super().__init__()
@@ -181,7 +205,7 @@ class Mapper(DataProcessor):
               
         """
         self.OPERATORS: Final = ["MÁV", "GYSEV"]
-        self.OPERATING_SITE_TAG_VALUES: Final = [
+        self.OPERATING_SITE_TAG_VALUES: Final = [  # type: ignore
             # TODO: uncomment lines below when implementing stations
             # "station",
             # "halt",
@@ -455,7 +479,7 @@ class Mapper(DataProcessor):
                                     self.sr_ways.append(member.ref)
                                 break
                     else:
-                        self.logger.critical(f"Relation with `ref={sr.line}` not found!")
+                        self.logger.warn(f"Relation with `ref={sr.line}` not found!")
                         raise ValueError
                 except ValueError as exception:
                     self.logger.debug(exception)
@@ -553,13 +577,14 @@ class Mapper(DataProcessor):
                     "30",
                     "8",
                     "18",
-                    "17",
+                    "17 (1)",
+                    "17 (2)",
                     "9",
                 ]
                 if sr.line not in prepared_lines:
                     pass
                 else:
-                    self.logger.debug(exception)
+                    self.logger.critical(exception)
                     raise
             if sr_index in notify_at_indexes:
                 self.logger.info(f"⏳ {int(sr_index / len(self.srs) * 100)}% done...")
@@ -576,41 +601,41 @@ class Mapper(DataProcessor):
         way_ids = [way.ref for way in relation.members]
         ways = [way for way in self.osm_data.ways if way.id in way_ids]
         return ways
-    
+
     def get_ways_of_milestones(
-            self, nearest_milestones: list[Node], ways: list[Way]
+        self, nearest_milestones: list[Node], ways: list[Way]
     ) -> tuple[Way, Way]:
         way_of_lower_milestone: Way | None = None
         way_of_greater_milestone: Way | None = None
-        
+
         for way in ways:
             for node in way.nodes:
                 if node == nearest_milestones[0]:
                     way_of_lower_milestone = way
                 elif node == nearest_milestones[-1]:
                     way_of_greater_milestone = way
-                
+
                 if way_of_lower_milestone and way_of_greater_milestone:
                     return way_of_lower_milestone, way_of_greater_milestone
         self.logger.critical("Ways of milestones not found!")
         raise ValueError
-    
+
     def get_ways_between_milestones(
-            self,
-            way_of_greater_milestone: Way,
-            way_of_lower_milestone: Way,
-            ways_of_line: list[Way],
+        self,
+        way_of_greater_milestone: Way,
+        way_of_lower_milestone: Way,
+        ways_of_line: list[Way],
     ) -> list[Way]:
         if way_of_lower_milestone is way_of_greater_milestone:
             return [way_of_lower_milestone]
-    
+
         ways_of_line_copy = ways_of_line.copy()
         ways_of_line_copy.remove(way_of_lower_milestone)
         neighbouring_ways_of_lower_milestone: tuple[list[Way], list[Way]] = (
             [way_of_lower_milestone],
             [way_of_lower_milestone],
         )
-        
+
         toggle = False
         return self.add_neighboring_ways(
             collection=neighbouring_ways_of_lower_milestone,
@@ -618,56 +643,35 @@ class Mapper(DataProcessor):
             destination_way=way_of_greater_milestone,
             toggle=toggle,
         )
-    
+
     def get_nearest_milestones(
-            self,
-            milestones: list[Node],
-            nearest_milestones: list[Node],
-            metre_post: int,
-            sr: SR,
-            on_ways: list[Way],
+        self,
+        milestones: list[Node],
+        nearest_milestones: list[Node],
+        metre_post: int,
+        sr: SR,
+        on_ways: list[Way],
     ) -> None:
         while len(nearest_milestones) < 2:
-            seemingly_nearest_milestone = self.get_nearest_milestone(
+            seemingly_nearest_milestone = get_nearest_milestone(
                 exact_location=metre_post,
                 milestones=milestones,
                 sr=sr,
                 on_ways=on_ways,
             )
             if not nearest_milestones or not (
-                    further_in_same_direction(
-                        milestone=seemingly_nearest_milestone,
-                        current_nearest_milestones=nearest_milestones,
-                        metre_post=metre_post,
-                    )
+                further_in_same_direction(
+                    milestone=seemingly_nearest_milestone,
+                    current_nearest_milestones=nearest_milestones,
+                    metre_post=metre_post,
+                )
             ):
                 nearest_milestones.append(seemingly_nearest_milestone)
             milestones.remove(seemingly_nearest_milestone)
-    
+
         nearest_milestones.sort(
             key=lambda milestone: float(milestone.tags["railway:position"])
         )
-    
-    # noinspection PyShadowingNames
-    def get_nearest_milestone(
-            self, exact_location: int, milestones: list[Node], sr: SR, on_ways: list[Way]
-    ) -> Node:
-        milestones.sort(
-            key=lambda milestone: abs(get_milestone_location(milestone) - exact_location)
-        )
-        for milestone in milestones:
-            for way in on_ways:
-                if milestone in way.nodes:
-                    if sr.main_track_side:
-                        try:
-                            if way.tags["railway:track_side"] == sr.main_track_side:
-                                return milestone
-                        except KeyError:
-                            continue
-                    else:
-                        return milestone
-        self.logger.critical("Nearest milestone not found!")
-        raise ValueError
 
     def add_na_lines(self, features_to_visualise: list[geojson.Feature]) -> None:
         self.logger.debug(f"Adding N/A lines started...")
@@ -701,18 +705,18 @@ class Mapper(DataProcessor):
                 )
                 features_to_visualise.append(feature)
         self.logger.debug(f"...finished!")
-    
+
     def add_neighboring_ways(
-            self,
-            collection: tuple[list[Way], list[Way]],
-            ways_to_search_in: list[Way],
-            destination_way: Way,
-            toggle: bool,
-            one_side_is_dead_end: bool = False,
+        self,
+        collection: tuple[list[Way], list[Way]],
+        ways_to_search_in: list[Way],
+        destination_way: Way,
+        toggle: bool,
+        one_side_is_dead_end: bool = False,
     ) -> list[Way]:
         for way in ways_to_search_in:
             found_neighbor_way = (collection[toggle][-1].nodes[0] in way.nodes) or (
-                    collection[toggle][-1].nodes[-1] in way.nodes
+                collection[toggle][-1].nodes[-1] in way.nodes
             )
             if found_neighbor_way:
                 collection[toggle].append(way)
@@ -729,8 +733,10 @@ class Mapper(DataProcessor):
                     toggle,
                 )
         if one_side_is_dead_end:
-            self.logger.critical("Couldn't reach destination_way from way_of_lower_milestone!")
-            raise ValueError
+            raise ValueError(
+                f"Couldn't reach destination_way (https://openstreetmap.org/way/{destination_way.id}) "
+                f"from way_of_lower_milestone (https://openstreetmap.org/way/{collection[0][0].id})!"
+            )
         else:
             one_side_is_dead_end = True
             ways_to_search_in.reverse()
