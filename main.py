@@ -47,7 +47,7 @@ def configure_logging(demonstration: bool) -> None:
                 logging.StreamHandler(sys.stdout),
                 logging.FileHandler("kalauz.log"),
             ],
-            format="%(asctime)s \t %(message)s",
+            format="%(asctime)s\t%(message)s",
             level=logging.INFO,
         )
     else:
@@ -57,7 +57,7 @@ def configure_logging(demonstration: bool) -> None:
                 logging.StreamHandler(),
                 logging.FileHandler("kalauz.log"),
             ],
-            format="%(asctime)s  %(levelname)s \t \"%(pathname)s:%(lineno)d\": %(message)s",
+            format="%(asctime)s [%(levelname)s] \"%(pathname)s:%(lineno)d\": %(message)s",
             level=logging.DEBUG,
         )
 
