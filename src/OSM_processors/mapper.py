@@ -5,10 +5,12 @@ from typing import Any, Final, List
 
 # future: remove the comment below when stubs for the library below are available
 import geojson  # type: ignore
-from multimethod import multimethod
 
 # future: remove the comment below when stubs for the library below are available
 from overpy import Area, Element, Node, Overpass, Relation, Result, Way  # type: ignore
+
+# noinspection PyPackageRequirements
+from plum import dispatch
 
 # future: remove the comment below when stubs for the library below are available
 from pydeck import Deck, Layer, ViewState  # type: ignore
@@ -232,10 +234,20 @@ def get_nearest_milestones(
     return nearest_milestones
 
 
-def convert_way_to_line(way: Way) -> geojson.LineString:
+def convert_way_to_gejson(way: Way) -> geojson.LineString:
     return geojson.LineString(
         [(float(node.lon), float(node.lat)) for node in way.nodes]
     )
+
+
+def convert_way_to_linestring(way: Way) -> shapely.LineString:
+    return shapely.LineString(
+        [(float(node.lon), float(node.lat)) for node in way.nodes]
+    )
+
+
+def point_on_line_if_you_squint(point: shapely.Point, line: shapely.LineString) -> bool:
+    return line.distance(point) < 1e-14
 
 
 class Mapper(DataProcessor):
@@ -565,14 +577,13 @@ class Mapper(DataProcessor):
                     if len(nearest_milestones) >= 2:
                         at_percentage_between_milestones = (
                             get_distance_percentage_between_milestones(
-                                nearest_milestones, sr_metre_post_boundary
+                                nearest_milestones=nearest_milestones,
+                                metre_post_boundary=sr_metre_post_boundary,
                             )
                         )
                         way_of_lower_milestone, way_of_greater_milestone = (
-                            # future: report bug (false positive) to mypy developers?
-                            self.get_ways_of_milestones(  # type: ignore
-                                nearest_milestones=nearest_milestones, ways=ways_of_line
-                            )
+                            # future: use kwargs when https://github.com/beartype/plum/issues/40 is fixed
+                            self.get_ways_at_locations(nearest_milestones, ways_of_line)
                         )
                         ways_between_milestones = self.get_ways_between_milestones(
                             way_of_greater_milestone=way_of_greater_milestone,
@@ -659,20 +670,52 @@ class Mapper(DataProcessor):
     def get_linestring_of_sr(
         self, sr: SR, ways_of_line: list[Way]
     ) -> shapely.LineString:
-        way_of_metre_post_from, way_of_metre_post_to = self.get_ways_of_milestones(
-            nearest_milestones=[
+        way_of_metre_post_from, way_of_metre_post_to = self.get_ways_at_locations(
+            # future: use kwargs when https://github.com/beartype/plum/issues/40 is fixed
+            [
                 # future: init `metre_post_from_coordinates` and `metre_post_to_coordinates` in the constructor
                 sr.metre_post_from_coordinates,  # type: ignore
                 sr.metre_post_to_coordinates,  # type: ignore
             ],
-            ways=ways_of_line,
+            ways_of_line,
         )
         ways_between_metre_posts = self.get_ways_between_milestones(
             way_of_greater_milestone=way_of_metre_post_to,
             way_of_lower_milestone=way_of_metre_post_from,
             ways_of_line=ways_of_line,
         )
-        return merge_ways(ways_between_metre_posts)
+        merged_ways_between_metre_posts = merge_ways(ways_between_metre_posts)
+
+        distance_percentage_of_metre_post_from = (
+            merged_ways_between_metre_posts.project(
+                other=sr.metre_post_from_coordinates,  # type: ignore
+                normalized=True,
+            )
+        )
+        distance_percentage_of_metre_post_to = merged_ways_between_metre_posts.project(
+            other=sr.metre_post_to_coordinates,  # type: ignore
+            normalized=True,
+        )
+        split_lines_at_lower_metre_post = split_lines(
+            line=merged_ways_between_metre_posts,
+            splitting_point=merged_ways_between_metre_posts.interpolate(
+                distance=distance_percentage_of_metre_post_from,
+                normalized=True,
+            ),
+        )
+        split_lines_at_greater_metre_post = split_lines(
+            line=merged_ways_between_metre_posts,
+            splitting_point=merged_ways_between_metre_posts.interpolate(
+                distance=distance_percentage_of_metre_post_to,
+                normalized=True,
+            ),
+        )
+
+        line_between_metre_posts = shapely.intersection(
+            split_lines_at_lower_metre_post.geoms[-1],
+            split_lines_at_greater_metre_post.geoms[0],
+        )
+        return line_between_metre_posts
 
     def get_ways_of_corresponding_line(self, sr: SR) -> list[Way]:
         relation = self.get_corresponding_relation(sr)
@@ -680,41 +723,56 @@ class Mapper(DataProcessor):
         ways = [way for way in self.osm_data.ways if way.id in way_ids]
         return ways
 
-    @multimethod
+    @dispatch
     # future: make `nearest_milestones` a two-element tuple?
-    def get_ways_of_milestones(self, nearest_milestones: list[Node], ways: list[Way]) -> tuple[Way, Way]:
-        way_of_lower_milestone: Way | None = None
-        way_of_greater_milestone: Way | None = None
-
-        for way in ways:
-            for node in way.nodes:
-                if node == nearest_milestones[0]:
-                    way_of_lower_milestone = way
-                elif node == nearest_milestones[-1]:
-                    way_of_greater_milestone = way
-
-                if way_of_lower_milestone and way_of_greater_milestone:
-                    return way_of_lower_milestone, way_of_greater_milestone
-        self.logger.critical("Ways of milestones not found!")
-        raise ValueError
-
-    @multimethod
-    def get_ways_of_milestones(
-        self, nearest_milestones: list[shapely.Point], ways: list[Way]
+    def get_ways_at_locations(
+        self, locations: List[Node], ways_to_search_in: List[Way]
     ) -> tuple[Way, Way]:
         way_of_lower_milestone: Way | None = None
         way_of_greater_milestone: Way | None = None
 
-        for way in ways:
-            way_line = convert_way_to_line(way)
-            if way_line.within(nearest_milestones[0]):
-                way_of_lower_milestone = way
-            elif way_line.within(nearest_milestones[-1]):
-                way_of_greater_milestone = way
+        for way in ways_to_search_in:
+            for node in way.nodes:
+                if node == locations[0]:
+                    way_of_lower_milestone = way
+                elif node == locations[-1]:
+                    way_of_greater_milestone = way
 
-            if way_of_lower_milestone and way_of_greater_milestone:
-                return way_of_lower_milestone, way_of_greater_milestone
-        self.logger.critical("Ways of milestones not found!")
+                if way_of_lower_milestone and way_of_greater_milestone:
+                    return way_of_lower_milestone, way_of_greater_milestone
+        if not way_of_lower_milestone:
+            self.logger.critical(
+                f"Way of https://www.openstreetmap.org/node/{locations[0].id} "
+                f"at {locations[0].lon}, {locations[0].lat} not found!"
+            )
+        if not way_of_greater_milestone:
+            self.logger.critical(
+                f"Way of https://www.openstreetmap.org/node/{locations[-1].id} "
+                f"at {locations[-1].lon}, {locations[-1].lat} not found!"
+            )
+        raise ValueError
+
+    # future: request mypy support from plum developers
+    @dispatch  # type: ignore
+    def get_ways_at_locations(
+        self, locations: List[shapely.Point], ways_to_search_in: List[Way]
+    ) -> tuple[Way, Way]:
+        way_of_lower_metre_post: Way | None = None
+        way_of_greater_metre_post: Way | None = None
+
+        for way in ways_to_search_in:
+            way_line = convert_way_to_linestring(way)
+            if point_on_line_if_you_squint(point=locations[0], line=way_line):
+                way_of_lower_metre_post = way
+            if point_on_line_if_you_squint(point=locations[-1], line=way_line):
+                way_of_greater_metre_post = way
+
+            if way_of_lower_metre_post and way_of_greater_metre_post:
+                return way_of_lower_metre_post, way_of_greater_metre_post
+        if not way_of_lower_metre_post:
+            self.logger.critical(f"Way of point at {locations[0].wkt} not found!")
+        if not way_of_greater_metre_post:
+            self.logger.critical(f"Way of point at {locations[-1].wkt} not found!")
         raise ValueError
 
     def get_ways_between_milestones(
@@ -787,7 +845,7 @@ class Mapper(DataProcessor):
     def add_all_ways(self, features_to_visualise: list[geojson.Feature]) -> None:
         self.logger.info(f"Adding all ways started...")
         for way in self.osm_data.ways:
-            way_line = convert_way_to_line(way)
+            way_line = convert_way_to_gejson(way)
             way.tags |= {
                 self.COLOR_TAG: (
                     [255, 255, 255] if way.id in self.sr_ways else [65, 65, 65]
@@ -800,7 +858,7 @@ class Mapper(DataProcessor):
             )
             features_to_visualise.append(feature)
         self.logger.info(f"...finished!")
-    
+
     def add_all_nodes(self, features_to_visualise: list[geojson.Feature]) -> None:
         self.logger.info(f"Adding all nodes started...")
         for node in self.osm_data.nodes:
