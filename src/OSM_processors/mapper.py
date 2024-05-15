@@ -19,7 +19,7 @@ from requests import HTTPError
 
 # future: remove the comment below when stubs for the library below are available
 import shapely  # type: ignore
-from shapely import from_geojson, get_coordinates
+from shapely import from_geojson, get_coordinates, intersection, snap
 
 # future: remove the comment below when stubs for the library below are available
 from shapely.geometry import shape  # type: ignore
@@ -612,10 +612,15 @@ class Mapper(DataProcessor):
                                 )
                             ),
                         )
-                        line_between_milestones = shapely.intersection(
+                        line_between_milestones = intersection(
                             split_lines_at_lower_milestone.geoms[-1],
                             split_lines_at_greater_milestone.geoms[0],
                         )
+                        if line_between_milestones.is_empty:
+                            line_between_milestones = intersection(
+                                split_lines_at_lower_milestone.geoms[0],
+                                split_lines_at_greater_milestone.geoms[-1],
+                            )
 
                         coordinate_of_metre_post = line_between_milestones.interpolate(
                             distance=at_percentage_between_milestones,
@@ -637,7 +642,6 @@ class Mapper(DataProcessor):
 
                 # future: init `geometry` in the constructor
                 sr.geometry = self.get_linestring_of_sr(sr, ways_of_line)  # type: ignore
-                pass
             except (IndexError, ValueError, ZeroDivisionError) as exception:
                 prepared_lines = [
                     "1",
@@ -686,28 +690,20 @@ class Mapper(DataProcessor):
         )
         merged_ways_between_metre_posts = merge_ways(ways_between_metre_posts)
 
-        distance_percentage_of_metre_post_from = (
-            merged_ways_between_metre_posts.project(
-                other=sr.metre_post_from_coordinates,  # type: ignore
-                normalized=True,
-            )
-        )
-        distance_percentage_of_metre_post_to = merged_ways_between_metre_posts.project(
-            other=sr.metre_post_to_coordinates,  # type: ignore
-            normalized=True,
-        )
         split_lines_at_lower_metre_post = split_lines(
             line=merged_ways_between_metre_posts,
-            splitting_point=merged_ways_between_metre_posts.interpolate(
-                distance=distance_percentage_of_metre_post_from,
-                normalized=True,
+            splitting_point=snap(
+                geometry=sr.metre_post_from_coordinates,  # type: ignore
+                reference=merged_ways_between_metre_posts,
+                tolerance=0.0003,
             ),
         )
         split_lines_at_greater_metre_post = split_lines(
             line=merged_ways_between_metre_posts,
-            splitting_point=merged_ways_between_metre_posts.interpolate(
-                distance=distance_percentage_of_metre_post_to,
-                normalized=True,
+            splitting_point=snap(
+                geometry=sr.metre_post_to_coordinates,  # type: ignore
+                reference=merged_ways_between_metre_posts,
+                tolerance=0.0003,
             ),
         )
 
