@@ -1,5 +1,6 @@
 import contextlib
 from datetime import datetime
+from functools import singledispatch
 import json
 from typing import Any, Final
 
@@ -210,7 +211,10 @@ def get_nearest_milestones(
             sr=sr,
             on_ways=on_ways,
         )
-        if float(seemingly_nearest_milestone.tags["railway:position"]) * 1000 == metre_post:
+        if (
+            float(seemingly_nearest_milestone.tags["railway:position"]) * 1000
+            == metre_post
+        ):
             return [seemingly_nearest_milestone]
         if not nearest_milestones or not (
             further_in_same_direction(
@@ -525,7 +529,7 @@ class Mapper(DataProcessor):
         features_to_visualise: list[geojson.Feature] = []
 
         self.add_all_nodes(features_to_visualise)
-        self.add_na_lines(features_to_visualise)
+        self.add_all_ways(features_to_visualise)
 
         self.logger.info(f"Visualising {len(self.srs)} speed restrictions started...")
         notification_percentage_interval = 2
@@ -559,14 +563,15 @@ class Mapper(DataProcessor):
                             )
                         )
                         way_of_lower_milestone, way_of_greater_milestone = (
-                            self.get_ways_of_milestones(
-                                nearest_milestones, ways_of_line
+                            # future: report bug (false positive) to mypy developers?
+                            self.get_ways_of_milestones(  # type: ignore
+                                nearest_milestones=nearest_milestones, ways=ways_of_line
                             )
                         )
                         ways_between_milestones = self.get_ways_between_milestones(
-                            way_of_greater_milestone,
-                            way_of_lower_milestone,
-                            ways_of_line,
+                            way_of_greater_milestone=way_of_greater_milestone,
+                            way_of_lower_milestone=way_of_lower_milestone,
+                            ways_of_line=ways_of_line,
                         )
                         merged_ways_between_milestones = merge_ways(
                             ways_between_milestones
@@ -613,7 +618,9 @@ class Mapper(DataProcessor):
                     else:
                         sr.metre_post_to_coordinates = coordinate_of_metre_post  # type: ignore
 
-                    pass
+                # future: init `geometry` in the constructor
+                sr.geometry = self.get_linestring_of_sr(sr, ways_of_line)  # type: ignore
+                pass
             except (IndexError, ValueError, ZeroDivisionError) as exception:
                 prepared_lines = [
                     "1",
@@ -643,15 +650,42 @@ class Mapper(DataProcessor):
         )
         self.export_map(feature_collection_to_visualise)
 
+    def get_linestring_of_sr(
+        self, sr: SR, ways_of_line: list[Way]
+    ) -> shapely.LineString:
+        way_of_metre_post_from, way_of_metre_post_to = self.get_ways_of_milestones(
+            nearest_milestones=[
+                # future: init `metre_post_from_coordinates` and `metre_post_to_coordinates` in the constructor
+                sr.metre_post_from_coordinates,  # type: ignore
+                sr.metre_post_to_coordinates,  # type: ignore
+            ],
+            ways=ways_of_line,
+        )
+        ways_between_metre_posts = self.get_ways_between_milestones(
+            way_of_greater_milestone=way_of_metre_post_to,
+            way_of_lower_milestone=way_of_metre_post_from,
+            ways_of_line=ways_of_line,
+        )
+        return merge_ways(ways_between_metre_posts)
+
     def get_ways_of_corresponding_line(self, sr: SR) -> list[Way]:
         relation = self.get_corresponding_relation(sr)
         way_ids = [way.ref for way in relation.members]
         ways = [way for way in self.osm_data.ways if way.id in way_ids]
         return ways
+    
+    # noinspection PyUnusedLocal
+    @singledispatch
+    def get_ways_of_milestones(self, nearest_milestones, ways):
+        self.logger.critical(
+            f"Method overload for argument `nearest_milestones` "
+            f"with the type of {type(nearest_milestones)} not implemented!"
+        )
+        raise NotImplementedError
 
-    def get_ways_of_milestones(
-        self, nearest_milestones: list[Node], ways: list[Way]
-    ) -> tuple[Way, Way]:
+    @get_ways_of_milestones.register
+    # future: make `nearest_milestones` a two-element tuple?
+    def _(self, nearest_milestones: list[Node], ways: list[Way]) -> tuple[Way, Way]:
         way_of_lower_milestone: Way | None = None
         way_of_greater_milestone: Way | None = None
 
@@ -660,6 +694,25 @@ class Mapper(DataProcessor):
                 if node == nearest_milestones[0]:
                     way_of_lower_milestone = way
                 elif node == nearest_milestones[-1]:
+                    way_of_greater_milestone = way
+
+                if way_of_lower_milestone and way_of_greater_milestone:
+                    return way_of_lower_milestone, way_of_greater_milestone
+        self.logger.critical("Ways of milestones not found!")
+        raise ValueError
+
+    @get_ways_of_milestones.register
+    def _(
+        self, nearest_milestones: list[shapely.Point], ways: list[Way]
+    ) -> tuple[Way, Way]:
+        way_of_lower_milestone: Way | None = None
+        way_of_greater_milestone: Way | None = None
+
+        for way in ways:
+            for node in way.nodes:
+                if (node.lon, node.lat) == nearest_milestones[0].coords:
+                    way_of_lower_milestone = way
+                elif (node.lon, node.lat) == nearest_milestones[-1].coords:
                     way_of_greater_milestone = way
 
                 if way_of_lower_milestone and way_of_greater_milestone:
@@ -690,39 +743,6 @@ class Mapper(DataProcessor):
             destination_way=way_of_greater_milestone,
             toggle=toggle,
         )
-
-    def add_na_lines(self, features_to_visualise: list[geojson.Feature]) -> None:
-        self.logger.info(f"Adding N/A lines started...")
-        for way in self.osm_data.ways:
-            way_line = geojson.LineString(
-                [(float(node.lon), float(node.lat)) for node in way.nodes]
-            )
-            way.tags |= {
-                self.COLOR_TAG: (
-                    [255, 255, 255] if way.id in self.sr_ways else [65, 65, 65]
-                )
-            }
-
-            feature = geojson.Feature(
-                geometry=way_line,
-                properties=way.tags,
-            )
-            features_to_visualise.append(feature)
-        self.logger.info(f"...finished!")
-
-    def add_all_nodes(self, features_to_visualise: list[geojson.Feature]) -> None:
-        self.logger.info(f"Adding all nodes started...")
-        for node in self.osm_data.nodes:
-            if node.id != 1:
-                point = geojson.Point((float(node.lon), float(node.lat)))
-                node.tags |= {self.COLOR_TAG: [0, 0, 0, 0]}
-
-                feature = geojson.Feature(
-                    geometry=point,
-                    properties=node.tags,
-                )
-                features_to_visualise.append(feature)
-        self.logger.info(f"...finished!")
 
     def add_neighboring_ways(
         self,
@@ -766,6 +786,39 @@ class Mapper(DataProcessor):
                 toggle,
                 one_side_is_dead_end,
             )
+
+    def add_all_ways(self, features_to_visualise: list[geojson.Feature]) -> None:
+        self.logger.info(f"Adding all ways started...")
+        for way in self.osm_data.ways:
+            way_line = geojson.LineString(
+                [(float(node.lon), float(node.lat)) for node in way.nodes]
+            )
+            way.tags |= {
+                self.COLOR_TAG: (
+                    [255, 255, 255] if way.id in self.sr_ways else [65, 65, 65]
+                )
+            }
+
+            feature = geojson.Feature(
+                geometry=way_line,
+                properties=way.tags,
+            )
+            features_to_visualise.append(feature)
+        self.logger.info(f"...finished!")
+
+    def add_all_nodes(self, features_to_visualise: list[geojson.Feature]) -> None:
+        self.logger.info(f"Adding all nodes started...")
+        for node in self.osm_data.nodes:
+            if node.id != 1:
+                point = geojson.Point((float(node.lon), float(node.lat)))
+                node.tags |= {self.COLOR_TAG: [0, 0, 0, 0]}
+
+                feature = geojson.Feature(
+                    geometry=point,
+                    properties=node.tags,
+                )
+                features_to_visualise.append(feature)
+        self.logger.info(f"...finished!")
 
     def export_map(self, feature_collection: geojson.FeatureCollection) -> None:
         geojson_layer = Layer(
