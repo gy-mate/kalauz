@@ -14,6 +14,7 @@ from plum import dispatch
 
 # future: remove the comment below when stubs for the library below are available
 from pydeck import Deck, Layer, ViewState  # type: ignore
+from pyproj import Geod
 import requests
 from requests import HTTPError
 
@@ -127,7 +128,9 @@ def get_distance_percentage_between_milestones(
         )
 
 
-def merge_ways(ways_between_milestones: list[Way]) -> shapely.LineString:
+def merge_ways_into_linestring(
+    ways_between_milestones: list[Way],
+) -> shapely.LineString:
     coordinates: list[tuple[float, float]] = []
     for way in ways_between_milestones:
         way_coordinates = [(float(node.lon), float(node.lat)) for node in way.nodes]
@@ -248,6 +251,32 @@ def convert_way_to_linestring(way: Way) -> shapely.LineString:
 
 def point_on_line_if_you_squint(point: shapely.Point, line: shapely.LineString) -> bool:
     return line.distance(point) < 1e-14
+
+
+def get_linestring_between_milestones(
+    lines_split_at_lower_milestone: shapely.MultiLineString,
+    lines_split_at_greater_milestone: shapely.MultiLineString,
+    expected_length: int,
+) -> shapely.LineString | shapely.Point:
+    geod = Geod(ellps="WGS84")
+    for i in (0, -1):
+        for j in (0, -1):
+            line_between_milestones = intersection(
+                lines_split_at_lower_milestone.geoms[i],
+                lines_split_at_greater_milestone.geoms[j],
+            )
+            sr_is_valid_as_point = expected_length <= 50 and isinstance(
+                line_between_milestones, shapely.Point
+            )
+            if sr_is_valid_as_point:
+                return line_between_milestones
+            length_of_found_linestring_is_reasonable = (
+                isinstance(line_between_milestones, shapely.LineString)
+                and abs(geod.geometry_length(line_between_milestones) - expected_length) <= 50
+            )
+            if length_of_found_linestring_is_reasonable:
+                return line_between_milestones
+    raise ValueError("Line between milestones not found!")
 
 
 class Mapper(DataProcessor):
@@ -590,11 +619,11 @@ class Mapper(DataProcessor):
                             way_of_lower_milestone=way_of_lower_milestone,
                             ways_of_line=ways_of_line,
                         )
-                        merged_ways_between_milestones = merge_ways(
+                        merged_ways_between_milestones = merge_ways_into_linestring(
                             ways_between_milestones
                         )
 
-                        split_lines_at_lower_milestone = split_lines(
+                        lines_split_at_lower_milestone = split_lines(
                             line=merged_ways_between_milestones,
                             splitting_point=shapely.Point(
                                 (
@@ -603,7 +632,7 @@ class Mapper(DataProcessor):
                                 )
                             ),
                         )
-                        split_lines_at_greater_milestone = split_lines(
+                        lines_split_at_greater_milestone = split_lines(
                             line=merged_ways_between_milestones,
                             splitting_point=shapely.Point(
                                 (
@@ -612,15 +641,19 @@ class Mapper(DataProcessor):
                                 )
                             ),
                         )
-                        line_between_milestones = intersection(
-                            split_lines_at_lower_milestone.geoms[-1],
-                            split_lines_at_greater_milestone.geoms[0],
-                        )
-                        if line_between_milestones.is_empty:
-                            line_between_milestones = intersection(
-                                split_lines_at_lower_milestone.geoms[0],
-                                split_lines_at_greater_milestone.geoms[-1],
+                        length_between_milestones = abs(
+                            int(
+                                float(nearest_milestones[0].tags["railway:position"])
+                                * 1000
+                                - float(nearest_milestones[-1].tags["railway:position"])
+                                * 1000
                             )
+                        )
+                        line_between_milestones = get_linestring_between_milestones(
+                            lines_split_at_lower_milestone=lines_split_at_lower_milestone,
+                            lines_split_at_greater_milestone=lines_split_at_greater_milestone,
+                            expected_length=length_between_milestones,
+                        )
 
                         coordinate_of_metre_post = line_between_milestones.interpolate(
                             distance=at_percentage_between_milestones,
@@ -688,7 +721,9 @@ class Mapper(DataProcessor):
             way_of_lower_milestone=way_of_metre_post_from,
             ways_of_line=ways_of_line,
         )
-        merged_ways_between_metre_posts = merge_ways(ways_between_metre_posts)
+        merged_ways_between_metre_posts = merge_ways_into_linestring(
+            ways_between_metre_posts
+        )
 
         split_lines_at_lower_metre_post = split_lines(
             line=merged_ways_between_metre_posts,
@@ -707,7 +742,7 @@ class Mapper(DataProcessor):
             ),
         )
 
-        line_between_metre_posts = shapely.intersection(
+        line_between_metre_posts = intersection(
             split_lines_at_lower_metre_post.geoms[-1],
             split_lines_at_greater_metre_post.geoms[0],
         )
