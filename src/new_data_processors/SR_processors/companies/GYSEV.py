@@ -301,6 +301,7 @@ class GysevUpdater(SRUpdater):
             assert line_source
             lines_to_be_manually_corrected = {
                 "17": "17 (1)",
+                "8E": "8",
             }
             if line_source in lines_to_be_manually_corrected:
                 line_corrected = lines_to_be_manually_corrected[line_source]
