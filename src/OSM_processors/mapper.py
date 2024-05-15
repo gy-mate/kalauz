@@ -679,19 +679,10 @@ class Mapper(DataProcessor):
         way_ids = [way.ref for way in relation.members]
         ways = [way for way in self.osm_data.ways if way.id in way_ids]
         return ways
-    
-    # noinspection PyUnusedLocal
-    @multimethod
-    def get_ways_of_milestones(self, nearest_milestones, ways):
-        self.logger.critical(
-            f"Method overload for argument `nearest_milestones` "
-            f"with the type of {type(nearest_milestones)} not implemented!"
-        )
-        raise NotImplementedError
 
-    @get_ways_of_milestones.register
+    @multimethod
     # future: make `nearest_milestones` a two-element tuple?
-    def _(self, nearest_milestones: List[Node], ways: List[Way]) -> tuple[Way, Way]:
+    def get_ways_of_milestones(self, nearest_milestones: list[Node], ways: list[Way]) -> tuple[Way, Way]:
         way_of_lower_milestone: Way | None = None
         way_of_greater_milestone: Way | None = None
 
@@ -707,9 +698,9 @@ class Mapper(DataProcessor):
         self.logger.critical("Ways of milestones not found!")
         raise ValueError
 
-    @get_ways_of_milestones.register
-    def _(
-        self, nearest_milestones: List[shapely.Point], ways: List[Way]
+    @multimethod
+    def get_ways_of_milestones(
+        self, nearest_milestones: list[shapely.Point], ways: list[Way]
     ) -> tuple[Way, Way]:
         way_of_lower_milestone: Way | None = None
         way_of_greater_milestone: Way | None = None
