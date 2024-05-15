@@ -1,11 +1,11 @@
 import contextlib
 from datetime import datetime
-from functools import singledispatch
 import json
-from typing import Any, Final
+from typing import Any, Final, List
 
 # future: remove the comment below when stubs for the library below are available
 import geojson  # type: ignore
+from multimethod import multimethod
 
 # future: remove the comment below when stubs for the library below are available
 from overpy import Area, Element, Node, Overpass, Relation, Result, Way  # type: ignore
@@ -230,6 +230,12 @@ def get_nearest_milestones(
         key=lambda milestone: float(milestone.tags["railway:position"])
     )
     return nearest_milestones
+
+
+def convert_way_to_line(way: Way) -> geojson.LineString:
+    return geojson.LineString(
+        [(float(node.lon), float(node.lat)) for node in way.nodes]
+    )
 
 
 class Mapper(DataProcessor):
@@ -675,7 +681,7 @@ class Mapper(DataProcessor):
         return ways
     
     # noinspection PyUnusedLocal
-    @singledispatch
+    @multimethod
     def get_ways_of_milestones(self, nearest_milestones, ways):
         self.logger.critical(
             f"Method overload for argument `nearest_milestones` "
@@ -685,7 +691,7 @@ class Mapper(DataProcessor):
 
     @get_ways_of_milestones.register
     # future: make `nearest_milestones` a two-element tuple?
-    def _(self, nearest_milestones: list[Node], ways: list[Way]) -> tuple[Way, Way]:
+    def _(self, nearest_milestones: List[Node], ways: List[Way]) -> tuple[Way, Way]:
         way_of_lower_milestone: Way | None = None
         way_of_greater_milestone: Way | None = None
 
@@ -703,20 +709,20 @@ class Mapper(DataProcessor):
 
     @get_ways_of_milestones.register
     def _(
-        self, nearest_milestones: list[shapely.Point], ways: list[Way]
+        self, nearest_milestones: List[shapely.Point], ways: List[Way]
     ) -> tuple[Way, Way]:
         way_of_lower_milestone: Way | None = None
         way_of_greater_milestone: Way | None = None
 
         for way in ways:
-            for node in way.nodes:
-                if (node.lon, node.lat) == nearest_milestones[0].coords:
-                    way_of_lower_milestone = way
-                elif (node.lon, node.lat) == nearest_milestones[-1].coords:
-                    way_of_greater_milestone = way
+            way_line = convert_way_to_line(way)
+            if way_line.within(nearest_milestones[0]):
+                way_of_lower_milestone = way
+            elif way_line.within(nearest_milestones[-1]):
+                way_of_greater_milestone = way
 
-                if way_of_lower_milestone and way_of_greater_milestone:
-                    return way_of_lower_milestone, way_of_greater_milestone
+            if way_of_lower_milestone and way_of_greater_milestone:
+                return way_of_lower_milestone, way_of_greater_milestone
         self.logger.critical("Ways of milestones not found!")
         raise ValueError
 
@@ -790,9 +796,7 @@ class Mapper(DataProcessor):
     def add_all_ways(self, features_to_visualise: list[geojson.Feature]) -> None:
         self.logger.info(f"Adding all ways started...")
         for way in self.osm_data.ways:
-            way_line = geojson.LineString(
-                [(float(node.lon), float(node.lat)) for node in way.nodes]
-            )
+            way_line = convert_way_to_line(way)
             way.tags |= {
                 self.COLOR_TAG: (
                     [255, 255, 255] if way.id in self.sr_ways else [65, 65, 65]
@@ -805,7 +809,7 @@ class Mapper(DataProcessor):
             )
             features_to_visualise.append(feature)
         self.logger.info(f"...finished!")
-
+    
     def add_all_nodes(self, features_to_visualise: list[geojson.Feature]) -> None:
         self.logger.info(f"Adding all nodes started...")
         for node in self.osm_data.nodes:
