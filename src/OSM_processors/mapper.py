@@ -288,16 +288,17 @@ def get_linestring_between_points(
     geod = Geod(ellps="WGS84")
     for i in (0, -1):
         for j in (0, -1):
-            line_between_milestones = intersection(
+            line_between_points = intersection(
                 lines_split_first.geoms[i],
                 lines_split_second.geoms[j],
             )
-            length_of_found_linestring_is_reasonable = (
-                abs(geod.geometry_length(line_between_milestones) - expected_length)
-                <= expected_length * 0.1
-            )
+            length_of_found_linestring_is_reasonable = abs(
+                geod.geometry_length(line_between_points) - expected_length
+            ) <= expected_length * (
+                0.15 if expected_length > 100 else 1
+            )  # 0.1 for the regular value was too low
             if length_of_found_linestring_is_reasonable:
-                return line_between_milestones
+                return line_between_points
     raise ValueError("Line between two points not found!")
 
 
@@ -767,12 +768,13 @@ class Mapper(DataProcessor):
             ways_between_metre_posts
         )
 
+        snapping_tolerance = 0.0004  # 0.0003 was too low, 0.0005 was too high
         split_lines_at_lower_metre_post = split_lines(
             line=merged_ways_between_metre_posts,
             splitting_point=snap(
                 geometry=sr.metre_post_from_coordinates,  # type: ignore
                 reference=merged_ways_between_metre_posts,
-                tolerance=0.0003,
+                tolerance=snapping_tolerance,
             ),
         )
         split_lines_at_greater_metre_post = split_lines(
@@ -780,7 +782,7 @@ class Mapper(DataProcessor):
             splitting_point=snap(
                 geometry=sr.metre_post_to_coordinates,  # type: ignore
                 reference=merged_ways_between_metre_posts,
-                tolerance=0.0003,
+                tolerance=snapping_tolerance,
             ),
         )
 
