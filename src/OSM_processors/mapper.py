@@ -20,7 +20,7 @@ from requests import HTTPError
 
 # future: remove the comment below when stubs for the library below are available
 import shapely  # type: ignore
-from shapely import from_geojson, get_coordinates, intersection, snap
+from shapely import distance, from_geojson, get_coordinates, intersection, snap
 
 # future: remove the comment below when stubs for the library below are available
 from shapely.geometry import shape  # type: ignore
@@ -82,7 +82,7 @@ def get_milestones(nodes: list[Node]) -> list[Node]:
 
 def get_milestone_location(milestone: Node) -> float:
     try:
-        return float(milestone.tags["railway:position"]) * 1000
+        return int(float(milestone.tags["railway:position"]) * 1000)
     except ValueError:
         raise ValueError(
             f"Milestone position ('{milestone.tags["railway:position"]}') couldn't be converted to float! "
@@ -93,13 +93,12 @@ def get_milestone_location(milestone: Node) -> float:
 def further_in_same_direction(
     milestone: Node, current_nearest_milestones: list[Node], metre_post: int
 ) -> bool:
-    return (
-        float(milestone.tags["railway:position"]) * 1000
-        < float(current_nearest_milestones[-1].tags["railway:position"]) * 1000
-        < metre_post
-        or metre_post
-        < float(current_nearest_milestones[-1].tags["railway:position"]) * 1000
-        < float(milestone.tags["railway:position"]) * 1000
+    return get_milestone_location(milestone) < get_milestone_location(
+        current_nearest_milestones[-1]
+    ) < metre_post or metre_post < get_milestone_location(
+        current_nearest_milestones[-1]
+    ) < get_milestone_location(
+        milestone
     )
 
 
@@ -108,8 +107,7 @@ def get_distance_percentage_between_milestones(
 ) -> float:
     try:
         nearest_milestones_locations = [
-            int(float(milestone.tags["railway:position"]) * 1000)
-            for milestone in nearest_milestones
+            get_milestone_location(milestone) for milestone in nearest_milestones
         ]
         distance_between_nearest_milestones = abs(
             nearest_milestones_locations[0] - nearest_milestones_locations[-1]
@@ -208,6 +206,9 @@ def get_nearest_milestones(
     sr: SR,
     on_ways: list[Way],
 ) -> list[Node]:
+    if sr.line == "146":
+        milestones = remove_irrelevant_duplicate_milestones(milestones, sr)
+
     nearest_milestones: list[Node] = []
     while len(nearest_milestones) < 2:
         seemingly_nearest_milestone = get_nearest_milestone(
@@ -216,10 +217,7 @@ def get_nearest_milestones(
             sr=sr,
             on_ways=on_ways,
         )
-        if (
-            float(seemingly_nearest_milestone.tags["railway:position"]) * 1000
-            == metre_post
-        ):
+        if get_milestone_location(seemingly_nearest_milestone) == metre_post:
             return [seemingly_nearest_milestone]
         if not nearest_milestones or not (
             further_in_same_direction(
@@ -231,10 +229,39 @@ def get_nearest_milestones(
             nearest_milestones.append(seemingly_nearest_milestone)
         milestones.remove(seemingly_nearest_milestone)
 
-    nearest_milestones.sort(
-        key=lambda milestone: float(milestone.tags["railway:position"])
-    )
+    # nearest_milestones.sort(
+    #     key=lambda milestone: float(milestone.tags["railway:position"])
+    # )
     return nearest_milestones
+
+
+def remove_irrelevant_duplicate_milestones(
+    milestones: list[Node], sr: SR
+) -> list[Node]:
+    milestones_near_kiskunfelegyhaza = [
+        11909093553,
+        11900570241,
+        11900570240,
+        11900570239,
+        10177734431,
+        11900570238,
+        11900570237,
+        10223953785,
+        11900570236,
+        11900570235,
+    ]
+    if sr.station_from in ["Kiskunfélegyháza", "Tiszaalpár"]:
+        return [
+            milestone
+            for milestone in milestones
+            if milestone.id in milestones_near_kiskunfelegyhaza
+        ]
+    else:
+        return [
+            milestone
+            for milestone in milestones
+            if milestone.id not in milestones_near_kiskunfelegyhaza
+        ]
 
 
 def convert_way_to_gejson(way: Way) -> geojson.LineString:
@@ -253,30 +280,25 @@ def point_on_line_if_you_squint(point: shapely.Point, line: shapely.LineString) 
     return line.distance(point) < 1e-14
 
 
-def get_linestring_between_milestones(
-    lines_split_at_lower_milestone: shapely.MultiLineString,
-    lines_split_at_greater_milestone: shapely.MultiLineString,
+def get_linestring_between_points(
+    lines_split_first: shapely.MultiLineString,
+    lines_split_second: shapely.MultiLineString,
     expected_length: int,
 ) -> shapely.LineString | shapely.Point:
     geod = Geod(ellps="WGS84")
     for i in (0, -1):
         for j in (0, -1):
             line_between_milestones = intersection(
-                lines_split_at_lower_milestone.geoms[i],
-                lines_split_at_greater_milestone.geoms[j],
+                lines_split_first.geoms[i],
+                lines_split_second.geoms[j],
             )
-            sr_is_valid_as_point = expected_length <= 50 and isinstance(
-                line_between_milestones, shapely.Point
-            )
-            if sr_is_valid_as_point:
-                return line_between_milestones
             length_of_found_linestring_is_reasonable = (
-                isinstance(line_between_milestones, shapely.LineString)
-                and abs(geod.geometry_length(line_between_milestones) - expected_length) <= 50
+                abs(geod.geometry_length(line_between_milestones) - expected_length)
+                <= expected_length * 0.1
             )
             if length_of_found_linestring_is_reasonable:
                 return line_between_milestones
-    raise ValueError("Line between milestones not found!")
+    raise ValueError("Line between two points not found!")
 
 
 class Mapper(DataProcessor):
@@ -649,9 +671,9 @@ class Mapper(DataProcessor):
                                 * 1000
                             )
                         )
-                        line_between_milestones = get_linestring_between_milestones(
-                            lines_split_at_lower_milestone=lines_split_at_lower_milestone,
-                            lines_split_at_greater_milestone=lines_split_at_greater_milestone,
+                        line_between_milestones = get_linestring_between_points(
+                            lines_split_first=lines_split_at_lower_milestone,
+                            lines_split_second=lines_split_at_greater_milestone,
                             expected_length=length_between_milestones,
                         )
 
@@ -659,6 +681,23 @@ class Mapper(DataProcessor):
                             distance=at_percentage_between_milestones,
                             normalized=True,
                         )
+                        if distance(
+                            coordinate_of_metre_post,
+                            shapely.Point(
+                                nearest_milestones[0].lon, nearest_milestones[0].lat
+                            ),
+                        ) > distance(
+                            coordinate_of_metre_post,
+                            shapely.Point(
+                                nearest_milestones[-1].lon, nearest_milestones[-1].lat
+                            ),
+                        ):
+                            coordinate_of_metre_post = (
+                                line_between_milestones.interpolate(
+                                    distance=1 - at_percentage_between_milestones,
+                                    normalized=True,
+                                )
+                            )
                     else:
                         coordinate_of_metre_post = shapely.Point(
                             (
@@ -692,7 +731,10 @@ class Mapper(DataProcessor):
                 if sr.line not in prepared_lines:
                     pass
                 else:
-                    self.logger.critical(exception)
+                    assert sr.id
+                    self.logger.critical(
+                        f"Fatal error with SR #{sr.id[-8:]}: {exception}"
+                    )
                     raise
             if sr_index in notify_at_indexes:
                 self.logger.info(f"⏳ {int(sr_index / len(self.srs) * 100)}% done...")
@@ -742,9 +784,10 @@ class Mapper(DataProcessor):
             ),
         )
 
-        line_between_metre_posts = intersection(
-            split_lines_at_lower_metre_post.geoms[-1],
-            split_lines_at_greater_metre_post.geoms[0],
+        line_between_metre_posts = get_linestring_between_points(
+            lines_split_first=split_lines_at_lower_metre_post,
+            lines_split_second=split_lines_at_greater_metre_post,
+            expected_length=abs(sr.metre_post_from - sr.metre_post_to),
         )
         return line_between_metre_posts
 
