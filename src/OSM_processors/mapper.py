@@ -286,20 +286,59 @@ def get_linestring_between_points(
     expected_length: int,
 ) -> shapely.LineString | shapely.Point:
     geod = Geod(ellps="WGS84")
+    # future: report bug (false positive) to JetBrains developers
+    # noinspection PyTypeChecker
+    differences_from_expected_length: list[dict[str, int]] = []
     for i in (0, -1):
         for j in (0, -1):
             line_between_points = intersection(
                 lines_split_first.geoms[i],
                 lines_split_second.geoms[j],
             )
-            length_of_found_linestring_is_reasonable = abs(
-                geod.geometry_length(line_between_points) - expected_length
-            ) <= expected_length * (
-                0.15 if expected_length > 100 else 1
-            )  # 0.1 for the regular value was too low
+            length = get_length(geod=geod, linestring=line_between_points)
+            difference_from_expected_length = int(abs(length - expected_length))
+            differences_from_expected_length.append(
+                {"length": int(length), "difference": difference_from_expected_length}
+            )
+            length_of_found_linestring_is_reasonable = (
+                difference_from_expected_length
+                <= expected_length
+                * get_tolerance_for_linestring_length(expected_length)
+            )
             if length_of_found_linestring_is_reasonable:
                 return line_between_points
-    raise ValueError("Line between two points not found!")
+    found_linestring_accepted_as_point = expected_length < 50
+    if found_linestring_accepted_as_point:
+        return line_between_points
+    assert differences_from_expected_length
+    closest_length = sorted(
+        differences_from_expected_length, key=lambda x: x["difference"]
+    )[0]
+    raise ValueError(
+        f"Line between two points not found! "
+        f"The closest length to the expected length of {expected_length} m was "
+        f"{closest_length["length"]} m (±{closest_length["difference"]} m / "
+        f"±{get_percentage(closest_length["difference"], expected_length)}%)!"
+    )
+
+
+def get_percentage(number_one: int, number_two: int) -> int:
+    return int(number_one / number_two * 100)
+
+
+def get_length(geod: Geod, linestring: shapely.LineString) -> float:
+    return geod.geometry_length(linestring)
+
+
+def get_tolerance_for_linestring_length(expected_length: int) -> float:
+    if expected_length > 500:
+        return 0.15  # 0.1 was too low
+    elif 500 >= expected_length > 100:
+        return 0.4  # 0.3 was too low
+    elif 100 >= expected_length:
+        return 1
+    else:
+        raise NotImplementedError
 
 
 class Mapper(DataProcessor):
@@ -768,30 +807,50 @@ class Mapper(DataProcessor):
             ways_between_metre_posts
         )
 
-        snapping_tolerance = 0.0004  # 0.0003 was too low, 0.0005 was too high
-        split_lines_at_lower_metre_post = split_lines(
-            line=merged_ways_between_metre_posts,
-            splitting_point=snap(
-                geometry=sr.metre_post_from_coordinates,  # type: ignore
-                reference=merged_ways_between_metre_posts,
-                tolerance=snapping_tolerance,
-            ),
-        )
-        split_lines_at_greater_metre_post = split_lines(
-            line=merged_ways_between_metre_posts,
-            splitting_point=snap(
-                geometry=sr.metre_post_to_coordinates,  # type: ignore
-                reference=merged_ways_between_metre_posts,
-                tolerance=snapping_tolerance,
-            ),
+        snapping_tolerances_best_to_worst = [0.0004, 0.0003, 0.0005, 0.0009, 0.001, 0.0015]
+        return self.try_to_get_linestring_of_sr(
+            merged_ways_between_metre_posts=merged_ways_between_metre_posts,
+            snapping_tolerances=snapping_tolerances_best_to_worst,
+            sr=sr,
         )
 
-        line_between_metre_posts = get_linestring_between_points(
-            lines_split_first=split_lines_at_lower_metre_post,
-            lines_split_second=split_lines_at_greater_metre_post,
-            expected_length=abs(sr.metre_post_from - sr.metre_post_to),
-        )
-        return line_between_metre_posts
+    def try_to_get_linestring_of_sr(
+        self,
+        merged_ways_between_metre_posts: shapely.LineString,
+        snapping_tolerances: list[float],
+        sr: SR,
+    ) -> shapely.LineString:
+        try:
+            snapping_tolerance = snapping_tolerances.pop(0)
+            split_lines_at_lower_metre_post = split_lines(
+                line=merged_ways_between_metre_posts,
+                splitting_point=snap(
+                    geometry=sr.metre_post_from_coordinates,  # type: ignore
+                    reference=merged_ways_between_metre_posts,
+                    tolerance=snapping_tolerance,
+                ),
+            )
+            split_lines_at_greater_metre_post = split_lines(
+                line=merged_ways_between_metre_posts,
+                splitting_point=snap(
+                    geometry=sr.metre_post_to_coordinates,  # type: ignore
+                    reference=merged_ways_between_metre_posts,
+                    tolerance=snapping_tolerance,
+                ),
+            )
+            linestring_of_sr = get_linestring_between_points(
+                lines_split_first=split_lines_at_lower_metre_post,
+                lines_split_second=split_lines_at_greater_metre_post,
+                expected_length=abs(sr.metre_post_from - sr.metre_post_to),
+            )
+            return linestring_of_sr
+        except ValueError:
+            if snapping_tolerances:
+                return self.try_to_get_linestring_of_sr(
+                    merged_ways_between_metre_posts, snapping_tolerances, sr
+                )
+            else:
+                raise
 
     def get_ways_of_corresponding_line(self, sr: SR) -> list[Way]:
         relation = self.get_corresponding_relation(sr)
