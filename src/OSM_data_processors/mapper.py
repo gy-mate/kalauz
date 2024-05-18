@@ -35,7 +35,13 @@ from tenacity import (
     wait_exponential,
 )
 
-from src.OSM_processors.map_data_helpers import (
+from src.OSM_data_processors.Overpass_queries import (
+    get_area_boundary,
+    get_ground_floor_tracks,
+    get_operating_site_separator,
+    get_route_relations,
+)
+from src.OSM_data_processors.map_data_helpers import (
     convert_way_to_gejson,
     convert_way_to_linestring,
     extract_operating_site_polygons,
@@ -91,6 +97,7 @@ def get_linestring_between_points(
     lines_split_first: shapely.MultiLineString,
     lines_split_second: shapely.MultiLineString,
     expected_length: int,
+    sr: SR,
 ) -> shapely.LineString | shapely.Point:
     geod = Geod(ellps="WGS84")
     # future: report bug (false positive) to JetBrains developers
@@ -110,11 +117,11 @@ def get_linestring_between_points(
             length_of_found_linestring_is_reasonable = (
                 difference_from_expected_length
                 <= expected_length
-                * get_tolerance_for_linestring_length(expected_length)
+                * get_tolerance_for_linestring_length(expected_length, sr)
             )
             if length_of_found_linestring_is_reasonable:
                 return line_between_points
-    found_linestring_accepted_as_point = expected_length < 50
+    found_linestring_accepted_as_point = expected_length < 100  # 50 was too low
     if found_linestring_accepted_as_point:
         return line_between_points
     assert differences_from_expected_length
@@ -135,14 +142,7 @@ class Mapper(DataProcessor):
 
         self.TODAY_SIMULATED: Final = datetime(2024, 1, 18, 21, 59, 59)
         self.COLOR_TAG: Final = "line_color"
-        self.QUERY_MAIN_PARAMETERS: Final = """
-            [out:json];
-            
-            area["ISO3166-1"="HU"]
-            // area["admin_level"="8"]["name"="Hegyeshalom"]
-              -> .country;
-              
-        """
+        self.QUERY_MAIN_PARAMETERS: Final = get_area_boundary()
         self.OPERATORS: Final = ["MÁV", "GYSEV"]
         self.OPERATING_SITE_TAG_VALUES: Final = [  # type: ignore
             # TODO: uncomment lines below when implementing stations
@@ -180,21 +180,7 @@ class Mapper(DataProcessor):
             out;
         """
 
-        self.query_final: str = (
-            self.QUERY_MAIN_PARAMETERS
-            # future: replace lines below when https://github.com/drolbr/Overpass-API/issues/146 is closed
-            #     relation["route"="railway"]["ref"]["operator"~"(^MÁV(?=;))|((?<=;)MÁV(?=;))|((?<=;)MÁV$)"](area.country);
-            #     relation["route"="railway"]["ref"]["operator"~"(^GYSEV(?=;))|((?<=;)GYSEV(?=;))|((?<=;)GYSEV$)"](area.country);
-            + """
-            (
-                relation["route"="railway"]["ref"]["operator"~"MÁV"](area.country);
-                relation["route"="railway"]["ref"]["operator"~"GYSEV"](area.country);
-            );
-            >>;
-            out;
-            
-        """
-        )
+        self.query_final: str = self.QUERY_MAIN_PARAMETERS + get_route_relations()
 
         self.osm_data_raw: dict = NotImplemented
         self.osm_data: Result = NotImplemented
@@ -353,23 +339,8 @@ class Mapper(DataProcessor):
                 );
                 """
         else:
-            self.query_final += f"""
-                (
-                    way["railway"="rail"][!"layer"](area.operatingSite);
-                    way["disused:railway"="rail"][!"layer"](area.operatingSite);
-                    way["abandoned:railway"="rail"][!"layer"](area.operatingSite);
-                    
-                    way["railway"="rail"]["layer"="0"](area.operatingSite);
-                    way["disused:railway"="rail"]["layer"="0"](area.operatingSite);
-                    way["abandoned:railway"="rail"]["layer"="0"](area.operatingSite);
-                );
-                """
-        self.query_final += f"""
-            (._;>;);
-            out;
-            node(1);
-            out ids;
-        """
+            self.query_final += get_ground_floor_tracks()
+        self.query_final += get_operating_site_separator()
 
     def process_srs(self) -> None:
         self.get_all_srs_from_database()
@@ -503,6 +474,7 @@ class Mapper(DataProcessor):
                             lines_split_first=lines_split_at_lower_milestone,
                             lines_split_second=lines_split_at_greater_milestone,
                             expected_length=length_between_milestones,
+                            sr=sr,
                         )
 
                         coordinate_of_metre_post = line_between_milestones.interpolate(
@@ -576,7 +548,7 @@ class Mapper(DataProcessor):
 
     def get_linestring_of_sr(
         self, sr: SR, ways_of_line: list[Way]
-    ) -> shapely.LineString:
+    ) -> shapely.LineString | shapely.Point:
         way_of_metre_post_from, way_of_metre_post_to = self.get_ways_at_locations(
             # future: use kwargs when https://github.com/beartype/plum/issues/40 is fixed
             [
@@ -602,6 +574,8 @@ class Mapper(DataProcessor):
             0.0009,
             0.001,
             0.0015,
+            0.01,
+            0.02,
         ]
         return self.try_to_get_linestring_of_sr(
             merged_ways_between_metre_posts=merged_ways_between_metre_posts,
@@ -614,29 +588,37 @@ class Mapper(DataProcessor):
         merged_ways_between_metre_posts: shapely.LineString,
         snapping_tolerances: list[float],
         sr: SR,
-    ) -> shapely.LineString:
+    ) -> shapely.LineString | shapely.Point:
         try:
             snapping_tolerance = snapping_tolerances.pop(0)
+
+            point_of_lower_metre_post = snap(
+                geometry=sr.metre_post_from_coordinates,  # type: ignore
+                reference=merged_ways_between_metre_posts,
+                tolerance=snapping_tolerance,
+            )
+            point_of_greater_metre_post = snap(
+                geometry=sr.metre_post_to_coordinates,  # type: ignore
+                reference=merged_ways_between_metre_posts,
+                tolerance=snapping_tolerance,
+            )
             split_lines_at_lower_metre_post = split_lines(
                 line=merged_ways_between_metre_posts,
-                splitting_point=snap(
-                    geometry=sr.metre_post_from_coordinates,  # type: ignore
-                    reference=merged_ways_between_metre_posts,
-                    tolerance=snapping_tolerance,
-                ),
+                splitting_point=point_of_lower_metre_post,
             )
             split_lines_at_greater_metre_post = split_lines(
                 line=merged_ways_between_metre_posts,
-                splitting_point=snap(
-                    geometry=sr.metre_post_to_coordinates,  # type: ignore
-                    reference=merged_ways_between_metre_posts,
-                    tolerance=snapping_tolerance,
-                ),
+                splitting_point=point_of_greater_metre_post,
             )
+
+            if point_of_lower_metre_post == point_of_greater_metre_post:
+                return point_of_lower_metre_post
+
             linestring_of_sr = get_linestring_between_points(
                 lines_split_first=split_lines_at_lower_metre_post,
                 lines_split_second=split_lines_at_greater_metre_post,
                 expected_length=abs(sr.metre_post_from - sr.metre_post_to),
+                sr=sr,
             )
             return linestring_of_sr
         except ValueError:

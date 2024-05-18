@@ -219,9 +219,17 @@ def remove_irrelevant_duplicate_milestones(
         ]
 
 
-def get_tolerance_for_linestring_length(expected_length: int) -> float:
+def get_tolerance_for_linestring_length(expected_length: int, sr: SR) -> float:
+    if sr.line == "1":
+        if (
+            min(sr.metre_post_from, sr.metre_post_to)
+            < 97700
+            < max(sr.metre_post_from, sr.metre_post_to)
+        ):  # inaccurate metre posts
+            return 0.4
+
     if expected_length > 500:
-        return 0.15  # 0.1 was too low
+        return 0.2  # 0.15 was too low
     elif 500 >= expected_length > 100:
         return 0.4  # 0.3 was too low
     elif 100 >= expected_length:

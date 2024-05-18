@@ -1,7 +1,7 @@
-1. [SR table of MÁV](..../data/02_converted/MÁV_2023-07-26_ASR.pdf)
+1. [SR table of MÁV](..../data/01_received/MÁV_eia26sg19lahx.pdf)
    1. its SQL database size is ~4 MB
-   1. Excel can't handle the gross length of SRs on line 100: _["3E+05"](..../data/02_converted/MÁV_2023-07-26_ASR.pdf#page=92)_
-   1. some SRs are duplicated – see [line 76 between Bánk and Romhány](..../data/02_converted/MÁV_2023-07-26_ASR.pdf#page=65)
+   1. Excel can't handle the gross length of SRs on line 100: _["3E+05"](..../data/01_received/MÁV_eia26sg19lahx.pdf#page=92)_
+   1. some SRs are duplicated – see [line 76 between Bánk and Romhány](..../data/01_received/MÁV_eia26sg19lahx.pdf#page=65)
 1. executive instructions of MÁV
    1. stations
       1. Szárliget

@@ -13,7 +13,7 @@ from sqlalchemy import text
 import roman  # type: ignore
 
 from src.SR import SR
-from src.new_data_processors.SR_processors.common import SRUpdater
+from src.new_data_processors.SR_table_processors.common import SRUpdater
 from src.new_data_processors.common_excel_processors import ExcelProcessorWithFormatting
 
 
@@ -288,9 +288,7 @@ class MavUpdater(SRUpdater, ExcelProcessorWithFormatting):
     ) -> str:
         try:
             assert line_source
-            lines_to_be_manually_corrected = {
-                "17": "17 (2)"
-            }
+            lines_to_be_manually_corrected = {"17": "17 (2)"}
             if line_source in lines_to_be_manually_corrected:
                 line_corrected = lines_to_be_manually_corrected[line_source]
 
