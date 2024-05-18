@@ -7,6 +7,7 @@ from pyproj import Geod
 
 # future: remove the comment below when stubs for the library below are available
 import shapely  # type: ignore
+from shapely import distance
 
 # future: remove the comment below when stubs for the library below are available
 from shapely.ops import split, substring  # type: ignore
@@ -251,18 +252,39 @@ def found_linestring_accepted_as_point(expected_length: int) -> bool:
     return expected_length < 100  # 50 was too low
 
 
-def line_between_coordinates(
-    full_line: shapely.LineString, sr: SR
+def line_between_points(
+    full_line: shapely.LineString, points: tuple[shapely.Point, shapely.Point]
 ) -> shapely.LineString:
     return substring(
         geom=full_line,
         start_dist=full_line.project(
-            other=sr.metre_post_from_coordinates,  # type: ignore
+            other=points[0],  # type: ignore
             normalized=True,
         ),
         end_dist=full_line.project(
-            other=sr.metre_post_to_coordinates,  # type: ignore
+            other=points[1],  # type: ignore
             normalized=True,
         ),
         normalized=True,
+    )
+
+
+def convert_node_to_point(nearest_milestones: Node) -> shapely.Point:
+    return shapely.Point(
+        (
+            float(nearest_milestones.lon),
+            float(nearest_milestones.lat),
+        )
+    )
+
+
+def milestones_are_in_reverse_order(
+    coordinate_of_metre_post: shapely.Point, nearest_milestones: list[Node]
+) -> bool:
+    return distance(
+        coordinate_of_metre_post,
+        shapely.Point(nearest_milestones[0].lon, nearest_milestones[0].lat),
+    ) > distance(
+        coordinate_of_metre_post,
+        shapely.Point(nearest_milestones[-1].lon, nearest_milestones[-1].lat),
     )
