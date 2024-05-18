@@ -236,3 +236,16 @@ def get_tolerance_for_linestring_length(expected_length: int, sr: SR) -> float:
         return 1
     else:
         raise NotImplementedError
+
+
+def length_of_found_linestring_is_reasonable(
+    difference_from_expected_length: int, expected_length: int, sr: SR
+) -> bool:
+    return (
+        difference_from_expected_length
+        <= expected_length * get_tolerance_for_linestring_length(expected_length, sr)
+    )
+
+
+def found_linestring_accepted_as_point(expected_length: int) -> bool:
+    return expected_length < 100  # 50 was too low

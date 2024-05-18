@@ -14,13 +14,12 @@ from plum import dispatch
 
 # future: remove the comment below when stubs for the library below are available
 from pydeck import Deck, Layer, ViewState  # type: ignore
-from pyproj import Geod
 import requests
 from requests import HTTPError
 
 # future: remove the comment below when stubs for the library below are available
 import shapely  # type: ignore
-from shapely import distance, from_geojson, get_coordinates, intersection, snap
+from shapely import distance, from_geojson, get_coordinates, intersection
 
 # future: remove the comment below when stubs for the library below are available
 from shapely.geometry import shape  # type: ignore
@@ -35,29 +34,8 @@ from tenacity import (
     wait_exponential,
 )
 
-from src.OSM_data_processors.Overpass_queries import (
-    get_area_boundary,
-    get_ground_floor_tracks,
-    get_operating_site_separator,
-    get_route_relations,
-)
-from src.OSM_data_processors.map_data_helpers import (
-    convert_way_to_gejson,
-    convert_way_to_linestring,
-    extract_operating_site_polygons,
-    further_in_same_direction,
-    get_distance_percentage_between_milestones,
-    get_length,
-    get_milestone_location,
-    get_milestones,
-    get_nearest_milestone,
-    get_percentage,
-    get_tolerance_for_linestring_length,
-    merge_ways_into_linestring,
-    point_on_line_if_you_squint,
-    remove_irrelevant_duplicate_milestones,
-    split_lines,
-)
+from src.OSM_data_processors.Overpass_queries import *
+from src.OSM_data_processors.map_data_helpers import *
 from src.SR import SR
 from src.new_data_processors.common import DataProcessor
 
@@ -93,12 +71,13 @@ def get_nearest_milestones(
     return nearest_milestones
 
 
+@dispatch
 def get_intersection_of_split_lines(
-    lines_split_first: shapely.MultiLineString,
-    lines_split_second: shapely.MultiLineString,
+    lines_split_first: shapely.MultiLineString | shapely.GeometryCollection,
+    lines_split_second: shapely.MultiLineString | shapely.GeometryCollection,
     expected_length: int,
     sr: SR,
-) -> shapely.LineString | shapely.Point:
+) -> shapely.LineString | shapely.MultiLineString | shapely.Point:
     geod = Geod(ellps="WGS84")
     # future: report bug (false positive) to JetBrains developers
     # noinspection PyTypeChecker
@@ -114,15 +93,11 @@ def get_intersection_of_split_lines(
             differences_from_expected_length.append(
                 {"length": int(length), "difference": difference_from_expected_length}
             )
-            length_of_found_linestring_is_reasonable = (
-                difference_from_expected_length
-                <= expected_length
-                * get_tolerance_for_linestring_length(expected_length, sr)
-            )
-            if length_of_found_linestring_is_reasonable:
+            if length_of_found_linestring_is_reasonable(
+                difference_from_expected_length, expected_length, sr
+            ):
                 return line_between_points
-    found_linestring_accepted_as_point = expected_length < 100  # 50 was too low
-    if found_linestring_accepted_as_point:
+    if found_linestring_accepted_as_point(expected_length):
         return line_between_points
     assert differences_from_expected_length
     closest_length = sorted(
@@ -134,6 +109,32 @@ def get_intersection_of_split_lines(
         f"{closest_length["length"]} m (±{closest_length["difference"]} m / "
         f"±{get_percentage(closest_length["difference"], expected_length)}%)!"
     )
+
+
+# future: request mypy support from plum developers
+@dispatch  # type: ignore
+def get_intersection_of_split_lines(
+    lines_split_first: tuple[shapely.LineString, shapely.LineString],
+    lines_split_second: tuple[shapely.LineString, shapely.LineString],
+    expected_length: int,
+    sr: SR,
+) -> shapely.LineString | shapely.MultiLineString | shapely.Point:
+    geod = Geod(ellps="WGS84")
+    if result := intersection(lines_split_first[0], lines_split_second[1]):
+        pass
+    elif result := intersection(lines_split_first[1], lines_split_second[0]):
+        pass
+    length = get_length(geod=geod, linestring=result)
+    difference_from_expected_length = int(abs(length - expected_length))
+    assert length_of_found_linestring_is_reasonable(
+        difference_from_expected_length, expected_length, sr
+    )
+    if isinstance(result, shapely.Point):
+        if found_linestring_accepted_as_point(expected_length):
+            return result
+        else:
+            raise ValueError("Point found instead of a line!")
+    return result
 
 
 class Mapper(DataProcessor):
@@ -442,7 +443,6 @@ class Mapper(DataProcessor):
                     raise
             if sr_index in notify_at_indexes:
                 self.logger.info(f"⏳ {int(sr_index / len(self.srs) * 100)}% done...")
-            pass
         self.logger.info(f"...finished visualising speed restrictions!")
 
         feature_collection_to_visualise = geojson.FeatureCollection(
@@ -507,11 +507,12 @@ class Mapper(DataProcessor):
                         - float(nearest_milestones[-1].tags["railway:position"]) * 1000
                     )
                 )
+                # future: use kwargs when https://github.com/beartype/plum/issues/40 is fixed
                 line_between_milestones = get_intersection_of_split_lines(
-                    lines_split_first=lines_split_at_lower_milestone,
-                    lines_split_second=lines_split_at_greater_milestone,
-                    expected_length=length_between_milestones,
-                    sr=sr,
+                    lines_split_at_lower_milestone,
+                    lines_split_at_greater_milestone,
+                    length_between_milestones,
+                    sr,
                 )
 
                 coordinate_of_metre_post = line_between_milestones.interpolate(
@@ -547,7 +548,7 @@ class Mapper(DataProcessor):
 
     def get_linestring_of_sr(
         self, sr: SR, ways_of_line: list[Way]
-    ) -> shapely.LineString | shapely.Point:
+    ) -> shapely.LineString | shapely.MultiLineString:
         way_of_metre_post_from, way_of_metre_post_to = self.get_ways_at_locations(
             # future: use kwargs when https://github.com/beartype/plum/issues/40 is fixed
             [
@@ -566,91 +567,40 @@ class Mapper(DataProcessor):
             ways_between_metre_posts
         )
 
-        # snapping_tolerances_best_to_worst = [
-        #     0.0004,
-        #     0.0003,
-        #     0.0005,
-        #     0.0009,
-        #     0.001,
-        #     0.0015,
-        #     0.01,
-        #     0.02,
-        # ]
-        # return self.try_to_get_linestring_of_sr(
-        #     merged_ways_between_metre_posts=merged_ways_between_metre_posts,
-        #     snapping_tolerances=snapping_tolerances_best_to_worst,
-        #     sr=sr,
-        # )
-
-        # future: report bug (false positive) to JetBrains and mypy developers
-        # noinspection PyTypeChecker
-        split_ways_at_metre_posts: tuple[tuple[shapely.LineString, shapely.LineString]] = ((NotImplemented, NotImplemented), (NotImplemented, NotImplemented))  # type: ignore
+        split_ways_at_metre_posts: list[
+            tuple[shapely.LineString, shapely.LineString]
+        ] = [(NotImplemented, NotImplemented), (NotImplemented, NotImplemented)]
         for i, sr_boundary in enumerate(
-            sr.metre_post_from_coordinates,  # type: ignore
-            sr.metre_post_to_coordinates,  # type: ignore
+            (
+                sr.metre_post_from_coordinates,  # type: ignore
+                sr.metre_post_to_coordinates,  # type: ignore
+            )
         ):
             at_percentage_on_merged_ways = merged_ways_between_metre_posts.project(
                 other=sr_boundary,
                 normalized=True,
             )
-            split_ways_at_metre_posts[i][0] = substring(
-                geom=merged_ways_between_metre_posts,
-                start_dist=0,
-                end_dist=at_percentage_on_merged_ways,
-                normalized=True,
+            split_ways_at_metre_posts[i] = (
+                substring(
+                    geom=merged_ways_between_metre_posts,
+                    start_dist=0,
+                    end_dist=at_percentage_on_merged_ways,
+                    normalized=True,
+                ),
+                substring(
+                    geom=merged_ways_between_metre_posts,
+                    start_dist=at_percentage_on_merged_ways,
+                    end_dist=1,
+                    normalized=True,
+                ),
             )
-            split_ways_at_metre_posts[i][1] = substring(
-                geom=merged_ways_between_metre_posts,
-                start_dist=at_percentage_on_merged_ways,
-                end_dist=1,
-                normalized=True,
-            )
-
-    def try_to_get_linestring_of_sr(
-        self,
-        merged_ways_between_metre_posts: shapely.LineString,
-        snapping_tolerances: list[float],
-        sr: SR,
-    ) -> shapely.LineString | shapely.Point:
-        try:
-            snapping_tolerance = snapping_tolerances.pop(0)
-
-            point_of_lower_metre_post = snap(
-                geometry=sr.metre_post_from_coordinates,  # type: ignore
-                reference=merged_ways_between_metre_posts,
-                tolerance=snapping_tolerance,
-            )
-            point_of_greater_metre_post = snap(
-                geometry=sr.metre_post_to_coordinates,  # type: ignore
-                reference=merged_ways_between_metre_posts,
-                tolerance=snapping_tolerance,
-            )
-            split_lines_at_lower_metre_post = split_lines(
-                line=merged_ways_between_metre_posts,
-                splitting_point=point_of_lower_metre_post,
-            )
-            split_lines_at_greater_metre_post = split_lines(
-                line=merged_ways_between_metre_posts,
-                splitting_point=point_of_greater_metre_post,
-            )
-
-            if point_of_lower_metre_post == point_of_greater_metre_post:
-                return point_of_lower_metre_post
-
-            linestring_of_sr = get_intersection_of_split_lines(
-                lines_split_first=split_lines_at_lower_metre_post,
-                lines_split_second=split_lines_at_greater_metre_post,
-                expected_length=abs(sr.metre_post_from - sr.metre_post_to),
-                sr=sr,
-            )
-            return linestring_of_sr
-        except ValueError:
-            if snapping_tolerances:
-                return self.try_to_get_linestring_of_sr(
-                    merged_ways_between_metre_posts, snapping_tolerances, sr
-                )
-            else:
-                raise
+            pass
+        return get_intersection_of_split_lines(
+            split_ways_at_metre_posts[0],
+            split_ways_at_metre_posts[1],
+            abs(sr.metre_post_from - sr.metre_post_to),
+            sr,
+        )
 
     def get_ways_of_corresponding_line(self, sr: SR) -> list[Way]:
         relation = self.get_corresponding_relation(sr)
