@@ -26,7 +26,7 @@ from shapely import distance, from_geojson, get_coordinates, intersection, snap
 from shapely.geometry import shape  # type: ignore
 
 # future: remove the comment below when stubs for the library below are available
-from shapely.ops import split  # type: ignore
+from shapely.ops import split, substring  # type: ignore
 from sqlalchemy.sql import text
 from tenacity import (
     retry,
@@ -93,7 +93,7 @@ def get_nearest_milestones(
     return nearest_milestones
 
 
-def get_linestring_between_points(
+def get_intersection_of_split_lines(
     lines_split_first: shapely.MultiLineString,
     lines_split_second: shapely.MultiLineString,
     expected_length: int,
@@ -414,103 +414,7 @@ class Mapper(DataProcessor):
                 nodes_of_line = [node for way in ways_of_line for node in way.nodes]
                 milestones_of_line = get_milestones(nodes=nodes_of_line)
 
-                for j, sr_metre_post_boundary in enumerate(
-                    (sr.metre_post_from, sr.metre_post_to)
-                ):
-                    milestones_of_line_copy = milestones_of_line.copy()
-                    nearest_milestones = get_nearest_milestones(
-                        milestones=milestones_of_line_copy,
-                        metre_post=sr_metre_post_boundary,
-                        sr=sr,
-                        on_ways=ways_of_line,
-                    )
-                    if len(nearest_milestones) >= 2:
-                        at_percentage_between_milestones = (
-                            get_distance_percentage_between_milestones(
-                                nearest_milestones=nearest_milestones,
-                                metre_post_boundary=sr_metre_post_boundary,
-                            )
-                        )
-                        way_of_lower_milestone, way_of_greater_milestone = (
-                            # future: use kwargs when https://github.com/beartype/plum/issues/40 is fixed
-                            self.get_ways_at_locations(nearest_milestones, ways_of_line)
-                        )
-                        ways_between_milestones = self.get_ways_between_milestones(
-                            way_of_greater_milestone=way_of_greater_milestone,
-                            way_of_lower_milestone=way_of_lower_milestone,
-                            ways_of_line=ways_of_line,
-                        )
-                        merged_ways_between_milestones = merge_ways_into_linestring(
-                            ways_between_milestones
-                        )
-
-                        lines_split_at_lower_milestone = split_lines(
-                            line=merged_ways_between_milestones,
-                            splitting_point=shapely.Point(
-                                (
-                                    float(nearest_milestones[0].lon),
-                                    float(nearest_milestones[0].lat),
-                                )
-                            ),
-                        )
-                        lines_split_at_greater_milestone = split_lines(
-                            line=merged_ways_between_milestones,
-                            splitting_point=shapely.Point(
-                                (
-                                    float(nearest_milestones[-1].lon),
-                                    float(nearest_milestones[-1].lat),
-                                )
-                            ),
-                        )
-                        length_between_milestones = abs(
-                            int(
-                                float(nearest_milestones[0].tags["railway:position"])
-                                * 1000
-                                - float(nearest_milestones[-1].tags["railway:position"])
-                                * 1000
-                            )
-                        )
-                        line_between_milestones = get_linestring_between_points(
-                            lines_split_first=lines_split_at_lower_milestone,
-                            lines_split_second=lines_split_at_greater_milestone,
-                            expected_length=length_between_milestones,
-                            sr=sr,
-                        )
-
-                        coordinate_of_metre_post = line_between_milestones.interpolate(
-                            distance=at_percentage_between_milestones,
-                            normalized=True,
-                        )
-                        if distance(
-                            coordinate_of_metre_post,
-                            shapely.Point(
-                                nearest_milestones[0].lon, nearest_milestones[0].lat
-                            ),
-                        ) > distance(
-                            coordinate_of_metre_post,
-                            shapely.Point(
-                                nearest_milestones[-1].lon, nearest_milestones[-1].lat
-                            ),
-                        ):
-                            coordinate_of_metre_post = (
-                                line_between_milestones.interpolate(
-                                    distance=1 - at_percentage_between_milestones,
-                                    normalized=True,
-                                )
-                            )
-                    else:
-                        coordinate_of_metre_post = shapely.Point(
-                            (
-                                float(nearest_milestones[0].lon),
-                                float(nearest_milestones[0].lat),
-                            )
-                        )
-
-                    # future: init `metre_post_from_coordinates` and `metre_post_to_coordinates` in the constructor
-                    if sr_metre_post_boundary == sr.metre_post_from:
-                        sr.metre_post_from_coordinates = coordinate_of_metre_post  # type: ignore
-                    else:
-                        sr.metre_post_to_coordinates = coordinate_of_metre_post  # type: ignore
+                self.get_coordinates_of_sr(milestones_of_line, sr, ways_of_line)
 
                 # future: init `geometry` in the constructor
                 sr.geometry = self.get_linestring_of_sr(sr, ways_of_line)  # type: ignore
@@ -546,6 +450,101 @@ class Mapper(DataProcessor):
         )
         self.export_map(feature_collection_to_visualise)
 
+    def get_coordinates_of_sr(
+        self, milestones_of_line: list[Node], sr: SR, ways_of_line: list[Way]
+    ) -> None:
+        for j, sr_metre_post_boundary in enumerate(
+            (sr.metre_post_from, sr.metre_post_to)
+        ):
+            milestones_of_line_copy = milestones_of_line.copy()
+            nearest_milestones = get_nearest_milestones(
+                milestones=milestones_of_line_copy,
+                metre_post=sr_metre_post_boundary,
+                sr=sr,
+                on_ways=ways_of_line,
+            )
+            if len(nearest_milestones) >= 2:
+                at_percentage_between_milestones = (
+                    get_distance_percentage_between_milestones(
+                        nearest_milestones=nearest_milestones,
+                        metre_post_boundary=sr_metre_post_boundary,
+                    )
+                )
+                way_of_lower_milestone, way_of_greater_milestone = (
+                    # future: use kwargs when https://github.com/beartype/plum/issues/40 is fixed
+                    self.get_ways_at_locations(nearest_milestones, ways_of_line)
+                )
+                ways_between_milestones = self.get_ways_between_milestones(
+                    way_of_greater_milestone=way_of_greater_milestone,
+                    way_of_lower_milestone=way_of_lower_milestone,
+                    ways_of_line=ways_of_line,
+                )
+                merged_ways_between_milestones = merge_ways_into_linestring(
+                    ways_between_milestones
+                )
+
+                lines_split_at_lower_milestone = split_lines(
+                    line=merged_ways_between_milestones,
+                    splitting_point=shapely.Point(
+                        (
+                            float(nearest_milestones[0].lon),
+                            float(nearest_milestones[0].lat),
+                        )
+                    ),
+                )
+                lines_split_at_greater_milestone = split_lines(
+                    line=merged_ways_between_milestones,
+                    splitting_point=shapely.Point(
+                        (
+                            float(nearest_milestones[-1].lon),
+                            float(nearest_milestones[-1].lat),
+                        )
+                    ),
+                )
+                length_between_milestones = abs(
+                    int(
+                        float(nearest_milestones[0].tags["railway:position"]) * 1000
+                        - float(nearest_milestones[-1].tags["railway:position"]) * 1000
+                    )
+                )
+                line_between_milestones = get_intersection_of_split_lines(
+                    lines_split_first=lines_split_at_lower_milestone,
+                    lines_split_second=lines_split_at_greater_milestone,
+                    expected_length=length_between_milestones,
+                    sr=sr,
+                )
+
+                coordinate_of_metre_post = line_between_milestones.interpolate(
+                    distance=at_percentage_between_milestones,
+                    normalized=True,
+                )
+                if distance(
+                    coordinate_of_metre_post,
+                    shapely.Point(nearest_milestones[0].lon, nearest_milestones[0].lat),
+                ) > distance(
+                    coordinate_of_metre_post,
+                    shapely.Point(
+                        nearest_milestones[-1].lon, nearest_milestones[-1].lat
+                    ),
+                ):
+                    coordinate_of_metre_post = line_between_milestones.interpolate(
+                        distance=1 - at_percentage_between_milestones,
+                        normalized=True,
+                    )
+            else:
+                coordinate_of_metre_post = shapely.Point(
+                    (
+                        float(nearest_milestones[0].lon),
+                        float(nearest_milestones[0].lat),
+                    )
+                )
+
+            # future: init `metre_post_from_coordinates` and `metre_post_to_coordinates` in the constructor
+            if sr_metre_post_boundary == sr.metre_post_from:
+                sr.metre_post_from_coordinates = coordinate_of_metre_post  # type: ignore
+            else:
+                sr.metre_post_to_coordinates = coordinate_of_metre_post  # type: ignore
+
     def get_linestring_of_sr(
         self, sr: SR, ways_of_line: list[Way]
     ) -> shapely.LineString | shapely.Point:
@@ -567,21 +566,45 @@ class Mapper(DataProcessor):
             ways_between_metre_posts
         )
 
-        snapping_tolerances_best_to_worst = [
-            0.0004,
-            0.0003,
-            0.0005,
-            0.0009,
-            0.001,
-            0.0015,
-            0.01,
-            0.02,
-        ]
-        return self.try_to_get_linestring_of_sr(
-            merged_ways_between_metre_posts=merged_ways_between_metre_posts,
-            snapping_tolerances=snapping_tolerances_best_to_worst,
-            sr=sr,
-        )
+        # snapping_tolerances_best_to_worst = [
+        #     0.0004,
+        #     0.0003,
+        #     0.0005,
+        #     0.0009,
+        #     0.001,
+        #     0.0015,
+        #     0.01,
+        #     0.02,
+        # ]
+        # return self.try_to_get_linestring_of_sr(
+        #     merged_ways_between_metre_posts=merged_ways_between_metre_posts,
+        #     snapping_tolerances=snapping_tolerances_best_to_worst,
+        #     sr=sr,
+        # )
+
+        # future: report bug (false positive) to JetBrains and mypy developers
+        # noinspection PyTypeChecker
+        split_ways_at_metre_posts: tuple[tuple[shapely.LineString, shapely.LineString]] = ((NotImplemented, NotImplemented), (NotImplemented, NotImplemented))  # type: ignore
+        for i, sr_boundary in enumerate(
+            sr.metre_post_from_coordinates,  # type: ignore
+            sr.metre_post_to_coordinates,  # type: ignore
+        ):
+            at_percentage_on_merged_ways = merged_ways_between_metre_posts.project(
+                other=sr_boundary,
+                normalized=True,
+            )
+            split_ways_at_metre_posts[i][0] = substring(
+                geom=merged_ways_between_metre_posts,
+                start_dist=0,
+                end_dist=at_percentage_on_merged_ways,
+                normalized=True,
+            )
+            split_ways_at_metre_posts[i][1] = substring(
+                geom=merged_ways_between_metre_posts,
+                start_dist=at_percentage_on_merged_ways,
+                end_dist=1,
+                normalized=True,
+            )
 
     def try_to_get_linestring_of_sr(
         self,
@@ -614,7 +637,7 @@ class Mapper(DataProcessor):
             if point_of_lower_metre_post == point_of_greater_metre_post:
                 return point_of_lower_metre_post
 
-            linestring_of_sr = get_linestring_between_points(
+            linestring_of_sr = get_intersection_of_split_lines(
                 lines_split_first=split_lines_at_lower_metre_post,
                 lines_split_second=split_lines_at_greater_metre_post,
                 expected_length=abs(sr.metre_post_from - sr.metre_post_to),
