@@ -9,7 +9,7 @@ from pyproj import Geod
 import shapely  # type: ignore
 
 # future: remove the comment below when stubs for the library below are available
-from shapely.ops import split  # type: ignore
+from shapely.ops import split, substring  # type: ignore
 
 from src.SR import SR
 
@@ -249,3 +249,20 @@ def length_of_found_linestring_is_reasonable(
 
 def found_linestring_accepted_as_point(expected_length: int) -> bool:
     return expected_length < 100  # 50 was too low
+
+
+def line_between_coordinates(
+    full_line: shapely.LineString, sr: SR
+) -> shapely.LineString:
+    return substring(
+        geom=full_line,
+        start_dist=full_line.project(
+            other=sr.metre_post_from_coordinates,  # type: ignore
+            normalized=True,
+        ),
+        end_dist=full_line.project(
+            other=sr.metre_post_to_coordinates,  # type: ignore
+            normalized=True,
+        ),
+        normalized=True,
+    )

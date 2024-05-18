@@ -36,6 +36,7 @@ from tenacity import (
 
 from src.OSM_data_processors.Overpass_queries import *
 from src.OSM_data_processors.map_data_helpers import *
+from src.OSM_data_processors.map_data_helpers import line_between_coordinates
 from src.SR import SR
 from src.new_data_processors.common import DataProcessor
 
@@ -419,6 +420,7 @@ class Mapper(DataProcessor):
 
                 # future: init `geometry` in the constructor
                 sr.geometry = self.get_linestring_of_sr(sr, ways_of_line)  # type: ignore
+                pass
             except (IndexError, ValueError, ZeroDivisionError) as exception:
                 prepared_lines = [
                     "1",
@@ -566,40 +568,8 @@ class Mapper(DataProcessor):
         merged_ways_between_metre_posts = merge_ways_into_linestring(
             ways_between_metre_posts
         )
-
-        split_ways_at_metre_posts: list[
-            tuple[shapely.LineString, shapely.LineString]
-        ] = [(NotImplemented, NotImplemented), (NotImplemented, NotImplemented)]
-        for i, sr_boundary in enumerate(
-            (
-                sr.metre_post_from_coordinates,  # type: ignore
-                sr.metre_post_to_coordinates,  # type: ignore
-            )
-        ):
-            at_percentage_on_merged_ways = merged_ways_between_metre_posts.project(
-                other=sr_boundary,
-                normalized=True,
-            )
-            split_ways_at_metre_posts[i] = (
-                substring(
-                    geom=merged_ways_between_metre_posts,
-                    start_dist=0,
-                    end_dist=at_percentage_on_merged_ways,
-                    normalized=True,
-                ),
-                substring(
-                    geom=merged_ways_between_metre_posts,
-                    start_dist=at_percentage_on_merged_ways,
-                    end_dist=1,
-                    normalized=True,
-                ),
-            )
-            pass
-        return get_intersection_of_split_lines(
-            split_ways_at_metre_posts[0],
-            split_ways_at_metre_posts[1],
-            abs(sr.metre_post_from - sr.metre_post_to),
-            sr,
+        return line_between_coordinates(
+            full_line=merged_ways_between_metre_posts, sr=sr
         )
 
     def get_ways_of_corresponding_line(self, sr: SR) -> list[Way]:
