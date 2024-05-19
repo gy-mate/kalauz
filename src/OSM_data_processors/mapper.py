@@ -334,17 +334,25 @@ class Mapper(DataProcessor):
         features_to_visualise: list[geojson.Feature] = []
 
         self.add_all_ways(features_to_visualise)
-        self.add_all_nodes(features_to_visualise)
+        # self.add_all_nodes(features_to_visualise)
 
         self.get_sr_geometries()
         for sr in self.srs:
+            sr.time_from = sr.time_from.strftime("%Y-%m-%d %H:%M:%S")  # type: ignore
+            infos = sr.__dict__
+            infos = {
+                key: value
+                for key, value in infos.items()
+                if value is not None
+                and key != "metre_post_from_coordinates"
+                and key != "metre_post_to_coordinates"
+                and key != "geometry"
+            }
+
             with contextlib.suppress(AttributeError):
                 feature = geojson.Feature(
                     geometry=convert_to_geojson(sr.geometry),  # type: ignore
-                    properties={
-                        "id": sr.id,
-                        self.COLOR_TAG: sr.__getattribute__(self.COLOR_TAG),
-                    },
+                    properties=infos,
                 )
                 features_to_visualise.append(feature)
 
