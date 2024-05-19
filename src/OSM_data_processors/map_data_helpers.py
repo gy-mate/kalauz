@@ -3,6 +3,7 @@ import geojson  # type: ignore
 
 # future: remove the comment below when stubs for the library below are available
 from overpy import Area, Element, Node, Relation, Way  # type: ignore
+from plum import dispatch
 from pyproj import Geod
 
 # future: remove the comment below when stubs for the library below are available
@@ -114,13 +115,22 @@ def get_nearest_milestone(
     )
 
 
-def convert_way_to_gejson(way: Way) -> geojson.LineString:
+@dispatch
+def convert_to_geojson(feature: Way) -> geojson.LineString:
     return geojson.LineString(
-        [(float(node.lon), float(node.lat)) for node in way.nodes]
+        [(float(node.lon), float(node.lat)) for node in feature.nodes]
     )
 
 
-def convert_way_to_linestring(way: Way) -> shapely.LineString:
+# future: request mypy support from plum developers
+@dispatch  # type: ignore
+def convert_to_geojson(feature: shapely.LineString) -> geojson.LineString:
+    return geojson.LineString(
+        [(float(point[0]), float(point[1])) for point in feature.coords]
+    )
+
+
+def convert_to_linestring(way: Way) -> shapely.LineString:
     return shapely.LineString(
         [(float(node.lon), float(node.lat)) for node in way.nodes]
     )

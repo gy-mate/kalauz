@@ -9,9 +9,6 @@ import geojson  # type: ignore
 # future: remove the comment below when stubs for the library below are available
 from overpy import Area, Element, Node, Overpass, Relation, Result, Way  # type: ignore
 
-# noinspection PyPackageRequirements
-from plum import dispatch
-
 # future: remove the comment below when stubs for the library below are available
 from pydeck import Deck, Layer, ViewState  # type: ignore
 import requests
@@ -339,6 +336,24 @@ class Mapper(DataProcessor):
         self.add_all_ways(features_to_visualise)
         self.add_all_nodes(features_to_visualise)
 
+        self.get_sr_geometries()
+        for sr in self.srs:
+            with contextlib.suppress(AttributeError):
+                feature = geojson.Feature(
+                    geometry=convert_to_geojson(sr.geometry),  # type: ignore
+                    properties={
+                        "id": sr.id,
+                        self.COLOR_TAG: sr.__getattribute__(self.COLOR_TAG),
+                    },
+                )
+                features_to_visualise.append(feature)
+
+        feature_collection_to_visualise = geojson.FeatureCollection(
+            features_to_visualise
+        )
+        self.export_map(feature_collection_to_visualise)
+
+    def get_sr_geometries(self) -> None:
         self.logger.info(f"Visualising {len(self.srs)} speed restrictions started...")
         notification_percentage_interval = 2
         notify_at_indexes: list[int] = []
@@ -352,13 +367,23 @@ class Mapper(DataProcessor):
             try:
                 ways_of_line = self.get_ways_of_corresponding_line(sr)
                 nodes_of_line = [node for way in ways_of_line for node in way.nodes]
-                milestones_of_line = get_milestones(nodes=nodes_of_line)
+                milestones_of_line = get_milestones(nodes_of_line)
 
                 self.get_coordinates_of_sr(milestones_of_line, sr, ways_of_line)
 
                 # future: init `geometry` in the constructor
                 sr.geometry = self.get_linestring_of_sr(sr, ways_of_line)  # type: ignore
-                pass
+                match int((1 - (sr.reduced_speed / sr.operating_speed)) * 100):
+                    case reduced_by if reduced_by in range(0, 20):
+                        setattr(sr, self.COLOR_TAG, [249, 255, 0])
+                    case reduced_by if reduced_by in range(20, 30):
+                        setattr(sr, self.COLOR_TAG, [255, 205, 0])
+                    case reduced_by if reduced_by in range(30, 40):
+                        setattr(sr, self.COLOR_TAG, [255, 150, 0])
+                    case reduced_by if reduced_by in range(40, 99):
+                        setattr(sr, self.COLOR_TAG, [255, 90, 0])
+                    case _:
+                        setattr(sr, self.COLOR_TAG, [255, 0, 0])
             except (IndexError, ValueError, ZeroDivisionError) as exception:
                 prepared_lines = [
                     "1",
@@ -386,12 +411,7 @@ class Mapper(DataProcessor):
                 self.logger.info(
                     f"{"⏳" if percentage < 50 else "⌛️"} {percentage}% done..."
                 )
-        self.logger.info(f"...finished visualising speed restrictions!")
-
-        feature_collection_to_visualise = geojson.FeatureCollection(
-            features_to_visualise
-        )
-        self.export_map(feature_collection_to_visualise)
+        self.logger.info(f"✅ 100% done! Finished visualising speed restrictions.")
 
     def get_coordinates_of_sr(
         self, milestones_of_line: list[Node], sr: SR, ways_of_line: list[Way]
@@ -454,7 +474,7 @@ class Mapper(DataProcessor):
 
     def get_linestring_of_sr(
         self, sr: SR, ways_of_line: list[Way]
-    ) -> shapely.LineString | shapely.MultiLineString:
+    ) -> shapely.LineString:
         way_of_metre_post_from, way_of_metre_post_to = self.get_ways_at_locations(
             # future: use kwargs when https://github.com/beartype/plum/issues/40 is fixed
             [
@@ -521,7 +541,7 @@ class Mapper(DataProcessor):
         way_of_greater_metre_post: Way | None = None
 
         for way in ways_to_search_in:
-            way_line = convert_way_to_linestring(way)
+            way_line = convert_to_linestring(way)
             if point_on_line_if_you_squint(point=locations[0], line=way_line):
                 way_of_lower_metre_post = way
             if point_on_line_if_you_squint(point=locations[-1], line=way_line):
@@ -605,10 +625,10 @@ class Mapper(DataProcessor):
     def add_all_ways(self, features_to_visualise: list[geojson.Feature]) -> None:
         self.logger.info(f"Adding all ways started...")
         for way in self.osm_data.ways:
-            way_line = convert_way_to_gejson(way)
+            way_line = convert_to_geojson(way)
             way.tags |= {
                 self.COLOR_TAG: (
-                    [255, 255, 255] if way.id in self.sr_ways else [65, 65, 65]
+                    [75, 75, 75] if way.id in self.sr_ways else [25, 25, 25]
                 )
             }
 
@@ -638,7 +658,7 @@ class Mapper(DataProcessor):
             "GeoJsonLayer",
             data=feature_collection,
             pickable=True,
-            line_width_min_pixels=2,
+            line_width_min_pixels=3,
             get_line_color=self.COLOR_TAG,
             get_fill_color=[0, 0, 0],
         )
