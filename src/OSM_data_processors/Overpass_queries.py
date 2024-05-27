@@ -24,6 +24,16 @@ def get_route_relations() -> str:
     """
 
 
+def get_operating_site_area(node_id: int) -> str:
+    return f"""
+        node({node_id}) -> .station;
+        .station out;
+        nwr(around.station:100)["landuse"="railway"];
+        convert item ::geom=geom();
+        out geom;
+    """
+
+
 def get_ground_floor_tracks() -> str:
     return f"""
         (

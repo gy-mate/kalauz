@@ -1,28 +1,17 @@
 import contextlib
 from datetime import datetime
 import json
+import re
 from typing import Any, Final, List
 
 # future: remove the comment below when stubs for the library below are available
 import geojson  # type: ignore
-
 # future: remove the comment below when stubs for the library below are available
 from overpy import Area, Element, Node, Overpass, Relation, Result, Way  # type: ignore
-
 # future: remove the comment below when stubs for the library below are available
 from pydeck import Deck, Layer, ViewState  # type: ignore
-import requests
-from requests import HTTPError
-
-# future: remove the comment below when stubs for the library below are available
-import shapely  # type: ignore
+from requests import HTTPError, Session
 from shapely import from_geojson, get_coordinates
-
-# future: remove the comment below when stubs for the library below are available
-from shapely.geometry import shape  # type: ignore
-
-# future: remove the comment below when stubs for the library below are available
-from shapely.ops import split, substring  # type: ignore
 from sqlalchemy.sql import text
 from tenacity import (
     retry,
@@ -33,44 +22,12 @@ from tenacity import (
 
 from src.OSM_data_processors.Overpass_queries import *
 from src.OSM_data_processors.map_data_helpers import *
-from src.OSM_data_processors.map_data_helpers import (
-    convert_node_to_point,
-    line_between_points,
-    milestones_are_in_reverse_order,
-)
 from src.SR import SR
+from src.logging_helpers import *
 from src.new_data_processors.common import DataProcessor
 
 
-def get_nearest_milestones(
-    milestones: list[Node],
-    metre_post: int,
-    sr: SR,
-    on_ways: list[Way],
-) -> list[Node]:
-    if sr.line == "146":
-        milestones = remove_irrelevant_duplicate_milestones(milestones, sr)
-
-    nearest_milestones: list[Node] = []
-    while len(nearest_milestones) < 2:
-        seemingly_nearest_milestone = get_nearest_milestone(
-            exact_location=metre_post,
-            milestones=milestones,
-            sr=sr,
-            on_ways=on_ways,
-        )
-        if get_milestone_location(seemingly_nearest_milestone) == metre_post:
-            return [seemingly_nearest_milestone]
-        if not nearest_milestones or not (
-            further_in_same_direction(
-                milestone=seemingly_nearest_milestone,
-                current_nearest_milestones=nearest_milestones,
-                metre_post=metre_post,
-            )
-        ):
-            nearest_milestones.append(seemingly_nearest_milestone)
-        milestones.remove(seemingly_nearest_milestone)
-    return nearest_milestones
+# future: remove the comment below when stubs for the library below are available
 
 
 class Mapper(DataProcessor):
@@ -94,7 +51,7 @@ class Mapper(DataProcessor):
         ]
 
         self._api: Final = Overpass()
-        self._dowload_session: Final = requests.Session()
+        self._dowload_session: Final = Session()
 
         self.show_lines_with_no_data = show_lines_with_no_data
 
@@ -142,13 +99,7 @@ class Mapper(DataProcessor):
 
         node_polygons_query = self.QUERY_MAIN_PARAMETERS
         for node in operating_site_elements.nodes:
-            node_polygons_query += f"""
-                node({node.id}) -> .station;
-                .station out;
-                nwr(around.station:100)["landuse"="railway"];
-                convert item ::geom=geom();
-                out geom;
-            """
+            node_polygons_query += get_operating_site_area(node.id)
         operating_site_node_polygons = geojson.loads(
             self.run_query_raw(
                 api=self._api,
@@ -337,6 +288,10 @@ class Mapper(DataProcessor):
         # self.add_all_nodes(features_to_visualise)
 
         self.get_sr_geometries()
+        self.add_sr_geometries(features_to_visualise)
+        self.export_map(geojson.FeatureCollection(features_to_visualise))
+
+    def add_sr_geometries(self, features_to_visualise: list[geojson.Feature]) -> None:
         for sr in self.srs:
             sr.time_from = sr.time_from.strftime("%Y-%m-%d %H:%M:%S")  # type: ignore
             infos = sr.__dict__
@@ -356,20 +311,11 @@ class Mapper(DataProcessor):
                 )
                 features_to_visualise.append(feature)
 
-        feature_collection_to_visualise = geojson.FeatureCollection(
-            features_to_visualise
-        )
-        self.export_map(feature_collection_to_visualise)
-
     def get_sr_geometries(self) -> None:
         self.logger.info(f"Visualising {len(self.srs)} speed restrictions started...")
-        notification_percentage_interval = 2
-        notify_at_indexes: list[int] = []
-        for i in range(1, int(100 / notification_percentage_interval) - 1):
-            notify_at_index = int(
-                len(self.srs) * (notification_percentage_interval / 100) * i
-            )
-            notify_at_indexes.append(notify_at_index + 1)
+        notify_at_indexes = get_when_to_notify(
+            data_length=len(self.srs), notification_percentage_interval=2
+        )
         # future: implement multithreading for the loop below
         for sr_index, sr in enumerate(self.srs):
             try:
@@ -681,7 +627,25 @@ class Mapper(DataProcessor):
         )
         self.logger.debug(f"Exporting map started...")
         deck.to_html(f"data/04_exported/map_pydeck_{self.TODAY}.html")
+        self.rename_title_html_tag(new_name="kalauz")
         self.logger.debug(f"...finished!")
+
+    def rename_title_html_tag(self, new_name: str) -> None:
+        map_html: str
+        with open(
+            f"data/04_exported/map_pydeck_{self.TODAY}.html", "r"
+        ) as exported_map:
+            map_html = exported_map.read()
+            map_html = re.sub(
+                r"<title>.*</title>",
+                f"<title>{new_name}</title>",
+                map_html,
+                flags=re.DOTALL,
+            )
+        with open(
+            f"data/04_exported/map_pydeck_{self.TODAY}.html", "w"
+        ) as exported_map:
+            exported_map.write(map_html)
 
     def get_corresponding_relation(self, sr: SR) -> Relation:
         try:
