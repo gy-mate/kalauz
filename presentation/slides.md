@@ -2,7 +2,7 @@
 theme: apple-basic
 
 layout: intro-image
-image: '/SRs_Hegyeshalom.jpeg'
+image: /SRs_Hegyeshalom.jpeg
 
 transition: slide-left
 ---
@@ -30,8 +30,10 @@ transition: slide-left
 
 <div class="absolute bottom-10">
 	<h1>Sebességkorlátozások</h1>
-	<p>jellemzőinek elemzése a magyarországi vasúthálózaton<br>
-mesterséges intelligenciával és geoinformatikai módszerekkel</p>
+	<p>
+        jellemzőinek elemzése a magyarországi vasúthálózaton<br>
+        mesterséges intelligenciával és geoinformatikai módszerekkel
+    </p>
 </div>
 
 
@@ -73,27 +75,43 @@ transition: slide-up
 
 ---
 transition: slide-up
-
-layout: iframe
-url: https://gy-mate.github.io/kalauz/
 ---
 
-# Teszt
+<SlidevVideo controls=true autoPlay=true autoPause="slide" autoReset="slide">
+  <!--suppress HtmlUnknownTarget -->
+<source src="/speed-restrictions_scroll.mp4" type="video/mp4"/>
+  <p>
+    Your browser does not support videos. You may download it
+    <!--suppress HtmlUnknownTarget -->
+    <a href="/speed-restrictions_scroll.mp4">here</a>.
+  </p>
+</SlidevVideo>
 
-```python
-import geojson
 
-def visualise_srs(self) -> None:
-        features = []
-        for i, node in enumerate(self.osm_data.nodes):
-            point = geojson.Point((float(node.lon), float(node.lat)))
-            node.tags |= {"line_color": [0, 0, 0, 0]}
-            feature = geojson.Feature(
-                geometry=point,
-                properties=node.tags,
-            )
-            features.append(feature)
-```
+---
+layout: intro-image-right
+image: /speed-restrictions_QR.png
+
+transition: slide-left
+---
+
+https://github.com/gy-mate/kalauz/blob/master/data/04_exported/speed_restrictions.csv?raw=true
+
+
+---
+layout: image
+image: /OSM_edits.png
+
+transition: slide-left
+---
+
+<!--
+- osszesen 7.000+ objektum
+  - 8 vonal 124 allomasan
+    - 716 valtoszam / tipus
+    - 734 vaganyszam
+  - 263 szelvenyko
+-->
 
 
 ---
