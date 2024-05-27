@@ -34,13 +34,42 @@ transition: slide-left
 mesterséges intelligenciával és geoinformatikai módszerekkel</p>
 </div>
 
+
 ---
 transition: slide-left
 ---
 
+<!--suppress HtmlUnknownTag -->
+[//]: # (<SlidevVideo controls=true autoPlay=true autoPause="slide" autoReset="slide">)
+[//]: # (  <!--suppress HtmlUnknownTarget -->)
+[//]: # (<source src="/Homolya_eloadas.mp4" type="video/mp4"/>)
+[//]: # (  <p>)
+[//]: # (    Your browser does not support videos. You may download it)
+[//]: # (    <!--suppress HtmlUnknownTarget -->)
+[//]: # (    <a href="/Homolya_eloadas.mp4">here</a>.)
+[//]: # (  </p>)
+[//]: # (</SlidevVideo>)
+
+
+---
+transition: slide-up
+---
+
 # Kutatási terv
 
-rövid összefoglalás
+- lassújelek: MySQL-adatbázis
+- közérdekűadat-igénylés
+  - MÁV: TopoRail
+  - GySEV: állomási vázlatos helyszínrajzok
+- vasútvonalak objektumainak
+  - feltöltése az OpenStreetMapre
+  - leszűrése és letöltése az OpenStreetMapről
+- lassújelek térképalapra illesztése
+- interaktív térképes megjelenítés
+- összefoglaló a szakirodalomról
+- elemzés az okokról
+- összefoglaló a megoldási lehetőségekről
+
 
 ---
 transition: slide-up
@@ -66,6 +95,7 @@ def visualise_srs(self) -> None:
             features.append(feature)
 ```
 
+
 ---
 transition: fade-out
 ---
@@ -74,6 +104,7 @@ transition: fade-out
 
 és azok összevetése a vállalásokkal
 
+
 ---
 layout: quote
 ---
@@ -81,3 +112,4 @@ layout: quote
 A kutatás a Kulturális és Innovációs Minisztérium *ÚNKP-23-1-I-BME-354* kódszámú Új Nemzeti Kiválóság Programjának a Nemzeti Kutatási, Fejlesztési és Innovációs Alapból finanszírozott szakmai támogatásával készült.
 
 ![ÚNKP-, NKFI- & KIM-logo](/funding.svg)
+
