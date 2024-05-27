@@ -22,8 +22,9 @@ transition: slide-left
 
 <div style="text-align: right">
 	<span class="font-200">
-		Szekció neve<br>
-        2024. 05. 29. 1x:xx
+        2024. 05. 29. 10:20<br>
+		Építőmérnöki tudományok<br>
+        2. szekció
 	</span>
 </div>
 
@@ -45,7 +46,7 @@ rövid összefoglalás
 transition: slide-up
 
 layout: iframe
-url: https://gy-mate.github.io/kalauz/data/04_exported/map_pydeck_2024-05-04.html
+url: https://gy-mate.github.io/kalauz/
 ---
 
 # Teszt
