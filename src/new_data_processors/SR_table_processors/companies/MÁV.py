@@ -47,6 +47,33 @@ def get_number_between_brackets(text_to_search: str) -> int:
     return round(int(re.findall(r"(?<=\().*(?=\))", text_to_search)[0]))
 
 
+def first_part_of_line_113(station_from: str | None, station_to: str | None) -> bool:
+    return (station_to or station_from) in [
+        "Nyíregyháza",
+        "Nagykálló",
+        "Nagykállói elágazás",  # sic!
+        "Kállósemjén",
+        "Máriapócs",  # sic!
+        "Nyírbátor",
+    ]
+
+
+def first_part_of_line_120(station_from: str | None, station_to: str | None) -> bool:
+    return (station_to or station_from) in [
+        "Rákos",
+        "Rákoshegy",
+        "Maglód",
+        "Gyömrő",
+        "Mende",
+        "Sülysáp",
+        "Tápiószecső",
+        "Nagykáta",
+        "Tápiószele",
+        "Tápiógyörgye",
+        "Újszász",
+    ]
+
+
 @final
 class MavUpdater(SRUpdater, ExcelProcessorWithFormatting):
     def __init__(self) -> None:
@@ -291,27 +318,20 @@ class MavUpdater(SRUpdater, ExcelProcessorWithFormatting):
             lines_to_be_manually_corrected = {"17": "17 (2)"}
             if line_source in lines_to_be_manually_corrected:
                 line_corrected = lines_to_be_manually_corrected[line_source]
-
                 if (
                     line_corrected == "75" and metre_post_to > 4800
                 ):  # rough metre post number of diverging lines
                     return "75A"
-
                 return line_corrected
             else:
                 if line_source == "113":
-                    first_part_of_the_line = (station_to or station_from) in [
-                        "Nyíregyháza",
-                        "Nagykálló",
-                        "Nagykállói elágazás",  # sic!
-                        "Kállósemjén",
-                        "Máriapócs",  # sic!
-                        "Nyírbátor",
-                    ]
-                    if first_part_of_the_line:
+                    if first_part_of_line_113(station_from, station_to):
                         return "113 (1)"
                     else:
                         return "113 (2)"
+                elif line_source == "120":
+                    if first_part_of_line_120(station_from, station_to):
+                        return "120a"
                 return line_source
         except AssertionError:
             self.logger.critical("Line not found!")
