@@ -132,7 +132,7 @@ class SRUpdater(ExcelProcessor, ABC):
         # future: delete date simulation below in production
         match self.COMPANY:
             case "MÁV":
-                self.TODAY = date(2024, 1, 18)
+                self.TODAY = date(2024, 3, 12)
             case "GYSEV":
                 self.TODAY = date(2022, 5, 13)
             case _:
