@@ -18,7 +18,7 @@ from src.OSM_data_processors.mapper import Mapper
 
 
 def main(
-    demonstration=False,
+    demonstration=True,
     show_lines_with_no_data=True,
 ) -> None:
     configure_logging(demonstration)
@@ -29,7 +29,7 @@ def main(
     # CountriesUpdater().run()
     # CompaniesUpdater().run()
     # OperatingSitesUpdater().run()
-    #
+
     # NewFilesRegistrar().run()
     # MavUpdater().run()
     # GysevUpdater().run()
@@ -47,7 +47,7 @@ def configure_logging(demonstration: bool) -> None:
                 logging.StreamHandler(sys.stdout),
                 logging.FileHandler("kalauz.log"),
             ],
-            format="%(asctime)s\t%(message)s",
+            format="%(asctime)s [%(levelname)s]: %(message)s",
             level=logging.INFO,
         )
     else:

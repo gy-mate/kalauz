@@ -279,7 +279,7 @@ class Mapper(DataProcessor):
                     else:
                         raise ValueError(f"Relation with `ref={sr.line}` not found!")
                 except ValueError as exception:
-                    self.logger.warn(exception)
+                    self.logger.debug(exception)
 
     def visualise_srs(self) -> None:
         features_to_visualise: list[geojson.Feature] = []
@@ -294,6 +294,8 @@ class Mapper(DataProcessor):
     def add_sr_geometries(self, features_to_visualise: list[geojson.Feature]) -> None:
         for sr in self.srs:
             sr.time_from = sr.time_from.strftime("%Y-%m-%d %H:%M:%S")  # type: ignore
+            if sr.time_to:
+                sr.time_to = sr.time_to.strftime("%Y-%m-%d %H:%M:%S")  # type: ignore
             infos = sr.__dict__
             infos = {
                 key: value
@@ -619,7 +621,7 @@ class Mapper(DataProcessor):
         view_state = ViewState(
             latitude=47.180833,
             longitude=19.503056,
-            zoom=7,
+            zoom=6,
         )
         deck = Deck(
             layers=[geojson_layer],
@@ -656,5 +658,5 @@ class Mapper(DataProcessor):
             ][0]
             return relation
         except IndexError:
-            self.logger.warn(f"Relation with `ref={sr.line}` not found!")
+            self.logger.debug(f"Relation with `ref={sr.line}` not found!")
             raise
