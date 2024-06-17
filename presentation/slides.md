@@ -41,10 +41,16 @@ image: /SRs_Hegyeshalom.jpeg
 </div>
 
 <!--
+- xy vagyok
+  - szociologus
+  - masodeves uzemmernok-informatikus hallgato
+  - de a kozlekedes (vasut) az erdeklodesi teruletem
+  - igy itt, az Epitomernoki karon vegzem a kutatasomat
+  - rovidesen befejezem
+- ezen belul is a palyahalozat allapota foglalkoztat
 - azaz a lassujelekbol
 - a hazai vasuthalozat allapotat a MAV korabbi (2022-ig regnalo) elnok-vezerigazgatoja, Homolya Róbert igy foglalta ossze
 -->
-
 
 ---
 layout: quote
@@ -102,11 +108,10 @@ transition: slide-left
 # Eredmények
 
 <!--
-- kutatasomat igazabol mar 2022 oszen elkezdtem
+- kutatasom elokesziteset igazabol mar 2022 oszen elkezdtem
 - amikor a Kozlekedo Tomeg Egyesulet a MAV-tol kikerte a lassujelek listajat
   - egyebkent nem eloszor...
 -->
-
 
 ---
 layout: image
@@ -167,6 +172,7 @@ transition: slide-up
 <!--
 - ...egy altalam irt celprogrammal
 - ami tobbek kozott a MAV-tol kapott `.pdf`-fajlokat automatikusan Excel-fajlokka konvertalja
+- a lassujelek bevezetesenek okait pedig mesterseges intelligencia segitsegevel, folyamatos gepi tanulassal kategorizalja
 -->
 
 
@@ -218,8 +224,6 @@ transition: slide-up
   - osszesen tobb mint 7.000 objektum feltoltese / javitasa, mindezt
     - 124 allomason
     - tobb mint 10 vasutvonalon
-- jobbra pl. a Keleti palyaudvar elkepesztoen reszletes terkepe lathato
-- az adatokat barki elerheti...
 -->
 
 ---
@@ -232,7 +236,8 @@ transition: slide-left
 https://www.openrailwaymap.org
 
 <!--
-- ...a legjobban ezen az oldalon latszanak
+- jobbra pl. a Keleti palyaudvar elkepesztoen reszletes terkepe lathato
+- a legjobban ezen az oldalon latszanak, barki elerheti
   - kesobb akar masnak is hasznos lehet
 - a vasuti objektumok feltoltese kozben egyebkent nehezseget okozott az adatok pontatlansaga
   - AVU-k
@@ -305,7 +310,6 @@ transition: slide-up
   </p>
 </SlidevVideo>
 
-
 <!--
 - lassújelek térképalapra illesztéset az altalam irt programnak a kovetkezo resze vegzi
 - *a video 20x gyorsitasu*
@@ -315,9 +319,8 @@ transition: slide-up
     - meg kell keresni az elejehez es vegehez legkozelebb allo 2 szelvenykovet
     - kiszamolni a lassujel elejenek es vegenek Euklideszi tavolsagat a szelvenykovektol
     - interpolacioval megallapitani a lassujel elejenek es vegeknek koordinatait
-    - majd ez alapjan kiszamolni a lassujel koordinatait
+    - majd ez alapjan kiszamolni a lassujel vonalanak koordinatait
 -->
-
 
 ---
 src: ./map.md
@@ -335,19 +338,6 @@ https://github.com/gy-mate/kalauz
 
 <!--
 - ezen a linken erheto el ez az alkalmazasom, ami kepes feldolgozni a lassujeleket, es generalni roluk egy terkepet
--->
-
-
----
-layout: image
-
-[//]: # (image: /SR_causes.png)
-
-transition: slide-left
----
-
-<!--
-- feltartam a lassujelek kialakulasanak okait es az azok megszuntetesenek lehetosegeit...
 -->
 
 
@@ -372,8 +362,10 @@ transition: slide-up
 </v-clicks>
 
 <!--
+- **mindig mondani, mi lenne a megoldas!**
 - ...ezekbol szeretnek nehanyat bemutatni a MAV-ra fokuszalva, mivel az o halozatukon a legnagyobb a problema [click]
-- logikailag az elso problema, hogy gyakran a meglevo palyaallapotokat sem osztalyozzak megfeleloen [click]
+- logikailag az elso problema, hogy gyakran a meglevo palyaallapotokat sem osztalyozzak megfeleloen, 
+ezert nincs pontos kepunk a palya allapotarol [click]
   - tul ritkak a merovonati bejarasok [click]
   - reszben emiatt tul nagy hangsuly van a palyamesterek szubjektiv ertekelesen
   - a MAV uzleti terveben szerepel erre megoldas: 1 merovonatot es 5+1 merojarmuvet szeretnenek beszerezni [click] 
@@ -395,10 +387,9 @@ transition: slide-up
 nincs koncepcioja a MAV-nak az alepitmenyhibak javitasara
 - es ajanlast adott ki ennek potlasara
 - e tekintetben peldat lehetne venni akar a GYSEV-rol is
-  - latszik, hogy sokkal atgondoltamm a palyakarbantartasi tevekenyseguk
+  - latszik, hogy sokkal atgondoltabb a palyakarbantartasi tevekenyseguk
 - vagy akar az OBB-rol...
 -->
-
 
 ---
 layout: image
@@ -410,7 +401,7 @@ transition: slide-left
 
 <!--
 - ...akiknel a torzshalozat lassujellistaja  mindossze 1,5 oldalra rafer
-  - a MAV-nal ez 192 oldal
+  - a MAV-nal ez ~100 oldal lenne
 - de akar a szlovak palyavasutrol is mintat lehetne venni...
 -->
 
@@ -449,7 +440,7 @@ transition: slide-left
 </v-clicks>
 
 <!--
-- *mindig mondani, mi lenne a megoldas!* [click] [click]
+- **mindig mondani, mi lenne a megoldas!** [click] [click]
 - a MAV uzleti terve: az allami koltsegterites kb. csak arra elegendo, hogy
 *"a pályaállag folyamatos romlását megállítsuk"*
 - az elobb mar emlitett merojarmuvek beszerzesere pedig hiaba van terv, ha meg nincs ra allami forras [click]
@@ -463,7 +454,6 @@ nem lehetett volna elkerulni a balesetet jobb karbantartassal
 es sokkal inkabb a modszereik helyessegenek bebizonyitasara forditja az eroforrasait
   - ezen a szervezeti kulturan valtoztatni kellene
 -->
-
 
 ---
 
@@ -496,10 +486,13 @@ transition: fade-out
 🟡 Elkészítem a MÁV hálózatán található valamennyi lassújel térképes megjelenítését.
 
 <!--
-- remelem, hogy a terkep elosegitheti a hatekony donteshozatalt es a beavatkozasok priorizalasat
+- adatok meglete eseten gyakorlatilag barmely vasutvonalon mukodik
+
 - **ha marad ido:**
   - egyebkent a program modularis, konnyen kiterjesztheto mas orszagokra
     - Ausztriaban pl. jovo szeptemberben lep eletbe az uj informacioszabadsag-torveny
+
+- remelem, hogy a terkep elosegitheti a hatekony donteshozatalt es a beavatkozasok priorizalasat
 -->
 
 ---
@@ -512,13 +505,9 @@ a Nemzeti Kutatási, Fejlesztési és Innovációs Alapból finanszírozott szak
 ![ÚNKP-, NKFI- & KIM-logo](/funding.svg)
 
 <!--
-- koszonom szepen a tamogatast
-  - az egyetemnek
-  - a Minisztériumnak
-  - konzulensemnek, Dr. Orosz Csaba tanar urnak
-- koszonom szepen a figyelmet
+- koszonom szepen a tamogatast a kutatashoz, fokent konzulensemnek, Dr. Orosz Csaba tanar urnak
+- es koszonom szepen a figyelmet is
 -->
-
 
 ---
 src: ./map.md

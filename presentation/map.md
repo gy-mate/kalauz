@@ -17,8 +17,8 @@ transition: slide-left
   - 113: szornyu allapotban van
   - 146: hasonlo a helyzet (tavaly augusztus 1-jen bezartak)
   - 40: gyakorlatilag sehol sem jarhato palyasebesseggel
-  - 6.975 vonalkm palyabol 7.608 vaganykm-en van lassujel (109%)
-- GYSEV: ehhez kepest 446 vonalkm palyabol mindossze 80 vaganykm-en van lassujel (18%)
+  - ~7.000 vonalkm palyabol ~7.600 vaganykm-en van lassujel (109%)
+- GYSEV: ehhez kepest ~450 vonalkm palyabol mindossze 80 vaganykm-en van lassujel (18%)
   - sokkal jobb allapotban van a halozata
   - 17: tokeletesen latszik, melyik az o reszuk, es melyik a MAV-e
 -->
