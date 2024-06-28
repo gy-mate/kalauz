@@ -4,6 +4,7 @@ author: Gyöngyösi Máté
 exportFilename: UNKP_eloadas_Gyongyosi-Mate_lassujelek
 
 theme: apple-basic
+lineNumbers: true
 
 layout: intro-image
 image: /SRs_Hegyeshalom.jpeg
@@ -256,7 +257,7 @@ transition: slide-up
 transition: slide-up
 ---
 
-```text {lines: true}
+```text
 area["ISO3166-1"="HU"]
   -> .country;
   
