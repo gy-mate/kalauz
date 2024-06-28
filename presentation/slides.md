@@ -1,6 +1,7 @@
 ---
+title: Sebességkorlátozások jellemzőinek elemzése a magyarországi vasúthálózaton – ÚNKP-konferencia
 author: Gyöngyösi Máté
-exportFilename: 'UNKP_eloadas_Gyongyosi-Mate_lassujelek.pdf'
+exportFilename: UNKP_eloadas_Gyongyosi-Mate_lassujelek
 
 theme: apple-basic
 
@@ -27,8 +28,8 @@ image: /SRs_Hegyeshalom.jpeg
 <div style="text-align: right">
 	<span class="font-200">
         2024. 05. 29. 10:20<br>
-		Építőmérnöki tudományok<br>
-        2. szekció
+		Építőmérnöki tudományok<br>
+        2. szekció
 	</span>
 </div>
 
@@ -41,15 +42,7 @@ image: /SRs_Hegyeshalom.jpeg
 </div>
 
 <!--
-- xy vagyok
-  - szociologus
-  - masodeves uzemmernok-informatikus hallgato
-  - de a kozlekedes (vasut) az erdeklodesi teruletem
-  - igy itt, az Epitomernoki karon vegzem a kutatasomat
-  - rovidesen befejezem
-- ezen belul is a palyahalozat allapota foglalkoztat
-- azaz a lassujelekbol
-- a hazai vasuthalozat allapotat a MAV korabbi (2022-ig regnalo) elnok-vezerigazgatoja, Homolya Róbert igy foglalta ossze
+- a hazai vasúthálózat állapotát a MÁV korábbi (2022-ig regnáló) elnök-vezérigazgatója, Homolya Róbert így foglalta össze
 -->
 
 ---
@@ -61,16 +54,16 @@ transition: slide-left
 # "...amikor megnézzük, hogy az elmúlt húsz évben hova jutottunk \[...] akkor a helyzet az meg szerintem nem ennyire rózsás. \[...] a lassújelekről beszélek, húsz éve ezeknek a száma nem változott. Évente kb. 3000 lassújelünk van mindig, és kb. 500 idegenes lassújelünk van. Ebben nem nagyon tudtunk elérni semmit."
 Homolya Róbert elnök-vezérigazgató, MÁV Zrt.<br>
 <br>
-2019. május 8., Budapest, HUNGRAIL Vasútakadémiai Konferencia
+2019. május 8., Budapest, Hungrail Vasútakadémiai Konferencia
 
 <!--
-- tehat az elmult evtizedekben csak rosszabb lett, vagy stagnalt a vasuti palya allapota
-- kutatasomban ennek okait, a jelenlegi allapotot es annak megoldasi lehetosegeit vizsgaltam
-- ennek kozponti elemekent egy lassujelterkep keszitesevel
-  - ami automatikusan frissitheto
-  - konnyen atlathato
-  - interaktivan bongeszheto
-- tudtommal ilyen meg nem letezik, hianypotlo
+- tehát az elmúlt évtizedekben csak rosszabb lett, vagy stagnált a vasúti pálya állapota
+- kutatásomban ennek okait, a jelenlegi állapotot és annak megoldási lehetőségeit vizsgáltam
+- ennek központi elemeként egy lassújeltérkép készítésével
+  - ami automatikusan frissíthető
+  - könnyen átlátható
+  - interaktívan böngészhető
+- tudtommal ilyen még nem létezik, hiánypótló
 -->
 
 ---
@@ -82,7 +75,7 @@ transition: slide-up
 - lassújelek: MySQL-adatbázis
 - közérdekűadat-igénylés
   - MÁV: TopoRail
-  - GySEV: állomási vázlatos helyszínrajzok
+  - GYSEV: állomási vázlatos helyszínrajzok
 - vasútvonalak objektumainak
   - feltöltése az OpenStreetMapre
   - szűrése és letöltése az OpenStreetMapről
@@ -93,10 +86,9 @@ transition: slide-up
 - összefoglaló a megoldási lehetőségekről
 
 <!--
-- **nem vegigmenni rajtuk!**
-- a kutatasi tervemnek ezek voltak a lepesei
-- ezeken szeretnek egyesevel vegigmenni
-  - megemlitve az egyes pontoknal a vallalasaim teljesiteset is
+- a kutatási tervemnek ezek voltak a lépései
+- ezeken szeretnék egyesével végigmenni
+  - megemlítve az egyes pontoknál a vállalásaim teljesítését is
 -->
 
 ---
@@ -108,9 +100,9 @@ transition: slide-left
 # Eredmények
 
 <!--
-- kutatasom elokesziteset igazabol mar 2022 oszen elkezdtem
-- amikor a Kozlekedo Tomeg Egyesulet a MAV-tol kikerte a lassujelek listajat
-  - egyebkent nem eloszor...
+- kutatásom előkészítését igazából már 2022 őszén elkezdtem
+- amikor a Közlekedő Tömeg Egyesület a MÁV-tól kikérte a lassújelek listáját
+  - egyébként nem először...
 -->
 
 ---
@@ -121,9 +113,9 @@ transition: slide-up
 ---
 
 <!--
-- ...de a MAV nem adta ki az adatokat
-  - uzleti titokra valo hivatkozassal
-- az Egyesulettel kozosen a NAIH-hoz fordultunk
+- ...de a MÁV nem adta ki az adatokat
+  - üzleti titokra való hivatkozással
+- az Egyesülettel közösen a NAIH-hoz fordultunk
 -->
 
 
@@ -136,9 +128,11 @@ transition: slide-up
 
 NAIH-4049-8/2023.
 
+<SlideCurrentNo /> / <SlidesTotal />
+
 <!--
-- egy evvel kesobb, 2023. juliusaban: hatarozat
-- ezuton is koszonom az Egyesulet es a NAIH kozbenjarasat
+- egy évvel később, 2023. júliusában: határozat
+- ezúton is köszönöm az Egyesület és a NAIH közbenjárását
 -->
 
 ---
@@ -153,8 +147,10 @@ transition: slide-up
   </p>
 </SlidevVideo>
 
+<SlideCurrentNo /> / <SlidesTotal />
+
 <!--
--  ebbol es a GYSEV tablazatabol egy SQL-adatbázist keszitettem...
+- ebből és a GYSEV táblázatából egy SQL-adatbázist készítettem...
 -->
 
 ---
@@ -170,9 +166,9 @@ transition: slide-up
 </SlidevVideo>
 
 <!--
-- ...egy altalam irt celprogrammal
-- ami tobbek kozott a MAV-tol kapott `.pdf`-fajlokat automatikusan Excel-fajlokka konvertalja
-- a lassujelek bevezetesenek okait pedig mesterseges intelligencia segitsegevel, folyamatos gepi tanulassal kategorizalja
+- ...egy általam írt célprogrammal
+- ami többek között a MÁV-tól kapott `.pdf`-fájlokat automatikusan Excel-fájlokká konvertálja
+- a lassújelek bevezetésének okait pedig mesterséges intelligencia segítségével, folyamatos gépi tanulással kategorizálja
 -->
 
 
@@ -189,9 +185,9 @@ transition: slide-up
 </SlidevVideo>
 
 <!--
-- az eredmenye ez a hatalmas tablazat
-- melyben tobb mint 7.000 lassujel szerepel
-- az adatbazis letrehozasaval kapcsolatos vallalasom teljesult
+- az eredménye ez a hatalmas táblázat
+- melyben több mint 7.000 lassújel szerepel
+- az adatbázis létrehozásával kapcsolatos vállalásom teljesült
 -->
 
 
@@ -205,11 +201,11 @@ transition: slide-left
 https://github.com/gy-mate/kalauz/blob/master/data/04_exported/speed_restrictions.csv?raw=true
 
 <!--
-- az adatok itt erhetoek el
-- viszont ezeket csak megfelelo geoinformatikai adatok birtokaban lehet terkepre helyezni
-- ezert a vallalasomban szerepelt, hogy közérdekűadat-igénylést nyujtok be a MAV es a GYSEV terinformatikai adataira
-  - erre vegul nem volt szukseg
-  - AVU-kbol es allomasi torzitott helyszinrajzokbol fel lehetett terkepezni az allomasokat
+- az adatok itt érhetőek el
+- viszont ezeket csak megfelelő geoinformatikai adatok birtokában lehet térképre helyezni
+- ezért a vállalásomban szerepelt, hogy közérdekűadat-igénylést nyújtok be a MÁV és a GYSEV térinformatikai adataira
+  - erre végül nem volt szükség
+  - ÁVU-kból és állomási torzított helyszínrajzokból fel lehetett térképezni az állomásokat
 -->
 
 ---
@@ -220,10 +216,10 @@ transition: slide-up
 ---
 
 <!--
-- vasútvonalak objektumainak feltöltése az OpenStreetMapre: ezt a vallalasomat is teljesitettem
-  - osszesen tobb mint 7.000 objektum feltoltese / javitasa, mindezt
-    - 124 allomason
-    - tobb mint 10 vasutvonalon
+- vasútvonalak objektumainak feltöltése az OpenStreetMapre: ezt a vállalásomat is teljesítettem
+  - összesen több mint 7.000 objektum feltöltése / javítása, mindezt
+    - 124 állomáson
+    - több mint 10 vasútvonalon
 -->
 
 ---
@@ -236,14 +232,14 @@ transition: slide-left
 https://www.openrailwaymap.org
 
 <!--
-- jobbra pl. a Keleti palyaudvar elkepesztoen reszletes terkepe lathato
-- a legjobban ezen az oldalon latszanak, barki elerheti
-  - kesobb akar masnak is hasznos lehet
-- a vasuti objektumok feltoltese kozben egyebkent nehezseget okozott az adatok pontatlansaga
-  - AVU-k
-  - allomasi torzitott helyszinrajzok
-- 12 allomason 26 hiba a vegrehajtasi utasitasokban
-  - a kutatasom mellekhatasakent jeleztem az allomasfonokoknek, szakertoknek...
+- jobbra pl. a Keleti pályaudvar elképesztően részletes térképe látható
+- a legjobban ezen az oldalon látszanak, bárki elérheti
+  - később akár másnak is hasznos lehet
+- a vasúti objektumok feltöltése közben egyébkent nehézséget okozott az adatok pontatlansága
+  - ÁVU-k
+  - állomási torzított helyszínrajzok
+- 12 állomáson 26 hiba a végrehajtási utasításokban
+  - a kutatásom mellékhatásaként jeleztem az állomásfőnököknek, szakértőknek...
 -->
 
 ---
@@ -254,10 +250,10 @@ transition: slide-up
 ---
 
 <!--
-- ...akik ezt megkoszontek, es jeleztek, hogy javitani fogjak oket
-- a VPE torzitott allomasi helyszinrajzain pedig 35 allomason 119 hibat talaltam
-  - nekik is jeleztem a pontatlansagokat
-- igy, hogy keszen vannak a terkepadatok, le lehet tolteni oket...
+- ...akik ezt megköszönték, és jelezték, hogy javítani fogják őket
+- a VPE torzított állomási helyszínrajzain pedig 35 állomáson 119 hibát találtam
+  - nekik is jeleztem a pontatlanságokat
+- így, hogy készen vannak a térképadatok, le lehet tölteni őket...
 -->
 
 ---
@@ -293,9 +289,9 @@ out ids;
 ```
 
 <!--
-- igy nez ki egy generalt lekerdezes az orszag osszes nyiltvonalara es atmeno fovaganyara, illetve egy allomasra vonatkozolag
-  - ebbol a szakaszbol persze tobb ezernyi van a lekerdezesben (ahany allomas)
-- teljesitettem azt is, hogy a vasútvonalak objektumait kiszűrom és letöltom az OpenStreetMapről
+- így néz ki egy generált lekérdezés az ország összes nyíltvonalára és átmenő fővágányára, illetve egy állomásra vonatkozólag
+  - ebből a szakaszból persze több ezernyi van a lekérdezésben (ahány állomás)
+- teljesítettem azt is, hogy a vasútvonalak objektumait kiszűröm és letöltöm az OpenStreetMapről
 -->
 
 ---
@@ -311,15 +307,15 @@ transition: slide-up
 </SlidevVideo>
 
 <!--
-- lassújelek térképalapra illesztéset az altalam irt programnak a kovetkezo resze vegzi
-- *a video 20x gyorsitasu*
-  - eleg idoigenyes feladat
-  - minden lassujelnel
+- lassújelek térképalapra illesztését az általam írt programnak a következő része végzi
+- *a videó 20x gyorsítású*
+  - elég időigényes feladat
+  - minden lassújelnél
     - meg kell keresni a vonalat
-    - meg kell keresni az elejehez es vegehez legkozelebb allo 2 szelvenykovet
-    - kiszamolni a lassujel elejenek es vegenek Euklideszi tavolsagat a szelvenykovektol
-    - interpolacioval megallapitani a lassujel elejenek es vegeknek koordinatait
-    - majd ez alapjan kiszamolni a lassujel vonalanak koordinatait
+    - meg kell keresni az elejéhez es végéhez legközelebb álló 2 szelvénykövet
+    - kiszámolni a lassújel elejének és végének euklideszi távolságát a szelvénykövektől
+    - interpolációval megállapítani a lassújel elejének és végének koordinátáit
+    - majd ez alapján kiszámolni a lassújel vonalának koordinátáit
 -->
 
 ---
@@ -337,7 +333,7 @@ transition: slide-up
 https://github.com/gy-mate/kalauz
 
 <!--
-- ezen a linken erheto el ez az alkalmazasom, ami kepes feldolgozni a lassujeleket, es generalni roluk egy terkepet
+- ezen a linken érhető el ez az alkalmazásom, ami képes feldolgozni a lassújeleket, és generálni róluk egy térképet
 -->
 
 
@@ -362,17 +358,16 @@ transition: slide-up
 </v-clicks>
 
 <!--
-- **mindig mondani, mi lenne a megoldas!**
-- ...ezekbol szeretnek nehanyat bemutatni a MAV-ra fokuszalva, mivel az o halozatukon a legnagyobb a problema [click]
-- logikailag az elso problema, hogy gyakran a meglevo palyaallapotokat sem osztalyozzak megfeleloen, 
-ezert nincs pontos kepunk a palya allapotarol [click]
-  - tul ritkak a merovonati bejarasok [click]
-  - reszben emiatt tul nagy hangsuly van a palyamesterek szubjektiv ertekelesen
-  - a MAV uzleti terveben szerepel erre megoldas: 1 merovonatot es 5+1 merojarmuvet szeretnenek beszerezni [click] 
-  - az egymashoz kozeli palyahibak egymasra hatasat altalaban nem vizsgaljak [click] [click]
-- a MAV mindossze 10 oldalas uzleti terve es a Nemzeti Közlekedési Infrastruktúra-fejlesztési Stratégia alapjan 
-nincs koncepcio a lassujelek megszuntetesere orszagszerte
-  - habar a MAV ezt tagadja, eleg beszedes a weboldaluk, ami jobbra lathato...
+- ...ezekből szeretnék néhányat bemutatni a MÁV-ra fókuszálva, mivel az ő hálózatukon a legnagyobb a probléma [click]
+- logikailag az első probléma, hogy gyakran a meglévő pályaállapotokat sem osztályozzák megfelelően, 
+ezért nincs pontos képünk a pálya állapotáról [click]
+  - túl ritkák a mérővonati bejárások [click]
+  - részben emiatt túl nagy hangsúly van a pályamesterek szubjektív értékelésén
+  - a MÁV üzleti tervében szerepel erre megoldás: 1 mérővonatot és 5+1 mérőjárművet szeretnének beszerezni [click] 
+  - az egymáshoz közeli pályahibák egymásra hatását általában nem vizsgálják [click] [click]
+- a MÁV mindössze 10 oldalas üzleti terve és a Nemzeti Közlekedési Infrastruktúra-fejlesztési Stratégia alapján 
+nincs koncepció a lassújelek megszüntetésére országszerte
+  - habár a MÁV ezt tagadja, elég beszédes a weboldaluk, ami jobbra látható...
 -->
 
 ---
@@ -383,12 +378,12 @@ transition: slide-up
 ---
 
 <!--
-- ...es a MAV tulajdonosahoz tartozo KBSZ is megallapitotta a tegnap publikalt zarojelenteseben, hogy 
-nincs koncepcioja a MAV-nak az alepitmenyhibak javitasara
-- es ajanlast adott ki ennek potlasara
-- e tekintetben peldat lehetne venni akar a GYSEV-rol is
-  - latszik, hogy sokkal atgondoltabb a palyakarbantartasi tevekenyseguk
-- vagy akar az OBB-rol...
+- ...és a MÁV tulajdonosához tartozó KBSZ is megállapította a tegnap publikált zárójelentésében, hogy 
+nincs koncepciója a MÁV-nak az alépítményhibák javítására
+- és ajánlást adott ki ennek pótlására
+- e tekintetben példát lehetne venni akár a GYSEV-ről is
+  - látszik, hogy sokkal átgondoltabb a pályakarbantartási tevékenységük
+- vagy akár az ÖBB-ről...
 -->
 
 ---
@@ -400,9 +395,9 @@ transition: slide-left
 ---
 
 <!--
-- ...akiknel a torzshalozat lassujellistaja  mindossze 1,5 oldalra rafer
-  - a MAV-nal ez ~100 oldal lenne
-- de akar a szlovak palyavasutrol is mintat lehetne venni...
+- ...akiknél a torzshálózat lassújellistája  mindössze 1,5 oldalra ráfér
+  - a MÁV-nál ez ~100 oldal lenne
+- de akár a szlovák pályavasútról is mintát lehetne venni...
 -->
 
 ---
@@ -414,11 +409,11 @@ transition: slide-down
 ---
 
 <!--
-- ha csak a fovaganyokat vesszuk
-  - a MAV-nal ~7.000 vonalkm-en ~5.400 vaganykm sebessegkorlatozott (78%)
-  - a ZSR-nel ez az arany mindossze 13%<br>
-*(~3.700 vonalkm-en ~500 vaganykm sebessegkorlatozott)*
-- visszaterve az okokra...
+- ha csak a fővágányokat vesszük
+  - a MÁV-nál ~7.000 vonalkm-en ~5.400 vágánykm sebességkorlátozott (78%)
+  - a ZSR-nél ez az arány mindössze 13%<br>
+*(~3.700 vonalkm-en ~500 vágánykm sebességkorlátozott)*
+- visszatérve az okokra...
 -->
 
 ---
@@ -440,19 +435,19 @@ transition: slide-left
 </v-clicks>
 
 <!--
-- **mindig mondani, mi lenne a megoldas!** [click] [click]
-- a MAV uzleti terve: az allami koltsegterites kb. csak arra elegendo, hogy
+[click] [click]
+- a MÁV üzleti terve: az állami költségtérítés kb. csak arra elegendő, hogy
 *"a pályaállag folyamatos romlását megállítsuk"*
-- az elobb mar emlitett merojarmuvek beszerzesere pedig hiaba van terv, ha meg nincs ra allami forras [click]
-- az EKM KBSZ megallapitotta, hogy az iranyhibaknal tul magas alkalmazhato sebesseget hataroz meg a palyavasut [click]
-- a KBSZ hiaba vegez olyan korszeru tudomanyos szimulaciokat, amiket a MAV egyaltalan nem alkalmaz
-  - az allamvasut ahelyett, hogy atvenne oket, indoklas nelkul kijelenti, hogy *"szakmailag megalapozatlan"*
-- a kepen egyebkent a 2022. augusztusi karcagi siklast reszben okozo fekszint- es iranyhiba lathato
-  - a baleset tegnap publikalt zarojelenteseben a MAV gyakorlatilag kijelentette, hogy 
-nem lehetett volna elkerulni a balesetet jobb karbantartassal
-- osszessegeben megallapithato, hogy a MAV kevesbe a biztonsag novelesere, 
-es sokkal inkabb a modszereik helyessegenek bebizonyitasara forditja az eroforrasait
-  - ezen a szervezeti kulturan valtoztatni kellene
+- az előbb már említett mérőjárművek beszerzésére pedig hiába van terv, ha még nincs rá állami forrás [click]
+- az EKM KBSZ megállapította, hogy az irányhibáknál túl magas alkalmazható sebességet határoz meg a pályavasút [click]
+- a KBSZ hiába végez olyan korszerű tudományos szimulációkat, amiket a MÁV egyáltalán nem alkalmaz
+  - az államvasút ahelyett, hogy átvenné őket, indoklás nélkül kijelenti, hogy *"szakmailag megalapozatlan"*
+- a képen egyébként a 2022. augusztusi karcagi siklást részben okozó fekszint- és irányhiba látható
+  - a baleset tegnap publikált zárójelentésében a MÁV gyakorlatilag kijelentette, hogy 
+nem lehetett volna elkerülni a balesetet jobb karbantartással
+- összességében megállapítható, hogy a MÁV kevésbé a biztonság növelésére, 
+és sokkal inkább a módszereik helyességének bebizonyítására fordítja az erőforrásait
+  - ezen a szervezeti kultúrán változtatni kellene
 -->
 
 ---
@@ -473,7 +468,7 @@ a GYSEV legalább két hazai fővonala, illetve két hazai mellékvonala valamen
 Összefoglalom a megoldási lehetőségeket, és konkrét javaslatokat nyújtok a jelenleg kialakult helyzet megoldására.
 
 <!--
-- itt tehat osszefoglalva lathato, hogy valamennyi kotelezo vallalasomat teljesitettem
+- itt tehát összefoglalva látható, hogy valamennyi kötelező vállalásomat teljesítettem
 -->
 
 ---
@@ -486,13 +481,12 @@ transition: fade-out
 🟡 Elkészítem a MÁV hálózatán található valamennyi lassújel térképes megjelenítését.
 
 <!--
-- adatok meglete eseten gyakorlatilag barmely vasutvonalon mukodik
+- adatok megléte esetén gyakorlatilag bármely vasútvonalon működik
 
-- **ha marad ido:**
-  - egyebkent a program modularis, konnyen kiterjesztheto mas orszagokra
-    - Ausztriaban pl. jovo szeptemberben lep eletbe az uj informacioszabadsag-torveny
+- egyébként a program moduláris, könnyen kiterjeszthető más országokra
+  - Ausztriában pl. jövő szeptemberben lép életbe az új információszabadság-törvény
 
-- remelem, hogy a terkep elosegitheti a hatekony donteshozatalt es a beavatkozasok priorizalasat
+- remélem, hogy a térkép elősegítheti a hatékony döntéshozatalt és a beavatkozások priorizálását
 -->
 
 ---
@@ -503,11 +497,6 @@ A kutatás a Kulturális és Innovációs Minisztérium *ÚNKP-23-1-I-BME-354* k
 a Nemzeti Kutatási, Fejlesztési és Innovációs Alapból finanszírozott szakmai támogatásával készült.
 
 ![ÚNKP-, NKFI- & KIM-logo](/funding.svg)
-
-<!--
-- koszonom szepen a tamogatast a kutatashoz, fokent konzulensemnek, Dr. Orosz Csaba tanar urnak
-- es koszonom szepen a figyelmet is
--->
 
 ---
 src: ./map.md
