@@ -1,0 +1,8 @@
+<template>
+  <footer class="absolute bottom-0 left-0 right-0 p-2"
+          style="background: rgba(255, 255, 255, 0.7); display: flex; justify-content: center">
+    <div>
+      <SlideCurrentNo /> / <SlidesTotal />
+    </div>
+  </footer>
+</template>

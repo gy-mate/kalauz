@@ -128,8 +128,6 @@ transition: slide-up
 
 NAIH-4049-8/2023.
 
-<SlideCurrentNo /> / <SlidesTotal />
-
 <!--
 - egy évvel később, 2023. júliusában: határozat
 - ezúton is köszönöm az Egyesület és a NAIH közbenjárását
@@ -146,8 +144,6 @@ transition: slide-up
     <a href="/MAV_SR-table.mp4">here</a>.
   </p>
 </SlidevVideo>
-
-<SlideCurrentNo /> / <SlidesTotal />
 
 <!--
 - ebből és a GYSEV táblázatából egy SQL-adatbázist készítettem...
