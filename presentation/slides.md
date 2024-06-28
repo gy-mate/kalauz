@@ -51,7 +51,7 @@ layout: quote
 transition: slide-left
 ---
 
-# "...amikor megnézzük, hogy az elmúlt húsz évben hova jutottunk \[...] akkor a helyzet az meg szerintem nem ennyire rózsás. \[...] a lassújelekről beszélek, húsz éve ezeknek a száma nem változott. Évente kb. 3000 lassújelünk van mindig, és kb. 500 idegenes lassújelünk van. Ebben nem nagyon tudtunk elérni semmit."
+# "...amikor megnézzük, hogy az elmúlt húsz évben hova jutottunk [...] akkor a helyzet az meg szerintem nem ennyire rózsás. [...] a lassújelekről beszélek, húsz éve ezeknek a száma nem változott. Évente kb. 3000 lassújelünk van mindig, és kb. 500 idegenes lassújelünk van. Ebben nem nagyon tudtunk elérni semmit."
 Homolya Róbert elnök-vezérigazgató, MÁV Zrt.<br>
 <br>
 2019. május 8., Budapest, Hungrail Vasútakadémiai Konferencia
@@ -153,8 +153,8 @@ transition: slide-up
 transition: slide-up
 ---
 
-<SlidevVideo controls autoplay>
-  <source src="/SR_table_update.mov" type="video/quicktime"/>
+<SlidevVideo controls autoplay printTimestamp="last">
+  <source src="/SR_table_update.mov" type="video/mp4"/>
   <p>
     Your browser does not support videos. You may download it
     <a href="/SR_table_update.mov">here</a>.
@@ -294,8 +294,8 @@ out ids;
 transition: slide-up
 ---
 
-<SlidevVideo controls autoplay>
-  <source src="/SR_map-generation.mov" type="video/quicktime"/>
+<SlidevVideo controls autoplay printTimestamp="last">
+  <source src="/SR_map-generation.mov" type="video/mp4"/>
   <p>
     Your browser does not support videos. You may download it
     <a href="/SR_map-generation.mov">here</a>.
