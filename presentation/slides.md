@@ -355,14 +355,14 @@ transition: slide-up
 </v-clicks>
 
 <!--
-- ...ezekből szeretnék néhányat bemutatni a MÁV-ra fókuszálva, mivel az ő hálózatukon a legnagyobb a probléma [click]
-- logikailag az első probléma, hogy gyakran a meglévő pályaállapotokat sem osztályozzák megfelelően, 
-ezért nincs pontos képünk a pálya állapotáról [click]
-  - túl ritkák a mérővonati bejárások [click]
-  - részben emiatt túl nagy hangsúly van a pályamesterek szubjektív értékelésén
-  - a MÁV üzleti tervében szerepel erre megoldás: 1 mérővonatot és 5+1 mérőjárművet szeretnének beszerezni [click] 
-  - az egymáshoz közeli pályahibák egymásra hatását általában nem vizsgálják [click] [click]
-- a MÁV mindössze 10 oldalas üzleti terve és a Nemzeti Közlekedési Infrastruktúra-fejlesztési Stratégia alapján 
+- ...ezekből szeretnék néhányat bemutatni a MÁV-ra fókuszálva, mivel az ő hálózatukon a legnagyobb a probléma
+- [click] logikailag az első probléma, hogy gyakran a meglévő pályaállapotokat sem osztályozzák megfelelően, 
+ezért nincs pontos képünk a pálya állapotáról
+  - [click] túl ritkák a mérővonati bejárások
+  - [click] részben emiatt túl nagy hangsúly van a pályamesterek szubjektív értékelésén
+  - a MÁV üzleti tervében szerepel erre megoldás: 1 mérővonatot és 5+1 mérőjárművet szeretnének beszerezni 
+  - [click] az egymáshoz közeli pályahibák egymásra hatását általában nem vizsgálják
+- [click:2] a MÁV mindössze 10 oldalas üzleti terve és a Nemzeti Közlekedési Infrastruktúra-fejlesztési Stratégia alapján 
 nincs koncepció a lassújelek megszüntetésére országszerte
   - habár a MÁV ezt tagadja, elég beszédes a weboldaluk, ami jobbra látható...
 -->
@@ -432,12 +432,11 @@ transition: slide-left
 </v-clicks>
 
 <!--
-[click] [click]
-- a MÁV üzleti terve: az állami költségtérítés kb. csak arra elegendő, hogy
+- [click:2] a MÁV üzleti terve: az állami költségtérítés kb. csak arra elegendő, hogy
 *"a pályaállag folyamatos romlását megállítsuk"*
-- az előbb már említett mérőjárművek beszerzésére pedig hiába van terv, ha még nincs rá állami forrás [click]
-- az EKM KBSZ megállapította, hogy az irányhibáknál túl magas alkalmazható sebességet határoz meg a pályavasút [click]
-- a KBSZ hiába végez olyan korszerű tudományos szimulációkat, amiket a MÁV egyáltalán nem alkalmaz
+- az előbb már említett mérőjárművek beszerzésére pedig hiába van terv, ha még nincs rá állami forrás
+- [click] az EKM KBSZ megállapította, hogy az irányhibáknál túl magas alkalmazható sebességet határoz meg a pályavasút
+- [click] a KBSZ hiába végez olyan korszerű tudományos szimulációkat, amiket a MÁV egyáltalán nem alkalmaz
   - az államvasút ahelyett, hogy átvenné őket, indoklás nélkül kijelenti, hogy *"szakmailag megalapozatlan"*
 - a képen egyébként a 2022. augusztusi karcagi siklást részben okozó fekszint- és irányhiba látható
   - a baleset tegnap publikált zárójelentésében a MÁV gyakorlatilag kijelentette, hogy 
