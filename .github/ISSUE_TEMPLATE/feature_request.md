@@ -1,20 +1,16 @@
 ---
-name: Feature request
-about: Suggest an idea for this project
+name: ✨ Feature request
+about: Suggest an idea for this software
 title: ''
-labels: ''
-assignees: ''
-
+labels: enhancement
+assignees: gy-mate
 ---
 
-**Is your feature request related to a problem? Please describe.**
-A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
+# What should be improved?
+E.g. _I'm always frustrated when [...]_
 
-**Describe the solution you'd like**
-A clear and concise description of what you want to happen.
+## Preferred solution
+A clear and concise description of what you would like to happen in these cases.
 
-**Describe alternatives you've considered**
+## Considered alternatives
 A clear and concise description of any alternative solutions or features you've considered.
-
-**Additional context**
-Add any other context or screenshots about the feature request here.
