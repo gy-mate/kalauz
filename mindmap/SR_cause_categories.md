@@ -1,0 +1,101 @@
+---
+title: SR cause categories
+markmap:
+    colorFreezeLevel: 3
+---
+
+# by infrastructure
+
+- safety_issue
+    - due_to_permit_to_increase_safety
+    - train_protection_system
+        - no_etcs_2
+    - crossing_issue
+        - entry_point_too_close_to_crossing
+        - 13_khz_track_circuit_for_crossing
+        - no_permit_for_crossing
+    - recent_accident
+    - track_works
+    - environmental_issue
+        - crossing_issue
+            - reduced_triangle_of_vision
+        - erosion_of_hill
+            - danger_of_mudslide
+    - insufficient_structure_gauge
+        - insufficient_structure_gauge_top
+        - insufficient_structure_gauge_bottom
+- track_structure_error
+    - substructure_error
+        - trackbed_error
+            - trackbed_drainage_problem
+                - trackbed_muddying
+            - inland_flooding
+            - track_sinking
+                - track_level_error
+                    - buffer_stop_with_level_error
+                - embankment_sinking
+            - dirty_trackbed
+            - insufficient_trackbed
+                - missing_trackbed
+            - unstable_trackbed
+            - no_trackbed_kerb
+                - no_trackbed_kerb_due_to_wildlife_crossing
+        - bridge_problem
+            - worn_bridge_beams
+            - worn_bridge_timbers
+            - water_stream_pipe_collapse
+    - superstructure_error
+        - faulty_sleepers
+            - broken_concrete_sleepers
+            - rotten_wooden_sleepers
+        - faulty_rail_fasteners
+            - broken_rail_fasteners
+            - corroded_rail_fasteners
+            - rotten_wooden_inlay
+            - missing_fastener_screws
+            - faulty_rail_harness
+        - faulty_rails
+            - gauge_error
+                - increased_gauge
+                - decreased_gauge
+            - rail_material_error
+                - rail_surface_problem
+                    - head_check_error
+                    - bent_rail_end
+                    - worn_rail
+                    - corroded_rail
+                - rail_core_problem
+                    - rail_ultrasound_error
+                    - broken_rail
+                        - broken_switch_tip_insert
+                        - broken_switch_tip_rail
+                        - broken_switch_point_blade
+                - rail_welding_problem
+                    - broken_rail_welding
+            - direction_error
+            - parts_error
+                - worn_parts
+        - state_of_crossing
+    - geometry_error
+        - distorted_curve_geometry
+- track_layout
+    - given_geometry
+        - small_curve_radius
+    - track_is_dead_end
+    - usage_permit
+    - track_elements
+        - track_scale
+- usage_issue
+    - no_maintenance
+        - no_maintenance_due_to_underutilization
+        - no_maintenance_due_to_capacity_reduction
+        - waiting_to_be_scrapped
+    - used_as_material_storage
+    - used_for_permanent_carriage_storage
+    - lower_maintenance_due_to_underutilized_maxspeed
+
+
+# by timetable
+
+- not in the timetable
+- in the timetable

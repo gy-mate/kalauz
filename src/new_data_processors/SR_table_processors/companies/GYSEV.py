@@ -13,6 +13,9 @@ import regex_spm  # type: ignore
 from sqlalchemy import text
 
 from src.SR import SR
+from src.new_data_processors.SR_table_processors.category_prediction import (
+    predict_category,
+)
 from src.new_data_processors.SR_table_processors.common import (
     SRUpdater,
     datetime_format_is_dmy,
@@ -134,6 +137,11 @@ class GysevUpdater(SRUpdater):
                     else None
                 )
 
+            cause_category_1, cause_category_2, cause_category_3 = (
+                predict_category(str(row.cause_source_text))
+                if str(row.cause_source_text) != ""
+                else (None, None, None)
+            )
             time_from = self.get_utc_time(str(row.time_from))
             assert isinstance(time_from, datetime)
 
@@ -163,9 +171,9 @@ class GysevUpdater(SRUpdater):
                 not_signalled_from_start_point=None,
                 not_signalled_from_end_point=None,
                 cause_source_text=str(row.cause_source_text),
-                cause_category_1=NotImplemented,
-                cause_category_2=NotImplemented,
-                cause_category_3=NotImplemented,
+                cause_category_1=cause_category_1,
+                cause_category_2=cause_category_2,
+                cause_category_3=cause_category_3,
                 time_from=time_from,
                 work_to_be_done=str(row.work_to_be_done),
                 time_to=self.get_time_to(str(row.time_to), str(row.time_to_planned)),
