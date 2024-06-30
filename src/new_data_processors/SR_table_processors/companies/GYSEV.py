@@ -14,7 +14,7 @@ from sqlalchemy import text
 
 from src.SR import SR
 from src.new_data_processors.SR_table_processors.category_prediction import (
-    predict_category,
+    CategoryPredictor,
 )
 from src.new_data_processors.SR_table_processors.common import (
     SRUpdater,
@@ -59,10 +59,11 @@ def get_main_track_side(text_to_search: str) -> str | None:
 
 @final
 class GysevUpdater(SRUpdater):
-    def __init__(self) -> None:
+    def __init__(self, category_predictor: CategoryPredictor) -> None:
         super().__init__(
             company="GYSEV",
             source_extension="xlsx",
+            category_predictor=category_predictor,
         )
         self._data_to_process: DataFrame = NotImplemented
 
@@ -138,7 +139,7 @@ class GysevUpdater(SRUpdater):
                 )
 
             cause_category_1, cause_category_2, cause_category_3 = (
-                predict_category(str(row.cause_source_text))
+                self.CATEGORY_PREDICTOR.predict_category(str(row.cause_source_text))
                 if str(row.cause_source_text) != ""
                 else (None, None, None)
             )

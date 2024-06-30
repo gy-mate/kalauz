@@ -21,6 +21,7 @@ from sqlalchemy import (
 )
 
 from src.SR import SR
+from src.new_data_processors.SR_table_processors.category_prediction import CategoryPredictor
 from src.new_data_processors.common_excel_processors import ExcelProcessor
 from src.new_data_processors.helper_table_updaters.companies import CompaniesUpdater
 from src.new_data_processors.helper_table_updaters.countries import CountriesUpdater
@@ -119,7 +120,7 @@ class SRUpdater(ExcelProcessor, ABC):
         Column(name="comment", type_=String(255)),
     )
 
-    def __init__(self, company: str, source_extension: str) -> None:
+    def __init__(self, company: str, source_extension: str, category_predictor: CategoryPredictor) -> None:
         super().__init__()
 
         self.COMPANY = company
@@ -127,6 +128,7 @@ class SRUpdater(ExcelProcessor, ABC):
         self.COUNTRY_CODE_ISO = self.get_country_iso_code(self.COMPANY)
         self.LIST_TYPE = "ASR"
         self.SOURCE_EXTENSION = source_extension
+        self.CATEGORY_PREDICTOR = category_predictor
 
         # TODO: implement company name detection from filename
         # future: delete date simulation below in production

@@ -1,50 +1,73 @@
+import os
 import pickle
+import re
+
+from sklearn.exceptions import NotFittedError
 from sklearn.feature_extraction.text import CountVectorizer  # type: ignore
 from sklearn.linear_model import LogisticRegression  # type: ignore
 
 
-def predict_category(text: str) -> str:
-    texts: list[str] = []
-    categories: list[str] = []
-    category = ""
-    try:
+def input_categories(text: str) -> None:
+    category = input(
+        f"I'm not sure about the category of '{text}'. Enter the correct category: "
+    )
+
+
+class CategoryPredictor:
+    def __init__(self):
         try:
-            with open("existing-categorisation-knowledge.pkl", "rb") as file:
-                vectorizer, classifier = pickle.load(file)
+            with open(
+                os.path.join(
+                    os.getcwd(),
+                    "data",
+                    "05_knowledge",
+                    "decision-tree-classification-knowledge.pkl",
+                ),
+                "rb",
+            ) as file:
+                self.vectorizer, self.classifier = pickle.load(file)
         except FileNotFoundError:
-            vectorizer = CountVectorizer()
-            classifier = LogisticRegression()
+            self.vectorizer = CountVectorizer()
+            self.classifier = LogisticRegression()
 
-        while True:
-            predicted_category = (
-                classifier.predict(vectorizer.transform([text]))[0] if texts else None
+    def predict_category(self, text: str) -> tuple[str, str, str]:
+        mindmap_location = os.path.join(
+            os.getcwd(), "mindmap", "SR_cause_categories.md"
+        )
+        with open(mindmap_location, "r") as file:
+            content = file.read()
+            categories = re.findall(
+                pattern=r"(?<=- ).*$", flags=re.MULTILINE, string=content
             )
-            confidence = (
-                classifier.predict_proba(vectorizer.transform([text])).max()
-                if texts
-                else 0
-            )
-            if confidence < 0.8 or not texts:
-                category = input(f"I'm not sure about the category of '{text}'. Enter the correct category: ")
-                return category
+
+        try:
+            predicted_categories = self.classifier.predict(self.vectorizer.transform([text]))
+            confidence = self.classifier.predict_proba(
+                self.vectorizer.transform([text])
+            ).max()
+            if confidence < 0.8:
+                input_categories(text)
             else:
-                choice = input(f"The predicted category is: {predicted_category}. Do you accept this category? (y/n): ")
-                if choice.lower() == "y":
-                    category = predicted_category
-                    return category
-                else:
-                    category = input("Enter the correct category for the text: ")
-                    return category
-    finally:
-        texts.append(text)
-        categories.append(category)
+                choice = input(
+                    f"The predicted categories are: {predicted_categories}. Do you accept this category? (y/n): "
+                )
+        except NotFittedError:
+            input_categories(text)
 
-        # Prepare training data
-        x = vectorizer.transform(texts)
+        x = self.vectorizer.transform(texts)
         y = categories
 
         # Train the classifier
-        classifier.fit(x, y)
-
-        with open("existing-categorisation-knowledge.pkl", "wb") as file:
-            pickle.dump((vectorizer, classifier), file)
+        self.classifier.fit(x, y)
+    
+    def dump_knowledge(self) -> None:
+        with open(
+            os.path.join(
+                os.getcwd(),
+                "data",
+                "05_knowledge",
+                "decision-tree-classification-knowledge.pkl",
+            ),
+            "wb",
+        ) as file:
+            pickle.dump((self.vectorizer, self.classifier), file)

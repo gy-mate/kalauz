@@ -3,6 +3,7 @@ import sys
 
 from dotenv import load_dotenv
 
+from src.new_data_processors.SR_table_processors.category_prediction import CategoryPredictor
 from src.new_data_processors.SR_table_processors.files import NewFilesRegistrar
 from src.new_data_processors.helper_table_updaters.countries import CountriesUpdater
 from src.new_data_processors.helper_table_updaters.companies import CompaniesUpdater
@@ -31,10 +32,13 @@ def main(
     # OperatingSitesUpdater().run()
 
     # NewFilesRegistrar().run()
-    # MavUpdater().run()
-    # GysevUpdater().run()
+    
+    category_predictor = CategoryPredictor()
+    MavUpdater(category_predictor).run()
+    GysevUpdater(category_predictor).run()
+    category_predictor.dump_knowledge()
 
-    Mapper(show_lines_with_no_data).run()
+    # Mapper(show_lines_with_no_data).run()
 
     logging.getLogger(__name__).info("...program finished!")
 

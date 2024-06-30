@@ -14,7 +14,7 @@ import roman  # type: ignore
 
 from src.SR import SR
 from src.new_data_processors.SR_table_processors.category_prediction import (
-    predict_category,
+    CategoryPredictor,
 )
 from src.new_data_processors.SR_table_processors.common import SRUpdater
 from src.new_data_processors.common_excel_processors import ExcelProcessorWithFormatting
@@ -79,10 +79,11 @@ def first_part_of_line_120(station_from: str | None, station_to: str | None) -> 
 
 @final
 class MavUpdater(SRUpdater, ExcelProcessorWithFormatting):
-    def __init__(self) -> None:
+    def __init__(self, category_predictor: CategoryPredictor) -> None:
         super().__init__(
             company="MÁV",
             source_extension="xlsx",
+            category_predictor=category_predictor,
         )
 
     def correct_data_manually(self) -> None:
@@ -113,7 +114,9 @@ class MavUpdater(SRUpdater, ExcelProcessorWithFormatting):
                         row[8]
                     )
                     cause_category_1, cause_category_2, cause_category_3 = (
-                        predict_category(row[12]) if row[12] else (None, None, None)
+                        self.CATEGORY_PREDICTOR.predict_category(row[12])
+                        if row[12]
+                        else (None, None, None)
                     )
                     time_from = self.get_utc_time(row[10])
                     assert isinstance(time_from, datetime)
