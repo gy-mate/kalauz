@@ -33,10 +33,9 @@ def main(
 
     # NewFilesRegistrar().run()
     
-    category_predictor = CategoryPredictor()
-    MavUpdater(category_predictor).run()
-    GysevUpdater(category_predictor).run()
-    category_predictor.dump_knowledge()
+    with CategoryPredictor() as category_predictor:
+        MavUpdater(category_predictor).run()
+        GysevUpdater(category_predictor).run()
 
     # Mapper(show_lines_with_no_data).run()
 
