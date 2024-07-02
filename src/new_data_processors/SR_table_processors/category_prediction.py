@@ -2,6 +2,7 @@ import csv
 import os
 import re
 
+import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer  # type: ignore
 from sklearn.linear_model import SGDClassifier  # type: ignore
 from sklearn.metrics import hamming_loss  # type: ignore
@@ -37,13 +38,15 @@ class CategoryPredictor(DataProcessor):
         self.MINIMUM_NUMBER_OF_TRAINING_SAMPLES = 25
         self.SEED = 146
         self.HIGH_CONFIDENCE_THRESHOLD = 0.8
-
+        
+    def __enter__(self) -> "CategoryPredictor":
         self.pipeline = create_pipeline()
         self.texts_and_categories: dict[str, list[str | list[str]]] = {
             "texts": [],
             "categories": [],
         }
         self.import_existing_data()
+        return self
 
     def import_existing_data(self) -> None:
         try:
@@ -87,6 +90,7 @@ class CategoryPredictor(DataProcessor):
         binarized_categories_test = label_binarizer.transform(categories_test)
         self.pipeline.fit(texts_train, binarized_categories_train)
         test_predictions = self.pipeline.predict(texts_test)
+        
         current_hamming_loss = hamming_loss(binarized_categories_test, test_predictions)
         match current_hamming_loss:
             case loss if loss < 0.1:
@@ -103,6 +107,14 @@ class CategoryPredictor(DataProcessor):
         )
 
     def predict_category(self, text: str) -> list[str]:
+        self.pipeline.predict([text])
+        probabilities: np.ndarray = self.pipeline.predict_proba([text])
+        category_confidences = {}
+        for i, category in enumerate(self.CATEGORIES):
+            confidence = min(probabilities[i][0])
+            category_confidences[category] = confidence
+        return category_confidences
+        
         return self.user_input_for_category(text)
 
     def user_input_for_category(self, text: str) -> list[str]:
@@ -126,7 +138,8 @@ class CategoryPredictor(DataProcessor):
             self.train_new_data(text, input_categories)
 
     def train_new_data(self, text: str, categories: list[str]) -> None:
-        self.texts_and_categories.add((text, categories))
+        self.texts_and_categories["texts"].append(text)
+        self.texts_and_categories["categories"].append(categories)
 
         if len(self.texts_and_categories) < self.MINIMUM_NUMBER_OF_TRAINING_SAMPLES:
             self.logger.warn(
@@ -143,7 +156,7 @@ class CategoryPredictor(DataProcessor):
         else:
             raise NotImplementedError
 
-    def __del__(self) -> None:
+    def __exit__(self, exc_type: None, exc_value: None, traceback: None) -> None:
         self.save_knowledge()
 
     def save_knowledge(self) -> None:
