@@ -3,6 +3,8 @@ import os
 import re
 
 import numpy as np
+from rich.console import Console
+from rich.markdown import Markdown
 from sklearn.feature_extraction.text import TfidfVectorizer  # type: ignore
 from sklearn.linear_model import SGDClassifier  # type: ignore
 from sklearn.metrics import hamming_loss  # type: ignore
@@ -21,24 +23,41 @@ def get_categories() -> list[str]:
         categories = re.findall(
             pattern=r"(?<=- ).*$", flags=re.MULTILINE, string=content
         )
-    return sorted(categories)
+    return categories
 
 
 def create_pipeline() -> Pipeline:
     vectorizer = TfidfVectorizer()
-    classifier = MultiOutputClassifier(SGDClassifier())
+    classifier = MultiOutputClassifier(SGDClassifier(loss="log_loss"))
     return make_pipeline(vectorizer, classifier)
+
+
+def clear_terminal():
+    os.system("clear||cls")
 
 
 class CategoryPredictor(DataProcessor):
     def __init__(self) -> None:
         super().__init__()
-        
+
         self.CATEGORIES = get_categories()
+        with open(
+            os.path.join(
+                os.getcwd(),
+                "mindmap",
+                "SR_cause_categories.md",
+            ),
+            "r",
+        ) as file:
+            categories_markdown = file.read()
+        self.CATEGORIES_MARKDOWN = Markdown(categories_markdown)
         self.MINIMUM_NUMBER_OF_TRAINING_SAMPLES = 25
         self.SEED = 146
         self.HIGH_CONFIDENCE_THRESHOLD = 0.8
-        
+
+        self.label_binarizer = MultiLabelBinarizer()
+        self.markdown_console = Console()
+
     def __enter__(self) -> "CategoryPredictor":
         self.pipeline = create_pipeline()
         self.texts_and_categories: dict[str, list[str | list[str]]] = {
@@ -65,9 +84,8 @@ class CategoryPredictor(DataProcessor):
                     categories = all_categories.split(", ")
                     self.texts_and_categories["texts"].append(text)
                     self.texts_and_categories["categories"].append(categories)
-            label_binarizer = MultiLabelBinarizer()
-            self.check_hamming_loss(label_binarizer)
-            binarized_categories = label_binarizer.fit_transform(
+            self.check_hamming_loss(self.label_binarizer)
+            binarized_categories = self.label_binarizer.fit_transform(
                 self.texts_and_categories["categories"]
             )
             self.pipeline.fit(self.texts_and_categories["texts"], binarized_categories)
@@ -90,7 +108,7 @@ class CategoryPredictor(DataProcessor):
         binarized_categories_test = label_binarizer.transform(categories_test)
         self.pipeline.fit(texts_train, binarized_categories_train)
         test_predictions = self.pipeline.predict(texts_test)
-        
+
         current_hamming_loss = hamming_loss(binarized_categories_test, test_predictions)
         match current_hamming_loss:
             case loss if loss < 0.1:
@@ -107,33 +125,40 @@ class CategoryPredictor(DataProcessor):
         )
 
     def predict_category(self, text: str) -> list[str]:
-        self.pipeline.predict([text])
         probabilities: np.ndarray = self.pipeline.predict_proba([text])
-        category_confidences = {}
-        for i, category in enumerate(self.CATEGORIES):
-            confidence = min(probabilities[i][0])
-            category_confidences[category] = confidence
-        return category_confidences
-        
-        return self.user_input_for_category(text)
+        for probability in probabilities:
+            if max(probability.tolist()[0]) < self.HIGH_CONFIDENCE_THRESHOLD:
+                self.logger.warn(
+                    f"The prediction for '{text}' is not confident enough. Asking for user input..."
+                )
+                return self.user_input_for_category(text)
+        predictions: np.ndarray = self.pipeline.predict([text])
+        original_categories = self.label_binarizer.inverse_transform(predictions)
+        return [category[0] for category in original_categories]
 
     def user_input_for_category(self, text: str) -> list[str]:
         input_categories: list[str] = []
         try:
+            clear_terminal()
+            print(f"The possible categories are:\n")
+            self.markdown_console.print(self.CATEGORIES_MARKDOWN)
             print(
-                f"Please categorize the following text: '{text}'\n"
-                f"The possible categories are:\n\n"
+                f"\nPlease mark the following text with one or more of the categories above:\n"
+                f"'{text}'"
             )
-            for category_id, category in enumerate(self.CATEGORIES):
-                print(f"#{category_id + 1}\t\t{category}")
             category_id_input = input(
-                "\nSelect one or more categories by entering their numbers separated by ', ': "
+                "\nEnter one or more categories (or their IDs) separated by ', ': "
             )
-            input_categories = [
-                self.CATEGORIES[int(category_id) - 1]
-                for category_id in category_id_input.split(", ")
-            ]
-            return input_categories
+            input_categories = category_id_input.split(", ")
+            if isinstance(input_categories[0], str):
+                return input_categories
+            elif isinstance(input_categories[0], int):
+                return [
+                    self.CATEGORIES[int(category_id) - 1]
+                    for category_id in input_categories
+                ]
+            else:
+                raise ValueError("Invalid input!")
         finally:
             self.train_new_data(text, input_categories)
 
@@ -141,23 +166,31 @@ class CategoryPredictor(DataProcessor):
         self.texts_and_categories["texts"].append(text)
         self.texts_and_categories["categories"].append(categories)
 
-        if len(self.texts_and_categories) < self.MINIMUM_NUMBER_OF_TRAINING_SAMPLES:
+        if (
+            len(self.texts_and_categories["texts"])
+            < self.MINIMUM_NUMBER_OF_TRAINING_SAMPLES
+        ):
             self.logger.warn(
                 "I don't have enough data to train the model yet. Going to the next text..."
             )
             return
-        if len(self.texts_and_categories) == self.MINIMUM_NUMBER_OF_TRAINING_SAMPLES:
-            assert isinstance(self.pipeline, Pipeline)
+        elif (
+            len(self.texts_and_categories["texts"])
+            == self.MINIMUM_NUMBER_OF_TRAINING_SAMPLES
+        ):
             self.pipeline.fit(self.texts_and_categories)
-            self.save_knowledge()
-            create_pipeline()
-        elif len(self.texts_and_categories) > self.MINIMUM_NUMBER_OF_TRAINING_SAMPLES:
-            pass
+            self.__exit__(None, None, None)
+            self.__enter__()
         else:
-            raise NotImplementedError
+            binarized_categories = self.label_binarizer.fit_transform(self.texts_and_categories["categories"])
+            self.pipeline.named_steps["multioutputclassifier"].estimator.partial_fit(
+                text, binarized_categories
+            )
+            self.logger.info("Model partially trained with the new data!")
 
     def __exit__(self, exc_type: None, exc_value: None, traceback: None) -> None:
-        self.save_knowledge()
+        if not exc_type and not exc_value and not traceback:
+            self.save_knowledge()
 
     def save_knowledge(self) -> None:
         with open(
@@ -165,8 +198,14 @@ class CategoryPredictor(DataProcessor):
                 os.getcwd(),
                 "data",
                 "05_knowledge",
-                "SR_cause_text_classification_knowledge.onnx",
+                "SR_cause_text_classification_knowledge.csv",
             ),
-            "wb",
+            "w",
         ) as file:
-            file.write()
+            writer = csv.writer(file, delimiter=";")
+            for text, categories in zip(
+                self.texts_and_categories["texts"],
+                self.texts_and_categories["categories"],
+            ):
+                writer.writerow([text, ", ".join(categories)])
+        self.logger.info("Knowledge saved successfully!")

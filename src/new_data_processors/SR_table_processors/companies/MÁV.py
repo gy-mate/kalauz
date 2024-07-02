@@ -113,10 +113,10 @@ class MavUpdater(SRUpdater, ExcelProcessorWithFormatting):
                     reduced_speed, reduced_speed_for_mus = self.get_reduced_speeds(
                         row[8]
                     )
-                    cause_category_1, cause_category_2, cause_category_3 = (
+                    cause_categories = (
                         self.CATEGORY_PREDICTOR.predict_category(row[12])
                         if row[12]
-                        else (None, None, None)
+                        else None
                     )
                     time_from = self.get_utc_time(row[10])
                     assert isinstance(time_from, datetime)
@@ -152,9 +152,7 @@ class MavUpdater(SRUpdater, ExcelProcessorWithFormatting):
                         not_signalled_from_start_point=NotImplemented,
                         not_signalled_from_end_point=NotImplemented,
                         cause_source_text=row[12],
-                        cause_category_1=cause_category_1,
-                        cause_category_2=cause_category_2,
-                        cause_category_3=cause_category_3,
+                        cause_categories=cause_categories,
                         time_from=time_from,
                         work_to_be_done=None,
                         time_to=self.get_utc_time(row[14]) if row[14] else None,

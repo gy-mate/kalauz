@@ -44,7 +44,7 @@ class ExcelProcessor(TableUpdater, ABC):
             to_replace={
                 pd.NA: None,
                 pd.NaT: None,
-                np.NaN: None,  # future: remove this line when https://github.com/pandas-dev/pandas/issues/32265 is fixed
+                np.nan: None,  # future: remove this line when https://github.com/pandas-dev/pandas/issues/32265 is fixed
                 NotImplemented: None,  # TODO: remove this line in production
             },
             inplace=True,

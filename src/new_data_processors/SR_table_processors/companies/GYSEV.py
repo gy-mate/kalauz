@@ -117,7 +117,7 @@ class GysevUpdater(SRUpdater):
             to_replace={
                 pd.NA: None,
                 pd.NaT: None,
-                np.NaN: None,  # future: remove this line when https://github.com/pandas-dev/pandas/issues/32265 is fixed
+                np.nan: None,  # future: remove this line when https://github.com/pandas-dev/pandas/issues/32265 is fixed
                 NotImplemented: None,  # TODO: remove this line in production
             },
             inplace=True,
@@ -137,11 +137,11 @@ class GysevUpdater(SRUpdater):
                     if row.station_track_switch_source_text
                     else None
                 )
-
-            cause_category_1, cause_category_2, cause_category_3 = (
+            
+            cause_categories = (
                 self.CATEGORY_PREDICTOR.predict_category(str(row.cause_source_text))
                 if str(row.cause_source_text) != ""
-                else (None, None, None)
+                else None
             )
             time_from = self.get_utc_time(str(row.time_from))
             assert isinstance(time_from, datetime)
@@ -172,9 +172,7 @@ class GysevUpdater(SRUpdater):
                 not_signalled_from_start_point=None,
                 not_signalled_from_end_point=None,
                 cause_source_text=str(row.cause_source_text),
-                cause_category_1=cause_category_1,
-                cause_category_2=cause_category_2,
-                cause_category_3=cause_category_3,
+                cause_categories=cause_categories,
                 time_from=time_from,
                 work_to_be_done=str(row.work_to_be_done),
                 time_to=self.get_time_to(str(row.time_to), str(row.time_to_planned)),

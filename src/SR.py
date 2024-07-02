@@ -27,9 +27,7 @@ class SR:
         not_signalled_from_start_point: bool | None,
         not_signalled_from_end_point: bool | None,
         cause_source_text: str | None,
-        cause_category_1: str | None,
-        cause_category_2: str | None,
-        cause_category_3: str | None,
+        cause_categories: list[str] | None,
         time_from: datetime,
         work_to_be_done: str | None,
         time_to: datetime | None,
@@ -66,9 +64,7 @@ class SR:
             not_signalled_from_end_point if not NotImplemented else None
         )
         self.cause_source_text = cause_source_text
-        self.cause_category_1 = cause_category_1 if not NotImplemented else None
-        self.cause_category_2 = cause_category_2 if not NotImplemented else None
-        self.cause_category_3 = cause_category_3 if not NotImplemented else None
+        self.cause_categories = cause_categories
         self.time_from = time_from
         self.work_to_be_done = work_to_be_done
         self.time_to = time_to
