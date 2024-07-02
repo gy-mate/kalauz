@@ -1,12 +1,14 @@
+import csv
 import os
 import re
 
-import numpy as np
-from sklearn.exceptions import NotFittedError  # type: ignore
 from sklearn.feature_extraction.text import TfidfVectorizer  # type: ignore
 from sklearn.linear_model import SGDClassifier  # type: ignore
-from sklearn.multioutput import MultiOutputClassifier
+from sklearn.metrics import hamming_loss  # type: ignore
+from sklearn.model_selection import train_test_split  # type: ignore
+from sklearn.multioutput import MultiOutputClassifier  # type: ignore
 from sklearn.pipeline import Pipeline, make_pipeline  # type: ignore
+from sklearn.preprocessing import MultiLabelBinarizer  # type: ignore
 
 from src.new_data_processors.common import DataProcessor
 
@@ -18,7 +20,7 @@ def get_categories() -> list[str]:
         categories = re.findall(
             pattern=r"(?<=- ).*$", flags=re.MULTILINE, string=content
         )
-    return categories
+    return sorted(categories)
 
 
 def create_pipeline() -> Pipeline:
@@ -30,14 +32,17 @@ def create_pipeline() -> Pipeline:
 class CategoryPredictor(DataProcessor):
     def __init__(self) -> None:
         super().__init__()
-
+        
         self.CATEGORIES = get_categories()
         self.MINIMUM_NUMBER_OF_TRAINING_SAMPLES = 25
+        self.SEED = 146
         self.HIGH_CONFIDENCE_THRESHOLD = 0.8
 
         self.pipeline = create_pipeline()
-        self.texts_and_categories: set[tuple[str, list[str]]] = set()
-        
+        self.texts_and_categories: dict[str, list[str | list[str]]] = {
+            "texts": [],
+            "categories": [],
+        }
         self.import_existing_data()
 
     def import_existing_data(self) -> None:
@@ -51,12 +56,51 @@ class CategoryPredictor(DataProcessor):
                 ),
                 "r",
             ) as file:
-                for line in file.readlines():
-                    text, unsplit_categories = line.split(",")
-                    categories = [str(category) for category in unsplit_categories.split(", ")]
-                    self.texts_and_categories.add((str(text), categories))
+                reader = csv.reader(file, delimiter=";")
+                for row in reader:
+                    text, all_categories = row
+                    categories = all_categories.split(", ")
+                    self.texts_and_categories["texts"].append(text)
+                    self.texts_and_categories["categories"].append(categories)
+            label_binarizer = MultiLabelBinarizer()
+            self.check_hamming_loss(label_binarizer)
+            binarized_categories = label_binarizer.fit_transform(
+                self.texts_and_categories["categories"]
+            )
+            self.pipeline.fit(self.texts_and_categories["texts"], binarized_categories)
         except FileNotFoundError:
-            self.logger.warn("No existing cause categorization data found! Starting from scratch...")
+            self.logger.warn(
+                "No existing cause categorization data found! Starting from scratch..."
+            )
+
+    def check_hamming_loss(
+        self,
+        label_binarizer: MultiLabelBinarizer,
+    ) -> None:
+        texts_train, texts_test, categories_train, categories_test = train_test_split(
+            self.texts_and_categories["texts"],
+            self.texts_and_categories["categories"],
+            test_size=0.33,
+            random_state=self.SEED,
+        )
+        binarized_categories_train = label_binarizer.fit_transform(categories_train)
+        binarized_categories_test = label_binarizer.transform(categories_test)
+        self.pipeline.fit(texts_train, binarized_categories_train)
+        test_predictions = self.pipeline.predict(texts_test)
+        current_hamming_loss = hamming_loss(binarized_categories_test, test_predictions)
+        match current_hamming_loss:
+            case loss if loss < 0.1:
+                current_hamming_loss_quality = "excellent"
+            case loss if loss < 0.2:
+                current_hamming_loss_quality = "good"
+            case loss if loss < 0.3:
+                current_hamming_loss_quality = "acceptable"
+            case _:
+                current_hamming_loss_quality = "poor"
+        self.logger.info(
+            f"Initial Hamming loss: {current_hamming_loss:.3f}. "
+            f"That's {current_hamming_loss_quality}!"
+        )
 
     def predict_category(self, text: str) -> list[str]:
         return self.user_input_for_category(text)

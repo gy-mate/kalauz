@@ -4,21 +4,18 @@ markmap:
     colorFreezeLevel: 3
 ---
 
-# by infrastructure
-
 - safety_issue
     - due_to_permit_to_increase_safety
     - train_protection_system
         - no_etcs_2
-    - crossing_issue
-        - entry_point_too_close_to_crossing
-        - 13_khz_track_circuit_for_crossing
-        - no_permit_for_crossing
     - recent_accident
     - track_works
     - environmental_issue
         - crossing_issue
             - reduced_triangle_of_vision
+            - entry_point_too_close_to_crossing
+            - 13_khz_track_circuit_for_crossing
+            - no_permit_for_crossing
         - erosion_of_hill
             - danger_of_mudslide
     - insufficient_structure_gauge
@@ -93,9 +90,3 @@ markmap:
     - used_as_material_storage
     - used_for_permanent_carriage_storage
     - lower_maintenance_due_to_underutilized_maxspeed
-
-
-# by timetable
-
-- not in the timetable
-- in the timetable
