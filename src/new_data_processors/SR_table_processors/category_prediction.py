@@ -136,7 +136,7 @@ class CategoryPredictor(DataProcessor):
                 )
                 return self.user_input_for_category(text)
         predictions: np.ndarray = self.pipeline.predict([text])
-        original_categories = self.label_binarizer.inverse_transform(predictions)
+        original_categories: list[tuple] = self.label_binarizer.inverse_transform(predictions)
         return [category[0] for category in original_categories]
 
     def user_input_for_category(self, text: str) -> list[str]:
@@ -188,10 +188,20 @@ class CategoryPredictor(DataProcessor):
             vectorized_text = self.pipeline.named_steps["tfidfvectorizer"].transform(
                 [text]
             )
-            binarized_categories = self.label_binarizer.fit_transform(categories)
-            self.pipeline.named_steps["multioutputclassifier"].estimator.partial_fit(
-                vectorized_text, binarized_categories
-            )
+            binarized_categories = self.label_binarizer.fit_transform(self.texts_and_categories["categories"])
+            
+            # Assuming `vectorized_text` is your input features for a single instance and is already transformed
+            for i, label in enumerate(self.label_binarizer.classes_):
+                # Extract the ith column (label) for all samples. Since you have one sample, it results in a 1D array.
+                target = binarized_categories[:, i].reshape(-1)
+                estimator = self.pipeline.named_steps["multioutputclassifier"].estimators_[i]
+                # You may need to provide the `classes` argument for the first call to partial_fit for each estimator,
+                # which can be [0, 1] for binary classification.
+                estimator.partial_fit(vectorized_text, target, classes=np.array([0, 1]))
+            
+            # self.pipeline.named_steps["multioutputclassifier"].estimator.partial_fit(
+            #     vectorized_text, binarized_categories
+            # )
             self.logger.info("Model partially trained with a new entry!")
 
     def __exit__(self, exc_type: None, exc_value: None, traceback: None) -> None:
