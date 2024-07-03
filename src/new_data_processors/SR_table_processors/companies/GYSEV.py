@@ -13,7 +13,7 @@ import regex_spm  # type: ignore
 from sqlalchemy import text
 
 from src.SR import SR
-from src.new_data_processors.SR_table_processors.category_prediction import (
+from src.new_data_processors.SR_table_processors.category_prediction.category_prediction import (
     CategoryPredictor,
 )
 from src.new_data_processors.SR_table_processors.common import (
@@ -139,7 +139,7 @@ class GysevUpdater(SRUpdater):
                 )
             
             cause_categories = (
-                self.CATEGORY_PREDICTOR.predict_category(str(row.cause_source_text))
+                self.CATEGORY_PREDICTOR.predict_category(str(row.cause_source_text), srs_to_add)
                 if str(row.cause_source_text) != ""
                 else None
             )

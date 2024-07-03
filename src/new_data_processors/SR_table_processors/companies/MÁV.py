@@ -13,7 +13,7 @@ from sqlalchemy import text
 import roman  # type: ignore
 
 from src.SR import SR
-from src.new_data_processors.SR_table_processors.category_prediction import (
+from src.new_data_processors.SR_table_processors.category_prediction.category_prediction import (
     CategoryPredictor,
 )
 from src.new_data_processors.SR_table_processors.common import SRUpdater
@@ -114,7 +114,7 @@ class MavUpdater(SRUpdater, ExcelProcessorWithFormatting):
                         row[8]
                     )
                     cause_categories = (
-                        self.CATEGORY_PREDICTOR.predict_category(row[12])
+                        self.CATEGORY_PREDICTOR.predict_category(row[12], srs_to_add)
                         if row[12]
                         else None
                     )

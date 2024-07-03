@@ -1,4 +1,5 @@
 import csv
+from difflib import SequenceMatcher
 import os
 import re
 
@@ -13,6 +14,8 @@ from sklearn.multioutput import MultiOutputClassifier  # type: ignore
 from sklearn.pipeline import Pipeline, make_pipeline  # type: ignore
 from sklearn.preprocessing import MultiLabelBinarizer  # type: ignore
 
+from src.SR import SR
+from src.new_data_processors.SR_table_processors.category_prediction.text_similarities import TextSimilarity
 from src.new_data_processors.common import DataProcessor
 
 
@@ -53,7 +56,8 @@ class CategoryPredictor(DataProcessor):
         self.CATEGORIES_MARKDOWN = Markdown(categories_markdown)
         self.MINIMUM_NUMBER_OF_TRAINING_SAMPLES = 25
         self.SEED = 146
-        self.HIGH_CONFIDENCE_THRESHOLD = 0.8
+        self.TEXT_SIMILARITY_THRESHOLD = 0.8
+        self.HIGH_CONFIDENCE_THRESHOLD = 0.9
 
         self.label_binarizer = MultiLabelBinarizer()
         self.markdown_console = Console()
@@ -127,7 +131,12 @@ class CategoryPredictor(DataProcessor):
             f"That's {current_hamming_loss_quality}!"
         )
 
-    def predict_category(self, text: str) -> list[str]:
+    def predict_category(self, text: str, previous_srs: list[SR]) -> list[str]:
+        match self.text_similarity(previous_srs, text):
+            case TextSimilarity.Same:
+                return self.texts_and_categories[
+            case TextSimilarity.Different:
+                return self.user_input_for_category(text)
         probabilities: np.ndarray = self.pipeline.predict_proba([text])
         for probability in probabilities:
             if max(probability.tolist()[0]) < self.HIGH_CONFIDENCE_THRESHOLD:
@@ -140,6 +149,20 @@ class CategoryPredictor(DataProcessor):
             predictions
         )
         return [category[0] for category in original_categories]
+
+    def text_similarity(self, previous_srs: list[SR], text: str) -> TextSimilarity:
+        maximum_similarity = 0.0
+        for sr in previous_srs:
+            if sr.cause_source_text and (similarity := SequenceMatcher(None, text, sr.cause_source_text).ratio()) > maximum_similarity:
+                maximum_similarity = similarity
+                
+        match maximum_similarity:
+            case similarity if similarity == 1.0:
+                return TextSimilarity.Same
+            case similarity if similarity >= self.TEXT_SIMILARITY_THRESHOLD:
+                return TextSimilarity.Similar
+            case _:
+                return TextSimilarity.Different
 
     def user_input_for_category(self, text: str) -> list[str]:
         input_categories: list[str] = []
@@ -161,9 +184,9 @@ class CategoryPredictor(DataProcessor):
                 else:
                     self.logger.warn("At least one input category is invalid!")
         finally:
-            self.train_new_data(text, input_categories)
+            self.train_with_new_data(text, input_categories)
 
-    def train_new_data(self, text: str, categories: list[str]) -> None:
+    def train_with_new_data(self, text: str, categories: list[str]) -> None:
         self.texts_and_categories["texts"].append(text)
         self.texts_and_categories["categories"].append(categories)
 
@@ -179,24 +202,36 @@ class CategoryPredictor(DataProcessor):
             len(self.texts_and_categories["texts"])
             == self.MINIMUM_NUMBER_OF_TRAINING_SAMPLES
         ):
-            self.fit_all_data()
-            self.__exit__(None, None, None)
-            self.__enter__()
+            self.export_and_import_knowledge()
         else:
-            vectorized_text = self.pipeline.named_steps["tfidfvectorizer"].transform(
-                [text]
-            )
-            self.label_binarizer.fit(self.texts_and_categories["categories"])
-            binarized_categories = self.label_binarizer.transform([categories])
-
-            classifiers = self.pipeline.named_steps["multioutputclassifier"].estimators_
-            for i, classifier in enumerate(classifiers):
-                classifier.partial_fit(
-                    vectorized_text,
-                    binarized_categories[:, i],
-                    classes=np.array([0, 1]),
-                )
+            for category in categories:
+                self.add_new_categories_to_model(category)
+            self.partially_train_with_new_data(categories, text)
             self.logger.info("Model partially trained with a new entry!")
+
+    def partially_train_with_new_data(self, categories: list[str], text: str) -> None:
+        binarized_categories = self.label_binarizer.transform([categories])
+        vectorized_text = self.pipeline.named_steps["tfidfvectorizer"].transform([text])
+        classifiers = self.pipeline.named_steps["multioutputclassifier"].estimators_
+        for i, classifier in enumerate(classifiers):
+            classifier.partial_fit(
+                vectorized_text,
+                binarized_categories[:, i],
+                classes=np.array([0, 1]),
+            )
+
+    def add_new_categories_to_model(self, category: str) -> None:
+        if category not in self.label_binarizer.classes_:
+            self.label_binarizer.fit(self.texts_and_categories["categories"])
+            new_classifier = SGDClassifier(loss="log_loss")
+            self.pipeline.named_steps["multioutputclassifier"].estimators_.append(
+                new_classifier
+            )
+
+    def export_and_import_knowledge(self) -> None:
+        self.fit_all_data()
+        self.__exit__(None, None, None)
+        self.__enter__()
 
     def __exit__(self, exc_type: None, exc_value: None, traceback: None) -> None:
         if not exc_type and not exc_value and not traceback:
