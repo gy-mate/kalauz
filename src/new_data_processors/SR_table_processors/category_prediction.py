@@ -85,14 +85,17 @@ class CategoryPredictor(DataProcessor):
                     self.texts_and_categories["texts"].append(text)
                     self.texts_and_categories["categories"].append(categories)
             self.check_hamming_loss(self.label_binarizer)
-            binarized_categories = self.label_binarizer.fit_transform(
-                self.texts_and_categories["categories"]
-            )
-            self.pipeline.fit(self.texts_and_categories["texts"], binarized_categories)
+            self.fit_all_data()
         except FileNotFoundError:
             self.logger.warn(
                 "No existing cause categorization data found! Starting from scratch..."
             )
+
+    def fit_all_data(self) -> None:
+        binarized_categories: np.ndarray = self.label_binarizer.fit_transform(
+            self.texts_and_categories["categories"]
+        )
+        self.pipeline.fit(self.texts_and_categories["texts"], binarized_categories)
 
     def check_hamming_loss(
         self,
@@ -178,15 +181,18 @@ class CategoryPredictor(DataProcessor):
             len(self.texts_and_categories["texts"])
             == self.MINIMUM_NUMBER_OF_TRAINING_SAMPLES
         ):
-            self.pipeline.fit(self.texts_and_categories)
+            self.fit_all_data()
             self.__exit__(None, None, None)
             self.__enter__()
         else:
-            binarized_categories = self.label_binarizer.fit_transform(self.texts_and_categories["categories"])
-            self.pipeline.named_steps["multioutputclassifier"].estimator.partial_fit(
-                text, binarized_categories
+            vectorized_text = self.pipeline.named_steps["tfidfvectorizer"].transform(
+                [text]
             )
-            self.logger.info("Model partially trained with the new data!")
+            binarized_categories = self.label_binarizer.fit_transform(categories)
+            self.pipeline.named_steps["multioutputclassifier"].estimator.partial_fit(
+                vectorized_text, binarized_categories
+            )
+            self.logger.info("Model partially trained with a new entry!")
 
     def __exit__(self, exc_type: None, exc_value: None, traceback: None) -> None:
         if not exc_type and not exc_value and not traceback:
