@@ -5,7 +5,6 @@ import re
 import numpy as np
 from rich.console import Console
 from rich.markdown import Markdown
-from scipy.sparse import csr_matrix
 from sklearn.feature_extraction.text import TfidfVectorizer  # type: ignore
 from sklearn.linear_model import SGDClassifier  # type: ignore
 from sklearn.metrics import hamming_loss  # type: ignore
@@ -137,32 +136,30 @@ class CategoryPredictor(DataProcessor):
                 )
                 return self.user_input_for_category(text)
         predictions: np.ndarray = self.pipeline.predict([text])
-        original_categories: list[tuple] = self.label_binarizer.inverse_transform(predictions)
+        original_categories: list[tuple] = self.label_binarizer.inverse_transform(
+            predictions
+        )
         return [category[0] for category in original_categories]
 
     def user_input_for_category(self, text: str) -> list[str]:
         input_categories: list[str] = []
         try:
             clear_terminal()
-            print(f"The possible categories are:\n")
+            print(f"\nThe possible categories are:\n")
             self.markdown_console.print(self.CATEGORIES_MARKDOWN)
             print(
                 f"\nPlease mark the following text with one or more of the categories above:\n"
                 f"'{text}'"
             )
-            category_id_input = input(
-                "\nEnter one or more categories (or their IDs) separated by ', ': "
-            )
-            input_categories = category_id_input.split(", ")
-            if isinstance(input_categories[0], str):
-                return input_categories
-            elif isinstance(input_categories[0], int):
-                return [
-                    self.CATEGORIES[int(category_id) - 1]
-                    for category_id in input_categories
-                ]
-            else:
-                raise ValueError("Invalid input!")
+            while True:
+                category_id_input = input(
+                    "\nEnter one or more categories separated by ', ': "
+                )
+                input_categories = category_id_input.split(", ")
+                if all(category in self.CATEGORIES for category in input_categories):
+                    return input_categories
+                else:
+                    self.logger.warn("At least one input category is invalid!")
         finally:
             self.train_new_data(text, input_categories)
 
@@ -186,14 +183,19 @@ class CategoryPredictor(DataProcessor):
             self.__exit__(None, None, None)
             self.__enter__()
         else:
-            self.label_binarizer.fit(self.texts_and_categories["categories"])
-            binarized_categories = self.label_binarizer.transform([categories]).reshape(1, -1)
-            
-            self.pipeline.named_steps["multioutputclassifier"].estimator.partial_fit(
-                self.pipeline.named_steps["tfidfvectorizer"].transform([text]),
-                binarized_categories,
-                classes=np.arange(len(self.label_binarizer.classes_)),
+            vectorized_text = self.pipeline.named_steps["tfidfvectorizer"].transform(
+                [text]
             )
+            self.label_binarizer.fit(self.texts_and_categories["categories"])
+            binarized_categories = self.label_binarizer.transform([categories])
+
+            classifiers = self.pipeline.named_steps["multioutputclassifier"].estimators_
+            for i, classifier in enumerate(classifiers):
+                classifier.partial_fit(
+                    vectorized_text,
+                    binarized_categories[:, i],
+                    classes=np.array([0, 1]),
+                )
             self.logger.info("Model partially trained with a new entry!")
 
     def __exit__(self, exc_type: None, exc_value: None, traceback: None) -> None:
