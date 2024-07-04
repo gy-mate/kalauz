@@ -5,11 +5,16 @@ markmap:
 ---
 
 - safety_issue
-    - due_to_permit_to_increase_safety
+    - usage_permit
+        - due_to_permit_to_increase_safety
     - train_protection_system
         - no_etcs_2
     - recent_accident
+        - recent_derailment
     - track_works
+        - protecting_workers
+        - after_track_works
+        - incompetent_track_works
     - environmental_issue
         - crossing_issue
             - reduced_triangle_of_vision
@@ -25,12 +30,14 @@ markmap:
     - substructure_error
         - trackbed_error
             - trackbed_drainage_problem
+                - missing_drainage_system
                 - trackbed_muddying
             - inland_flooding
             - track_sinking
-                - track_level_error
-                    - buffer_stop_with_level_error
+                - distorted_track_plane
+                - sinking_buffer_stop
                 - embankment_sinking
+                - manhole_cover_sinking
             - dirty_trackbed
             - insufficient_trackbed
                 - missing_trackbed
@@ -40,7 +47,14 @@ markmap:
         - bridge_problem
             - worn_bridge_beams
             - worn_bridge_timbers
+                - broken_screws_in_bridge_timbers
             - water_stream_pipe_collapse
+            - moving_bridge_bearing
+                - vertically_moving_bridge_bearing
+                - horizontally_moving_bridge_bearing
+            - moving_bridge_structure
+                - vertically_moving_bridge_structure
+                - horizontally_moving_bridge_structure
     - superstructure_error
         - faulty_sleepers
             - broken_concrete_sleepers
@@ -48,9 +62,12 @@ markmap:
         - faulty_rail_fasteners
             - broken_rail_fasteners
             - corroded_rail_fasteners
-            - rotten_wooden_inlay
+            - rotten_inlay
+                - rotten_wooden_inlay
+                - rotten_plastic_inlay
             - missing_fastener_screws
             - faulty_rail_harness
+            - misaligned_rails
         - faulty_rails
             - gauge_error
                 - increased_gauge
@@ -64,22 +81,22 @@ markmap:
                 - rail_core_problem
                     - rail_ultrasound_error
                     - broken_rail
-                        - broken_switch_tip_insert
-                        - broken_switch_tip_rail
+                        - broken_switch_frog_insert
+                        - broken_switch_frog_rail
                         - broken_switch_point_blade
+                        - broken_expansion_joint
                 - rail_welding_problem
                     - broken_rail_welding
-            - direction_error
-            - parts_error
-                - worn_parts
+            - worn_parts
         - state_of_crossing
     - geometry_error
+        - direction_error
         - distorted_curve_geometry
 - track_layout
     - given_geometry
         - small_curve_radius
     - track_is_dead_end
-    - usage_permit
+        - short_dead_end
     - track_elements
         - track_scale
 - usage_issue
@@ -90,3 +107,5 @@ markmap:
     - used_as_material_storage
     - used_for_permanent_carriage_storage
     - lower_maintenance_due_to_underutilized_maxspeed
+- practical_cause
+    - joint_srs
