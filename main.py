@@ -3,7 +3,7 @@ import sys
 
 from dotenv import load_dotenv
 
-from src.new_data_processors.SR_table_processors.category_prediction import CategoryPredictor
+from src.new_data_processors.SR_table_processors.category_prediction.category_prediction import CategoryPredictor
 from src.new_data_processors.SR_table_processors.files import NewFilesRegistrar
 from src.new_data_processors.helper_table_updaters.countries import CountriesUpdater
 from src.new_data_processors.helper_table_updaters.companies import CompaniesUpdater

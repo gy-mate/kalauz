@@ -88,6 +88,7 @@ class MavUpdater(SRUpdater, ExcelProcessorWithFormatting):
 
     def correct_data_manually(self) -> None:
         srs_to_add: list[SR] = []
+        number_of_worksheets = len(self._data_to_process)
         for worksheet_id, worksheet in enumerate(self._data_to_process):
             for row_id, row_of_cells in enumerate(
                 [list(cell) for cell in worksheet.iter_rows()]
@@ -114,7 +115,7 @@ class MavUpdater(SRUpdater, ExcelProcessorWithFormatting):
                         row[8]
                     )
                     cause_categories = (
-                        self.CATEGORY_PREDICTOR.predict_category(row[12], srs_to_add)
+                        self.CATEGORY_PREDICTOR.predict_category(row[12])
                         if row[12]
                         else None
                     )
@@ -174,7 +175,8 @@ class MavUpdater(SRUpdater, ExcelProcessorWithFormatting):
                     self.current_sr_ids.append(sr_to_add.id)
 
                     srs_to_add.append(sr_to_add)
-
+            percentage_done = round((worksheet_id + 1) / number_of_worksheets * 100)
+            self.logger.info(f"{percentage_done}% of the worksheets done!")
         self.data = srs_to_add
 
     def add_data(self) -> None:
@@ -206,9 +208,7 @@ class MavUpdater(SRUpdater, ExcelProcessorWithFormatting):
                     not_signalled_from_start_point,
                     not_signalled_from_end_point,
                     cause_source_text,
-                    cause_category_1,
-                    cause_category_2,
-                    cause_category_3,
+                    cause_categories,
                     time_from,
                     work_to_be_done,
                     time_to,
@@ -239,9 +239,7 @@ class MavUpdater(SRUpdater, ExcelProcessorWithFormatting):
                     :not_signalled_from_start_point,
                     :not_signalled_from_end_point,
                     :cause_source_text,
-                    :cause_category_1,
-                    :cause_category_2,
-                    :cause_category_3,
+                    :cause_categories,
                     :time_from,
                     :work_to_be_done,
                     :time_to,

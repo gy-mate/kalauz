@@ -139,7 +139,7 @@ class GysevUpdater(SRUpdater):
                 )
             
             cause_categories = (
-                self.CATEGORY_PREDICTOR.predict_category(str(row.cause_source_text), srs_to_add)
+                self.CATEGORY_PREDICTOR.predict_category(str(row.cause_source_text))
                 if str(row.cause_source_text) != ""
                 else None
             )
@@ -225,9 +225,7 @@ class GysevUpdater(SRUpdater):
                     not_signalled_from_start_point,
                     not_signalled_from_end_point,
                     cause_source_text,
-                    cause_category_1,
-                    cause_category_2,
-                    cause_category_3,
+                    cause_categories,
                     time_from,
                     work_to_be_done,
                     time_to,
@@ -258,9 +256,7 @@ class GysevUpdater(SRUpdater):
                     :not_signalled_from_start_point,
                     :not_signalled_from_end_point,
                     :cause_source_text,
-                    :cause_category_1,
-                    :cause_category_2,
-                    :cause_category_3,
+                    :cause_categories,
                     :time_from,
                     :work_to_be_done,
                     :time_to,
