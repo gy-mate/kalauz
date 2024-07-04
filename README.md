@@ -1,6 +1,6 @@
 # 🛤️ kalauz
 
-![Lines of code](https://img.shields.io/badge/lines_of_code-1.5k+-blue)
+![Lines of code](https://img.shields.io/badge/lines_of_code-2k+-blue)
 [![Build status](https://scrutinizer-ci.com/g/gy-mate/kalauz/badges/build.png?b=master)](https://scrutinizer-ci.com/g/gy-mate/kalauz/build-status/master)
 [![Code quality](https://img.shields.io/scrutinizer/quality/g/gy-mate/kalauz/master)](https://scrutinizer-ci.com/g/gy-mate/kalauz/)
 [![Type hinting used](https://img.shields.io/badge/type_hinting-used-brightgreen)](https://docs.python.org/3/library/typing.html)
