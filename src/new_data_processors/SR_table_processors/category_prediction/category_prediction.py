@@ -93,7 +93,7 @@ class CategoryPredictor(DataProcessor):
                         raise ValueError(
                             "At least one category is invalid among the existing data!"
                         )
-            self.check_hamming_loss(self.label_binarizer)
+            self.check_hamming_loss()
             self.fit_all_data()
         except FileNotFoundError:
             self.logger.warn(
@@ -109,18 +109,17 @@ class CategoryPredictor(DataProcessor):
             binarized_categories,
         )
 
-    def check_hamming_loss(
-        self,
-        label_binarizer: MultiLabelBinarizer,
-    ) -> None:
+    def check_hamming_loss(self) -> None:
         texts_train, texts_test, categories_train, categories_test = train_test_split(
             [training_data.text for training_data in self.training_data],
             [training_data.categories for training_data in self.training_data],
             test_size=0.33,
             random_state=self.SEED,
         )
-        binarized_categories_train = label_binarizer.fit_transform(categories_train)
-        binarized_categories_test = label_binarizer.transform(categories_test)
+        binarized_categories_train = self.label_binarizer.fit_transform(
+            categories_train
+        )
+        binarized_categories_test = self.label_binarizer.transform(categories_test)
         self.pipeline.fit(texts_train, binarized_categories_train)
         test_predictions = self.pipeline.predict(texts_test)
 
@@ -159,6 +158,11 @@ class CategoryPredictor(DataProcessor):
                         )
                         return self.user_input_for_category(text)
                 predictions: np.ndarray = self.pipeline.predict([text])
+                if not predictions.any():
+                    self.logger.warn(
+                        f"The prediction for '{text}' returned no categories. Asking for user input..."
+                    )
+                    return self.user_input_for_category(text)
                 original_categories: list[tuple] = (
                     self.label_binarizer.inverse_transform(predictions)
                 )
