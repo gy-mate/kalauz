@@ -150,23 +150,26 @@ class CategoryPredictor(DataProcessor):
             case TextSimilarity.Different:
                 return self.user_input_for_category(text)
             case TextSimilarity.Similar:
-                probabilities: np.ndarray = self.pipeline.predict_proba([text])
-                for probability in probabilities:
-                    if max(probability.tolist()[0]) < self.HIGH_CONFIDENCE_THRESHOLD:
-                        self.logger.warn(
-                            f"The prediction for '{text}' is not confident enough. Asking for user input..."
-                        )
-                        return self.user_input_for_category(text)
-                predictions: np.ndarray = self.pipeline.predict([text])
-                if not predictions.any():
-                    self.logger.warn(
-                        f"The prediction for '{text}' returned no categories. Asking for user input..."
-                    )
-                    return self.user_input_for_category(text)
-                original_categories: list[tuple] = (
-                    self.label_binarizer.inverse_transform(predictions)
+                return self.get_predictions_or_input(text)
+
+    def get_predictions_or_input(self, text: str) -> list[str]:
+        probabilities: np.ndarray = self.pipeline.predict_proba([text])
+        for probability in probabilities:
+            if max(probability.tolist()[0]) < self.HIGH_CONFIDENCE_THRESHOLD:
+                self.logger.warn(
+                    f"The prediction for '{text}' is not confident enough. Asking for user input..."
                 )
-                return [category[0] for category in original_categories]
+                return self.user_input_for_category(text)
+        predictions: np.ndarray = self.pipeline.predict([text])
+        if not predictions.any():
+            self.logger.warn(
+                f"The prediction for '{text}' returned no categories. Asking for user input..."
+            )
+            return self.user_input_for_category(text)
+        original_categories: list[tuple] = self.label_binarizer.inverse_transform(
+            predictions
+        )
+        return [category[0] for category in original_categories]
 
     def text_similarity(self, text: str) -> TextSimilarity:
         texts_to_check = [pair.text for pair in self.training_data]
