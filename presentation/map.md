@@ -15,7 +15,7 @@ transition: slide-left
 - MÁV
   - 1: a jelenleg is tartó felújítás sokat javított
   - 113: szörnyű állapotban van
-  - 146: hasonló a helyzet (tavaly augusztus 1-jén bezárták)
+  - 146: hasonló a helyzet (a keleti felét tavaly augusztus 1-jén bezárták)
   - 40: gyakorlatilag sehol sem járható pályasebességgel
   - ~7.000 vonalkm pályából ~7.600 vágánykm-en van lassújel (109%)
 - GYSEV: ehhez képest ~450 vonalkm pályából mindössze 80 vágánykm-en van lassújel (18%)
