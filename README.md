@@ -49,24 +49,24 @@ A program for...
     <source media="(prefers-color-scheme: dark)" srcset="img/database_schema_dark.png" height="600"/>
     <img src="img/database_schema_light.png" alt="Database schema for SRs" height="600"/>
   </picture>
-- Visualizes them on a map using pydeck.
+- Visualizes them on a map using `pydeck`.
 
 
 #### ⚙️ How it works
 
-1. Importing
+- Importing
   - The program reads the spreadsheets from the `data/01_received` directory.
   - It converts the `.pdf` files to `.xlsx` files using the [ConvertAPI](https://convertapi.com).
   - It stores the converted files in the `data/02_converted` directory.
   - It reads the `.xlsx` files and extracts the SRs.
-1. Processing
+- Processing
   - It categorizes the cause of the SRs using AI ([`scikit-learn`](https://scikit-learn.org/stable/index.html)):
     - feature extraction (student): [`TfidfVectorizer`](https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.TfidfVectorizer.html) ([term frequency–inverse document frequency](https://en.wikipedia.org/wiki/Tf–idf) vectorizer)
     - linear model (estimator / predictor – it can constantly learn): [`SGDClassifier`](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDClassifier.html) ([stochastic gradient descent](https://en.wikipedia.org/wiki/Stochastic_gradient_descent) classifier)
       - extending it to a multioutput estimator: [`MultiOutputClassifier`](https://scikit-learn.org/stable/modules/generated/sklearn.multioutput.MultiOutputClassifier.html#sklearn.multioutput.MultiOutputClassifier)
-1. Storing
+- Storing
   - It stores the SRs in a MySQL database.
-1. Visualizing
+- Visualizing
   - It visualizes the SRs on a map using pydeck.
 
 
