@@ -2,6 +2,7 @@ from datetime import datetime
 
 
 class SR:
+    # TODO: break down the member variables into smaller classes
     def __init__(
         self,
         country_code_iso: str,

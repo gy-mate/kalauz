@@ -160,6 +160,7 @@ class MavUpdater(SRUpdater, ExcelProcessorWithFormatting):
                         comment=row[15],
                     )
 
+                    # future: let the database do the hashing
                     string_to_hash = "; ".join(
                         [
                             str(sr_to_add.company_code_uic),
@@ -176,7 +177,9 @@ class MavUpdater(SRUpdater, ExcelProcessorWithFormatting):
 
                     srs_to_add.append(sr_to_add)
             percentage_done = round((worksheet_id + 1) / number_of_worksheets * 100)
-            self.logger.info(f"{percentage_done}% of the worksheets done!")
+            self.logger.info(
+                f"{worksheet_id + 1} / {number_of_worksheets} worksheets ({percentage_done}%) done!"
+            )
         self.data = srs_to_add
 
     def add_data(self) -> None:
