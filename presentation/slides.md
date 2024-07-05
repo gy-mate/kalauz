@@ -235,7 +235,7 @@ https://www.openrailwaymap.org
 - a vasúti objektumok feltöltése közben egyébkent nehézséget okozott az adatok pontatlansága
   - ÁVU-k
   - állomási torzított helyszínrajzok
-- 12 állomáson 26 hiba a végrehajtási utasításokban
+- 12 állomáson 29 hiba a végrehajtási utasításokban
   - a kutatásom mellékhatásaként jeleztem az állomásfőnököknek, szakértőknek...
 -->
 
