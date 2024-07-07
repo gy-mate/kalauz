@@ -7,47 +7,61 @@ markmap:
 - safety_issue
     - usage_permit
         - due_to_permit_to_increase_safety
+        - no_usage_permit
     - train_protection_system
         - no_etcs_2
     - recent_accident
         - recent_derailment
+        - not_restored_after_recent_accident
+        - animal_hit
     - track_works
         - protecting_workers
         - after_track_works
         - incompetent_track_works
-    - environmental_issue
-        - crossing_issue
-            - reduced_triangle_of_vision
-            - entry_point_too_close_to_crossing
-            - 13_khz_track_circuit_for_crossing
-            - no_permit_for_crossing
-        - erosion_of_hill
-            - danger_of_mudslide
+        - in_between_track_works
+        - skipped_track_works
+    - crossing_issue
+        - reduced_triangle_of_vision
+        - entry_point_too_close_to_crossing
+        - 13_khz_track_circuit_for_crossing
+    - erosion_of_hill
+        - danger_of_mudslide
     - insufficient_structure_gauge
         - insufficient_structure_gauge_top
         - insufficient_structure_gauge_bottom
+        - vegetation_enroachment
+    - tunnel_structure
 - track_structure_error
     - substructure_error
         - trackbed_error
-            - trackbed_drainage_problem
-                - missing_drainage_system
-                - trackbed_muddying
-            - inland_flooding
-            - track_sinking
+            - track_level_error
+                - buffer_stop_level_error
                 - distorted_track_plane
-                - sinking_buffer_stop
-                - embankment_sinking
-                - manhole_cover_sinking
+                - unstable_trackbed
+                    - uncompacted_trackbed
+                - track_sinking
+                    - embankment_sinking
+                    - manhole_cover_sinking
+                    - insufficient_trackbed
+                        - missing_trackbed
+                    - trackbed_drainage_problem
+                        - missing_drainage_system
+                        - trackbed_muddying
+                        - inland_flooding
+                        - crossflowing_water
             - dirty_trackbed
-            - insufficient_trackbed
-                - missing_trackbed
-            - unstable_trackbed
-            - no_trackbed_kerb
-                - no_trackbed_kerb_due_to_wildlife_crossing
+            - trackbed_kerb_problem
+                - sinking_trackbed_kerb
+                - missing_trackbed_kerb
+                    - missing_trackbed_kerb_due_to_wildlife_crossing
+            - embankment_slope_problem
+                - sliding_embankment_slope
+                - thinned_embankment_slope
         - bridge_problem
             - worn_bridge_beams
             - worn_bridge_timbers
                 - broken_screws_in_bridge_timbers
+            - worn_bridge_wall
             - water_stream_pipe_collapse
             - moving_bridge_bearing
                 - vertically_moving_bridge_bearing
@@ -55,16 +69,21 @@ markmap:
             - moving_bridge_structure
                 - vertically_moving_bridge_structure
                 - horizontally_moving_bridge_structure
+            - temporary_bridge
+        - inspection_pit_problem
+        - turntable_problem
     - superstructure_error
         - faulty_sleepers
             - broken_concrete_sleepers
             - rotten_wooden_sleepers
         - faulty_rail_fasteners
             - broken_rail_fasteners
-            - corroded_rail_fasteners
-            - rotten_inlay
+              - corroded_rail_fasteners
+              - rotten_rail_fasteners
+            - worn_inlay
                 - rotten_wooden_inlay
-                - rotten_plastic_inlay
+                - worn_plastic_inlay
+            - broken_underlay
             - missing_fastener_screws
             - faulty_rail_harness
             - misaligned_rails
@@ -78,34 +97,53 @@ markmap:
                     - bent_rail_end
                     - worn_rail
                     - corroded_rail
+                        - corroded_rail_foot
                 - rail_core_problem
                     - rail_ultrasound_error
                     - broken_rail
-                        - broken_switch_frog_insert
-                        - broken_switch_frog_rail
+                        - broken_switch_frog
+                          - broken_switch_frog_insert
+                          - broken_switch_frog_rail
                         - broken_switch_point_blade
                         - broken_expansion_joint
                 - rail_welding_problem
                     - broken_rail_welding
             - worn_parts
         - state_of_crossing
-    - geometry_error
-        - direction_error
-        - distorted_curve_geometry
+        - demolished_track_element
+            - demolished_track_scale
+        - geometry_error
+            - direction_error
+            - distorted_curve_geometry
 - track_layout
     - given_geometry
         - small_curve_radius
-    - track_is_dead_end
-        - short_dead_end
+        - short_transition_curve
+        - track_is_dead_end
+            - short_dead_end
+        - short_braking_distance
+    - built_for_lower_speed
     - track_elements
         - track_scale
+        - sideloading_platform
 - usage_issue
     - no_maintenance
         - no_maintenance_due_to_underutilization
+            - no_maintenance_due_to_underutilized_track_scale
         - no_maintenance_due_to_capacity_reduction
         - waiting_to_be_scrapped
+        - nonexistent_track
+            - scrapped_track
+            - filled_track
+        - disfunctional_track
     - used_as_material_storage
-    - used_for_permanent_carriage_storage
+    - used_for_carriage_storage
+        - used_for_permanent_carriage_storage
     - lower_maintenance_due_to_underutilized_maxspeed
+    - unused_crossing
+- environmental_issue
+    - noise_reduction
+        - worn_noise_barrier
 - practical_cause
     - joint_srs
+- unknown

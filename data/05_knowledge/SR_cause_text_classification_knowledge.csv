@@ -371,3 +371,36 @@ Egyéb ok. ETCS-2 rendszer nem lett kiépitve Szelvényváltás 0+00 = 228+78;no
 Pályaállapot. I. sz.vágány;track_structure_error
 Pályaállapot. csonkavágány.;track_structure_error
 Pályahiba. Sínfej hosszirányú repedése miatt.;broken_rail
+Geometria miatt. Rövid átmeneti ív.;short_transition_curve
+Pályahiba. aljcsere után vágányszabályozás elmaradása;skipped_track_works
+Rálátási háromszög hiánya. Kpo. felől rálátási háromszög hiánya miatt.;reduced_triangle_of_vision
+Pályahiba. A felépítmény műszaki állapota miatt;superstructure_error
+Pályahiba. UH hiba a kitérő keresztezési középrészben;broken_switch_frog
+Geometria miatt.  Pályageometria miatt;given_geometry
+Geometria miatt. Ív, nem szüntethető meg.;given_geometry
+Geometria miatt. Kis sugarú ív, nem szüntethető meg.;small_curve_radius
+Geometria miatt. Ív, vg. tengely ugratás.;given_geometry
+Pályaállapot. I. csonka.vg..;track_structure_error
+Pályaállapot. A vágányban található aljak rendkivül rossz állapota miatt.;faulty_sleepers
+Pályaállapot. sínvég lehajlás, süppedések;bent_rail_end, track_sinking
+Rálátási háromszög hiánya. rálátási háromszög hiánya miatt, útátjáróban süppedés;reduced_triangle_of_vision, track_sinking
+Pályaállapot. sínvég lehajlás, süppedés;bent_rail_end, track_sinking
+Alépítmény állapota. Elvékonyodott töltés, padkahiány;thinned_embankment_slope, missing_trackbed_kerb
+Pályahiba. aljak állapota miatt forgalomból kizárva;faulty_sleepers
+Pályahiba. Forgalomból kizárás;track_structure_error
+Pályahiba. az előző évi rostálás helyén kialakult fekszint- és irányhibák miatt .;track_level_error, direction_error
+Alépítmény állapota. Padkahiány;substructure_error, missing_trackbed_kerb
+Karbantartási munka. útátjáró átépítés;protecting_workers
+Pályahiba. Nagymérvű elsárosodás, kialakult süppedés miatt.;trackbed_muddying, track_sinking
+Alépítmény állapota. Alépitmény hiba;substructure_error
+Karbantartási munka. Talpfa cserélési munkák miatt.;protecting_workers
+Alépítmény állapota. Vízelvezetés, Csitény-hegy;substructure_error, trackbed_drainage_problem
+Pályahiba. Betonalj csere után aláverés hiánya miatt kialakult fekszínt és irányhiba.;skipped_track_works, track_level_error, direction_error
+Kivitelezői hiba miatt. Vasbetonalj cserét követően, a kézi vágányszabályozás elvégzéséig.;incompetent_track_works
+Geometria miatt. Kis sugarú ívek;small_curve_radius
+Pályahiba. Sáros ágyazatban kialakult fekszint és irányhiba miatt;trackbed_muddying, track_level_error, direction_error
+Rálátási háromszög hiánya. A 648+30,  és a 649+37 sz.ben levő útátjárókra való szabad rálátás beépítettség miatt.;reduced_triangle_of_vision
+Egyéb ok miatt. Gépcserék miatt szükséges;unknown
+Pályaállapot. Aljak állapota, irány és fekszinthibák;faulty_sleepers, direction_error, track_level_error
+Pályahiba. Útátjáróban kialakult fekszint hiba miatt.;track_level_error
+Pályahiba. Süppedés és síktorzulás miatt.;track_sinking, distorted_track_plane
