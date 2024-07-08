@@ -370,7 +370,7 @@ Egyéb ok. ETCS-2 rendszer nem lett kiépitve Szelvényváltás 5+76 = 223+02;no
 Egyéb ok. ETCS-2 rendszer nem lett kiépitve Szelvényváltás 0+00 = 228+78;no_etcs_2
 Pályaállapot. I. sz.vágány;track_structure_error
 Pályaállapot. csonkavágány.;track_structure_error
-Pályahiba. Sínfej hosszirányú repedése miatt.;broken_rail
+Pályahiba. Sínfej hosszirányú repedése miatt.;head_check_error
 Geometria miatt. Rövid átmeneti ív.;short_transition_curve
 Pályahiba. aljcsere után vágányszabályozás elmaradása;skipped_track_works
 Rálátási háromszög hiánya. Kpo. felől rálátási háromszög hiánya miatt.;reduced_triangle_of_vision
@@ -903,3 +903,54 @@ Geometria miatt. A vágány forgalomba helyezési sebessége;given_geometry
 Geometria miatt. Menetrendi alapsebesség;given_geometry
 Pályahiba. Örvényáramos vizsgálat által feltárt csúcssín hiba.;broken_switch_point_blade
 Rálátási háromszög hiánya. Csak Somoskőújfalu felől.;reduced_triangle_of_vision
+Egyéb ok miatt. A 2. vágány melleti támfal ducolással állékonyság biztosítása végett;state_of_retaining_wall
+Pályahiba. Mérővonati grafikon és vonalbeutazás alapján sorozatok fekszint és irányhibák.;track_level_error, direction_error
+Pályahiba. felépítmény ugrásszerű állapotromlása miatt;superstructure_error
+Pályahiba. fekszint-hibák miatt;track_level_error
+Pályaállapot. fekszinthibák;track_level_error
+Pályaállapot. esőzések okozta fekszinthibák;track_level_error, trackbed_drainage_problem
+Pályahiba. X;track_structure_error
+Pályahiba. Sorozatos fekszinthibák;track_level_error
+Pályahiba. Varratszakadás illetve varratszakadás helyén fekszinthiba kialakulása miatt;broken_rail_welding, track_level_error
+Pályahiba. irányhiba a meleg időjárás miatt.;direction_error
+Pályaállapot. esőzés miatti fekszinthibák;trackbed_drainage_problem, track_level_error
+Pályahiba. Síntörés ideiglenes helyreállítása után;broken_rail
+Egyéb ok. a vonalszakasz járhatalan elbontva;scrapped_track
+Egyéb ok. vágány elbontásra került;scrapped_track
+Egyéb ok. vágány járhatatlan elbontva;scrapped_track
+Pályaállapot. Bz 40 km/h. Avult felépítmény.;superstructure_error
+Pályaállapot. Bz 40 km/h. Aljak állapota.;faulty_sleepers
+Pályaállapot. Felépítmény avulása.;superstructure_error
+Pályahiba. tömeges nyomtávhiba;gauge_error
+Pályaállapot. Rálátás hiánya.;reduced_triangle_of_vision
+Pályahiba. Nyomtáv hiba.;gauge_error
+Pályaállapot. Geometriai torzulásokra érzékeny szakasz. Aljak, kapcsolószerek állapota.;faulty_sleepers, faulty_rail_fasteners, geometry_error
+Pályahiba. aljak állapota , fekszinthiba;faulty_sleepers, track_level_error
+Kitérő állapota. Aljak állapota.;faulty_sleepers
+Pályaállapot. alj, kapcsolószer állapota miatt;faulty_sleepers, faulty_rail_fasteners
+Egyéb ok. vágány záró kőfal;unknown
+Pályaállapot. Aljak, ágyazat állapota.;faulty_sleepers, substructure_error
+Pályaállapot. Talpfák állapota.;rotten_wooden_sleepers
+Pályaállapot. Bz. 40 km/h. Aljak állapota.;faulty_sleepers
+Egyéb ok. Aljak állapota.;faulty_sleepers
+Egyéb ok. Forgalomból kizárva. Hídmérleg műszaki állapota.;track_scale
+Egyéb ok. Forgalomból kizárva.;unknown
+Egyéb ok. az útátjáró behatási pontja miatt;entry_point_too_close_to_crossing
+Kitérő állapota. Aljak avulása.;faulty_sleepers
+Pályaállapot. Útátjáró rálátási hiány.;reduced_triangle_of_vision
+Pályaállapot. Útátjáró rálátás hiánya.;reduced_triangle_of_vision
+Pályaállapot. útátjáró állapota;track_structure_error
+Meleg időjárás miatti állapot romlás. irányhiba (könyök);direction_error
+Pályaállapot. Útátjáró állapota.;track_structure_error
+Pályaállapot. A vonalszakasz járhatatlan;track_structure_error
+Pályaállapot. a vágány járhatatlan;track_structure_error
+Pályahiba. Kirtérőfa állapot miatt.;rotten_wooden_sleepers
+Pályaállapot. Ívhiány.;missing_curve
+Pályahiba. sinkopás;rail_wear
+Pályahiba. Aljak, kapcsolószerek, fekszint;faulty_sleepers, faulty_rail_fasteners, track_level_error
+Pályaállapot. Szennyezett ágyazat, geometriai torzulásokra érzékeny.;dirty_trackbed, geometry_error
+Pályaállapot. Szennyezett ágyazat, gometriai torzulásokra érzékeny, elverődött hegesztések;dirty_trackbed, geometry_error, broken_rail_welding
+Pályaállapot. Szennyezett ágyazat, gometriai torzulásokra érzékeny, elverődött hegesztések.;dirty_trackbed, geometry_error, broken_rail_welding
+Pályaállapot. Geometriai torzulásokra érzékeny szakasz. Szennyezett ágyazat.;geometry_error, dirty_trackbed
+Pályahiba. vez. táv. max hiba;unknown
+Pályahiba. sínfej repedés;head_check_error
