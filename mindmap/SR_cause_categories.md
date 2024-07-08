@@ -167,6 +167,7 @@ markmap:
         - track_scale
         - sideloading_platform
         - track_brake
+        - x_ray
 - usage_issue
     - no_maintenance
         - no_maintenance_due_to_underutilization
