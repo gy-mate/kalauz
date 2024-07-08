@@ -10,8 +10,12 @@ markmap:
         - no_usage_permit
         - environmental_permit
         - no_transition_curve
-    - train_protection_system
+        - usage_permit_due_to_signalling
+        - usage_permit_due_to_different_systems_meeting
+    - train_protection_system_issue
         - no_etcs_2
+    - signalling_issue
+        - missing_distant_signal
     - recent_accident
         - recent_derailment
         - not_restored_after_recent_accident
@@ -26,6 +30,7 @@ markmap:
         - reduced_triangle_of_vision
         - entry_point_too_close_to_crossing
         - 13_khz_track_circuit_for_crossing
+        - protection_signal_used
     - erosion_of_hill
         - mudslide
             - danger_of_mudslide
@@ -139,7 +144,9 @@ markmap:
         - goods_scattered_on_tracks
         - used_material_was_built_in
         - bad_train_protection_signal_transmission
-        - slow_switch_built_in
+        - switch_issue
+            - slow_switch_built_in
+            - unguarded_switch
 - overhead_line_error
 - track_layout
     - given_geometry
