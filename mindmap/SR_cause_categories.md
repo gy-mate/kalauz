@@ -20,11 +20,13 @@ markmap:
         - recent_derailment
         - not_restored_after_recent_accident
         - animal_hit
+        - switch_recently_ran_through
     - track_works
         - track_works_protection
             - protecting_workers
             - protecting_passengers
         - after_track_works
+            - no_measurement_after_track_works
         - incompetent_track_works
         - in_between_track_works
         - skipped_track_works
@@ -79,7 +81,7 @@ markmap:
                   - broken_screws_in_bridge_timbers
               - worn_bridge_wall
                   - worn_bridge_edge
-              - water_stream_pipe_collapse
+              - corroded_bridge
               - moving_bridge_bearing
                   - vertically_moving_bridge_bearing
                   - horizontally_moving_bridge_bearing
@@ -87,6 +89,7 @@ markmap:
                   - vertically_moving_bridge_structure
                   - horizontally_moving_bridge_structure
             - temporary_bridge
+        - water_stream_pipe_collapse
         - inspection_pit_problem
         - turntable_problem
         - state_of_earthen_bumper
@@ -163,6 +166,7 @@ markmap:
     - track_elements
         - track_scale
         - sideloading_platform
+        - track_brake
 - usage_issue
     - no_maintenance
         - no_maintenance_due_to_underutilization
