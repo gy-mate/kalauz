@@ -21,7 +21,9 @@ markmap:
         - not_restored_after_recent_accident
         - animal_hit
     - track_works
-        - protecting_workers
+        - track_works_protection
+            - protecting_workers
+            - protecting_passengers
         - after_track_works
         - incompetent_track_works
         - in_between_track_works
@@ -150,9 +152,10 @@ markmap:
 - overhead_line_error
 - track_layout
     - given_geometry
-        - small_curve_radius
+        - curve_geometry
+            - small_curve_radius
+            - short_transition_curve
         - incline
-        - short_transition_curve
         - track_is_dead_end
             - short_dead_end
         - short_braking_distance
