@@ -1246,7 +1246,7 @@ Pályahiba. avult 34,5 kg/fm-es sín, régi típusú betonalj, kohósalak ágyaz
 Egyéb ok. Hatósági szemle után bevezetett korlátozás;usage_permit
 Egyéb ok. Íves páyarészen a rálátás hiánya miatt;reduced_triangle_of_vision
 Pályaállapot. HN vágány geometriai állapota miatt;geometry_error
-Alépítmény állapota. vélelmezhető alép. hiba (célvizsgálat nem történt), a töltés állékonysága miatt kialakult pályahiba;unstable_trackbed
+Alépítmény állapota. vélelmezhető alép. hiba (célvizsgálat nem történt), a töltés állékonysága miatt kialakult pályahiba;embankment_sinking
 Pályaállapot. Sín és aljállag rossz műszaki állapota;rail_material_error, faulty_sleepers
 Pályaállapot. Vágány lezárva rossz aljállag és fekszint hibák miatt;faulty_sleepers, track_level_error
 Pályaállapot. hagyományos vágányban fekszint hibák miatt;track_level_error
@@ -1295,3 +1295,30 @@ Pályaállapot. pálya rossz műszaki áll. miatt (salakos ágyazat, rossz aljá
 Pályaállapot. Vágány lezárva (selejtezésre vár);waiting_to_be_scrapped
 Pályaállapot. Fekszinthibák, rossz aljállag;track_level_error, faulty_sleepers
 Egyéb ok. Tram-Train;unknown
+Egyéb ok. Pályakapacitás csökkentés_2012.12.16;no_maintenance_due_to_capacity_reduction
+Alépítmény állapota. sárosodás;trackbed_muddying
+Pályaállapot. Alj és kapcsolószer állapot.;faulty_rail_fasteners, faulty_sleepers
+Hatósági határozat. MÁV - BKV szintbeni keresztezés;usage_permit_due_to_different_systems_meeting
+Pályaállapot csak tehervonatok részére. Avult leerősítés, fekszint hibák;faulty_rail_fasteners, track_level_error
+Pályaállapot. Avult felépítmény, műszaki állapot miatt a vágány a forgalomból kizárva;superstructure_error, track_structure_error
+Pályaállapot. Korhadt fa aljak, avult leerősítés, fekszint hibák;rotten_wooden_sleepers, faulty_rail_fasteners, track_level_error
+Pályaállapot. Korhadt fa aljak, avult leerősítés, fekszint hibák.;rotten_wooden_sleepers, faulty_rail_fasteners, track_level_error
+Egyéb ok miatt. rálátási háromszög hiánya miatt;reduced_triangle_of_vision
+Rálátási háromszög hiánya. Idegen területen lévő növényzet miatt;reduced_triangle_of_vision
+Geometria miatt. Pálya geometria miatt R=249 méter;small_curve_radius
+Pályaállapot. pálya műszaki áll. miatt, durva visszatérő fekszinthibák, rossz ágyazat;track_level_error, trackbed_error
+Pályaállapot. pálya műszaki állapota miatt, avult felépítmény, rossz aljállag, ágyazat hiány miatt;superstructure_error, faulty_sleepers, insufficient_trackbed
+Pályahiba. pályaállapot miatt (fekszint, irányhibák, alj állag);track_level_error, direction_error, faulty_sleepers
+Pályaállapot. pálya műszaki állapota miatt, avult felépítmény, rossz aljállag, ágyazat hiány miatt, nyomtáv hibák;superstructure_error, faulty_sleepers, insufficient_trackbed, gauge_error
+Pályahiba. Pályaállapot miatt (fekszint, irányhibák, aljállag);track_level_error, direction_error, faulty_sleepers
+Pályaállapot. pálya műszaki állapota miatt, avult felépítmény, rossz aljállag miatt, fekszint hibák miatt;faulty_sleepers, track_level_error, superstructure_error
+Pályaállapot. pálya műszaki állapota miatt, avult felépítmény, rossz aljállag, fekszinthibák miatt;superstructure_error, faulty_sleepers, track_level_error
+Pályaállapot. Pályaállapot miatt (fekszint, síktorzulás);track_level_error, distorted_track_plane
+Pályaállapot. pálya műszaki állapota miatt, avult kitérők miatt;superstructure_error
+Egyéb ok. Pályakapacitás csökkentés_2012.12.18;no_maintenance_due_to_capacity_reduction
+Pályahiba. kitérő alk. kopás;worn_parts
+Pályaállapot. Avult leerősítés, fekszint hibák;faulty_rail_fasteners, track_level_error
+Pályaállapot. Avult leerősítés, fekszint hibák.;faulty_rail_fasteners, track_level_error
+Pályaállapot. Vágány lezárva, állomási kiszolgálás szünetel;closed_station
+"Pályaállapot. ""c"" felépítmény, avult felépítmény, rossz aljállag, fekszinthibák";superstructure_error, faulty_sleepers, track_level_error
+Alépítmény állapota. töltés süllyedés miatt;embankment_sinking

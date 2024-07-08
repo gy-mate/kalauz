@@ -166,6 +166,7 @@ markmap:
             - no_maintenance_due_to_underutilized_track_scale
         - no_maintenance_due_to_capacity_reduction
         - closed_line_section
+            - closed_station
         - waiting_to_be_scrapped
         - nonexistent_track
             - scrapped_track
