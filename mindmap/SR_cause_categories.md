@@ -29,6 +29,7 @@ markmap:
     - erosion_of_hill
         - mudslide
             - danger_of_mudslide
+        - state_of_retaining_wall
     - insufficient_structure_gauge
         - insufficient_structure_gauge_top
         - insufficient_structure_gauge_bottom
@@ -55,6 +56,7 @@ markmap:
                         - inland_flooding
                         - crossflowing_water
             - dirty_trackbed
+            - too_thick_trackbed
             - trackbed_kerb_problem
                 - sinking_trackbed_kerb
                 - missing_trackbed_kerb
@@ -101,9 +103,9 @@ markmap:
             - rail_material_error
                 - rail_surface_problem
                     - head_check_error
-                    - bent_rail_end
                     - rail_wear
                         - rail_side_wear
+                        - bent_rail_end
                     - corroded_rail
                         - corroded_rail_foot
                 - rail_core_problem
@@ -128,8 +130,10 @@ markmap:
             - gauge_error
                 - increased_gauge
                 - decreased_gauge
+            - missing_curve
         - goods_scattered_on_tracks
         - used_material_was_built_in
+- overhead_line_error
 - track_layout
     - given_geometry
         - small_curve_radius
