@@ -751,3 +751,18 @@ Pályaállapot csak tehervonatok részére. Csak tehervonatok részére.;track_s
 Pályaállapot csak tehervonatok részére. 40 km/h a tehervonatok részére;track_structure_error
 Rálátási háromszög hiánya. Csak Balassagyarmat felől;reduced_triangle_of_vision
 Baleset miatt. ideiglenes helyreállítás után technológiai okból;recent_accident
+Pályaállapot. Avult  felépítmén, aljak állapota;superstructure_error, faulty_sleepers
+Elemi esemény miatt. Vízátfolyás.;crossflowing_water
+Pályahiba. pályageometriai hiba miatt;geometry_error
+Pályaállapot. Forgalomba visszahelyezve;track_structure_error
+Pályaállapot. elsárosodott ágyazat;trackbed_muddying
+Pályaállapot. kitérő műszaki állapota;worn_parts
+Pályaállapot csak tehervonatok részére. Menetrendi alapsebesség;track_structure_error
+Pályaállapot. Irányhiba az útátjáróban;direction_error
+Pályahiba. Útátjáró felfagyása, nyom szűkület;frozen_crossing, decreased_gauge
+Egyéb ok miatt. SR 1 sz. útátjáróban közúti jármű által okozott irányhiba.;direction_error
+Pályaállapot csak tehervonatok részére. pályageometriai hibák;geometry_error
+Pályaállapot. pályageometriai hibák;geometry_error
+Rálátási háromszög hiánya. Csak Aszód felől;reduced_triangle_of_vision
+Meleg időjárás miatti állapot romlás. Illesztésben irányhiba.;direction_error
+Rálátási háromszög hiánya. Csak Galgamácsa felől.;reduced_triangle_of_vision

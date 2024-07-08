@@ -119,6 +119,7 @@ markmap:
                 - worn_switch_lock
         - state_of_crossing
             - groove_error
+            - frozen_crossing
         - demolished_track_element
             - demolished_track_scale
         - geometry_error
