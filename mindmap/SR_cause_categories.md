@@ -8,6 +8,8 @@ markmap:
     - usage_permit
         - due_to_permit_to_increase_safety
         - no_usage_permit
+        - environmental_permit
+        - no_transition_curve
     - train_protection_system
         - no_etcs_2
     - recent_accident
@@ -25,12 +27,15 @@ markmap:
         - entry_point_too_close_to_crossing
         - 13_khz_track_circuit_for_crossing
     - erosion_of_hill
-        - danger_of_mudslide
+        - mudslide
+            - danger_of_mudslide
     - insufficient_structure_gauge
         - insufficient_structure_gauge_top
         - insufficient_structure_gauge_bottom
         - vegetation_enroachment
     - tunnel_structure
+    - platform_issues
+        - narrow_safety_distance_on_platform
 - track_structure_error
     - substructure_error
         - trackbed_error
@@ -57,11 +62,13 @@ markmap:
             - embankment_slope_problem
                 - sliding_embankment_slope
                 - thinned_embankment_slope
+                - collapsed_embankment_slope
         - bridge_problem
             - worn_bridge_beams
             - worn_bridge_timbers
                 - broken_screws_in_bridge_timbers
             - worn_bridge_wall
+                - worn_bridge_edge
             - water_stream_pipe_collapse
             - moving_bridge_bearing
                 - vertically_moving_bridge_bearing
@@ -72,34 +79,34 @@ markmap:
             - temporary_bridge
         - inspection_pit_problem
         - turntable_problem
+        - state_of_earthen_bumper
     - superstructure_error
         - faulty_sleepers
             - broken_concrete_sleepers
             - rotten_wooden_sleepers
+            - too_small_sleepers
         - faulty_rail_fasteners
             - broken_rail_fasteners
               - corroded_rail_fasteners
               - rotten_rail_fasteners
+              - broken_rail_fastener_screws
             - worn_inlay
                 - rotten_wooden_inlay
                 - worn_plastic_inlay
             - broken_underlay
-            - missing_fastener_screws
             - faulty_rail_harness
             - misaligned_rails
+            - no_track_frame_stiffness
         - faulty_rails
-            - gauge_error
-                - increased_gauge
-                - decreased_gauge
             - rail_material_error
                 - rail_surface_problem
                     - head_check_error
                     - bent_rail_end
-                    - worn_rail
+                    - rail_wear
+                        - rail_side_wear
                     - corroded_rail
                         - corroded_rail_foot
                 - rail_core_problem
-                    - rail_ultrasound_error
                     - broken_rail
                         - broken_switch_frog
                           - broken_switch_frog_insert
@@ -109,15 +116,23 @@ markmap:
                 - rail_welding_problem
                     - broken_rail_welding
             - worn_parts
+                - worn_switch_lock
         - state_of_crossing
+            - groove_error
         - demolished_track_element
             - demolished_track_scale
         - geometry_error
             - direction_error
             - distorted_curve_geometry
+            - gauge_error
+                - increased_gauge
+                - decreased_gauge
+        - goods_scattered_on_tracks
+        - used_material_was_built_in
 - track_layout
     - given_geometry
         - small_curve_radius
+        - incline
         - short_transition_curve
         - track_is_dead_end
             - short_dead_end
@@ -131,11 +146,14 @@ markmap:
         - no_maintenance_due_to_underutilization
             - no_maintenance_due_to_underutilized_track_scale
         - no_maintenance_due_to_capacity_reduction
+        - closed_line_section
         - waiting_to_be_scrapped
         - nonexistent_track
             - scrapped_track
             - filled_track
         - disfunctional_track
+        - no_contract_for_spur
+        - cut_off_track
     - used_as_material_storage
     - used_for_carriage_storage
         - used_for_permanent_carriage_storage
