@@ -120,6 +120,7 @@ markmap:
                         - broken_expansion_joint
                 - rail_welding_problem
                     - broken_rail_welding
+                        - broken_rail_welding_by_manufacturer
                     - missing_rail_welding
             - worn_parts
                 - worn_switch_lock
@@ -137,6 +138,8 @@ markmap:
             - missing_curve
         - goods_scattered_on_tracks
         - used_material_was_built_in
+        - bad_train_protection_signal_transmission
+        - slow_switch_built_in
 - overhead_line_error
 - track_layout
     - given_geometry
@@ -171,6 +174,7 @@ markmap:
 - environmental_issue
     - noise_reduction
         - worn_noise_barrier
+        - noise_reduction_in_residential_area
 - practical_cause
     - joint_srs
 - unknown

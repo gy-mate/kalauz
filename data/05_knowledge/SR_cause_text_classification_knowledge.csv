@@ -1022,3 +1022,82 @@ Pályahiba. A fekszinthiba tovább romlott.;track_level_error
 Két közeli sebességkorlátozás közti pályaszakaszokra (műszaki). 16159/2022/MAV PLO vonalbeutazási megállapítás alapján.;joint_srs
 Pályahiba. ívben féloldalas süppedés;distorted_track_plane
 Pályahiba. Kitérőben sáros ágyazat és fekszinthiba.;trackbed_muddying, track_level_error
+Pályahiba. Síncsere után, AT hegesztés elmaradása miatt.;missing_rail_welding
+Pályaállapot. Sáros ágyazat, fekszinthiba;trackbed_muddying, track_level_error
+Hatósági határozat. NKH.UVH/VF/1030/1/2016;usage_permit
+Pályaállapot. fekszint-, irányhibák;track_level_error, direction_error
+Karbantartási munka. síncsere után elmaradt hegesztés miatt;missing_rail_welding
+Pályahiba. süppedés és fekszinthiba;track_sinking, track_level_error
+Pályahiba. Szigetelt ilesztés törés ideiglenes helyreállítása után.;broken_rail_welding
+Pályaállapot. fekszint-, irányhibák forgalomból kizárva;track_level_error, direction_error
+Pályahiba. Útátjáróban eső után kialakult fekszinthiba;trackbed_drainage_problem, track_level_error
+Pályahiba. Fekszínt hiba az útátjáróban;track_level_error
+Pályahiba. Kitérő irányú villasín gyári hegesztésének repedése miatt;broken_rail_welding_by_manufacturer
+Pályahiba. Csúcsbetét repedés.;broken_switch_frog_insert
+"Pályahiba. 20. kit-ben C1 típusú ""HC"" hibák a ker.középrészen";head_check_error
+Pályahiba. repedt aljak miatt;broken_concrete_sleepers
+Pályahiba. Fekszínt hiba, vízzsák;track_level_error, trackbed_muddying
+Pályahiba. Erős ismétlődő fekszinthiba és sárosodás ragasztott szigetelt sínnél.;track_level_error, trackbed_muddying
+Pályahiba. Esőzések után rövid féloldali vízzsákos részek és fekszinthibák alakultak ki;track_level_error, trackbed_muddying, trackbed_drainage_problem
+Pályahiba. Sáros ágyazat és erős fekszinthiba.;track_level_error, trackbed_muddying
+Pályahiba. Esőzések után erősödő, ismétlődő fekszinthibák az útátjáróban és csatlakozó részén.;trackbed_drainage_problem, track_level_error
+Pályaállapot csak tehervonatok részére. fekszint-, irányhibák;trackbed_muddying, direction_error
+"Pályahiba. ""C2"" hibák és hullámos sínkopás.";rail_wawy_wear, track_structure_error
+Pályahiba. Sáros ágyazat, fekszinthibák, síktorzulások, C3 hibák.;track_structure_error, trackbed_muddying, track_level_error, distorted_track_plane
+Pályaállapot. Kitérő;superstructure_error
+Pályahiba. ágyazat sárosodás, keresztsüppedés;trackbed_muddying, track_sinking
+"Pályaállapot. ""HC"" sínhiba";head_check_error
+Pályaállapot. fekszint-, irányhibák, sáros ágyazat;track_level_error, direction_error, trackbed_muddying
+Pályahiba. Meleg végett kialakult írányhiba. (07.04 10:15 től a forgalomból ki volt zárva a vágány);direction_error
+Pályahiba. Pályaállapot miatt.;track_structure_error
+Pályahiba. Kitérő alk. meghibásodás;worn_parts
+Egyéb ok. Pályakapacitás csökkentés_2012.12.15;no_maintenance_due_to_capacity_reduction
+Pályahiba. Mérővonati grafikon alapján.;track_structure_error
+Pályahiba. v;track_structure_error
+Egyéb ok. A bizt.ber jelfeladás nem megfelelő.;bad_train_protection_signal_transmission
+Egyéb ok. Bizt.ber jelfeladás nem megfelelő;bad_train_protection_signal_transmission
+Pályahiba. pályaállapot romlás;track_structure_error
+Egyéb ok. Lakott terrület miatt a zajcsökkentés érdekében.;noise_reduction_in_residential_area
+Egyéb ok. Lakott terület miatt a zajcsökkentés érdekében.;noise_reduction_in_residential_area
+Pályahiba. Műszaki állapot;track_structure_error
+Egyéb ok miatt. Űrszelvény hiánya;insufficient_structure_gauge
+Pályahiba. oldalrakodó  oldalának  állapotromlása miatt.;sideloading_platform
+Egyéb ok miatt. Az oldalrakodó homlokfalának  omlása miatt;sideloading_platform
+Pályahiba. Műszaki állapot.;track_structure_error
+Híd állapot. peronaluljáró miatt.;state_of_bridge
+Karbantartási munka. pályafenntartási beavatkozás után;after_track_works
+Egyéb ok. geometria;given_geometry
+Pályahiba. Műszaki állapot további romlása.;track_structure_error
+Pályahiba. Útátjáró állapota miatt;state_of_crossing
+Pályahiba. fekszinthiba útátjáróban;track_level_error
+Pályahiba. Műszaki állapotromlás;track_structure_error
+Pályahiba. AT heg. kagylósodás;rail_welding_problem
+Pályahiba. a kizárás a 2272-es útátjáró rálátásának biztosítása miatt indokolt.;reduced_triangle_of_vision
+Pályahiba. Uh sinvizsgálat által felfedezett hiba;broken_rail
+Pályaállapot. mérővonati helyreállítás után;after_track_works
+Karbantartási munka. *;track_works
+Pályahiba. mérővonat utáni helyreállítás után;after_track_works
+Baleset miatt. baleset miatti helyreállítás után;recent_accident
+Geometria miatt. geometriai adottságok;given_geometry
+Alépítmény állapota. Műszaki állapot;substructure_error
+Egyéb ok miatt. Tömeges felép. anyagok a vg-on való tárolása miatt.;used_as_material_storage
+Egyéb ok miatt. *;unknown
+Geometria miatt. geometriai okok;given_geometry
+Geometria miatt. Műszaki állapot;geometry_error
+Pályahiba. sintörés elhárítása után;broken_rail
+Kitérő állapota. A kitérő beépítési sebessége.;slow_switch_built_in
+Pályahiba. útátjáró hiba;state_of_crossing
+Pályahiba. Nyombővülés;increased_gauge
+Pályahiba. síntörés id.helyreállítása után;broken_rail
+Híd állapot. Teknőhíd minimális ágyazatvastagsága miatt.;insufficient_trackbed
+Híd állapot. Teknőhíd műszaki állapot;state_of_bridge
+Híd állapot. A teknőhíd műszaki állapota;state_of_bridge
+Híd állapot. teknőhíd műszaki állapotának romlása miatt;state_of_bridge
+Pályahiba. síntörés id.helyreállítás után;broken_rail
+Pályaállapot. műszaki áll.;track_structure_error
+Pályahiba. Pálya műszaki állapotának romlása miatt;track_structure_error
+Egyéb ok. A 6. sz. átszelési kitérőre engedélyezett sebesség 100 km/h;slow_switch_built_in
+Pályahiba. Síntörés helyreállítva.;broken_rail
+Egyéb ok. A 8. sz. átszelési kitérőre engedélyezett sebesség 100 km/h;slow_switch_built_in
+Pályahiba. Elsárosodott ágyazat;trackbed_muddying
+Pályaállapot. kettős ker. csere;superstructure_error
