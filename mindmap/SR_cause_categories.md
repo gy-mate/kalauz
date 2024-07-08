@@ -92,6 +92,7 @@ markmap:
               - corroded_rail_fasteners
               - rotten_rail_fasteners
               - broken_rail_fastener_screws
+            - stolen_rail_fasteners
             - worn_inlay
                 - rotten_wooden_inlay
                 - worn_plastic_inlay
@@ -102,8 +103,9 @@ markmap:
         - faulty_rails
             - rail_material_error
                 - rail_surface_problem
-                    - head_check_error
                     - rail_wear
+                        - head_check_error
+                        - rail_wawy_wear
                         - rail_side_wear
                         - bent_rail_end
                     - corroded_rail

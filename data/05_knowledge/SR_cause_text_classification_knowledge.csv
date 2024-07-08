@@ -954,3 +954,14 @@ Pályaállapot. Szennyezett ágyazat, gometriai torzulásokra érzékeny, elver�
 Pályaállapot. Geometriai torzulásokra érzékeny szakasz. Szennyezett ágyazat.;geometry_error, dirty_trackbed
 Pályahiba. vez. táv. max hiba;unknown
 Pályahiba. sínfej repedés;head_check_error
+Pályaállapot. a vonalszakasz járhatatalan;track_structure_error
+Pályahiba. talpfák avulása;rotten_wooden_sleepers
+Kitérő állapota. anyagok kopottsága;worn_parts
+Pályahiba. nagy nyomtáv és vezetéstáv;increased_gauge
+Pályahiba. félváltó kopás;worn_parts
+Kitérő állapota. v;superstructure_error
+Pályahiba. Kopott félváltó, vezetés táv hiba.;worn_parts, gauge_error
+Pályahiba. sáros ágyazat, fekszint- irányhiba;trackbed_muddying, track_level_error, direction_error
+Egyéb ok miatt. kapcsolószer lopás;stolen_rail_fasteners
+Pályahiba. 1 sz. kitérő, kitérő iránya.;superstructure_error
+Alépítmény állapota. Ismétlődő fekszint és irány hibák alépítményi problémák miatt, amelyek FKG szabályozással rövid időre szüntethetők meg.;direction_error, track_level_error, skipped_track_works
