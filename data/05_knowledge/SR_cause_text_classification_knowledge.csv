@@ -939,9 +939,9 @@ Egyéb ok. az útátjáró behatási pontja miatt;entry_point_too_close_to_cross
 Kitérő állapota. Aljak avulása.;faulty_sleepers
 Pályaállapot. Útátjáró rálátási hiány.;reduced_triangle_of_vision
 Pályaállapot. Útátjáró rálátás hiánya.;reduced_triangle_of_vision
-Pályaállapot. útátjáró állapota;track_structure_error
+Pályaállapot. útátjáró állapota;state_of_crossing
 Meleg időjárás miatti állapot romlás. irányhiba (könyök);direction_error
-Pályaállapot. Útátjáró állapota.;track_structure_error
+Pályaállapot. Útátjáró állapota.;state_of_crossing
 Pályaállapot. A vonalszakasz járhatatlan;track_structure_error
 Pályaállapot. a vágány járhatatlan;track_structure_error
 Pályahiba. Kirtérőfa állapot miatt.;rotten_wooden_sleepers
@@ -982,3 +982,43 @@ Pályaállapot. Korhadt aljak, fabetétek. Sáros ágyazat, lehajlott illesztés
 Pályahiba. állapot romlás, síktorzulás;distorted_track_plane, track_structure_error
 Pályaállapot. A vonatok sebességének 80 km/h-ra történő csökkentésével a dinamikus hatások valamelyes mérsékelhetők, amelytől azt várjuk, hogy a koros felépítményű vonalszakaszokon a romlási folyamatok hosszabb távon mérsékelhetők maradjanak.;superstructure_error
 Pályaállapot. aljak, kapcsolószerek, ágyazat állapota;faulty_sleepers, faulty_rail_fasteners, trackbed_error
+Pályahiba. Fekszinthiba, útátjáró állapota;track_level_error, state_of_crossing
+Geometria miatt. R=549-565m, m=71-71mm;small_curve_radius
+Pályahiba. Síktorzulás, nyombővülés.;distorted_track_plane, increased_gauge
+Pályahiba. Fekszinthina, útátjáró állapota;track_level_error, state_of_crossing
+Geometria miatt. R=555-560m, m=71-71mm;small_curve_radius
+Pályaállapot. korhadt aljak, ismétlődő fekszinthibák;rotten_wooden_sleepers, track_level_error
+Egyéb ok. Útátjáró behatási pont távolsága miatt.;entry_point_too_close_to_crossing
+Pályaállapot. Sáros ágyazat miatt ismételten kialakuló fekszint hibák.;trackbed_muddying, track_level_error
+Pályahiba. A vágány állapota. Aljak kapcsolószerek.;faulty_sleepers, faulty_rail_fasteners
+Pályahiba. Bánréve állomás X. mellék vágánya, a vágány rossz műszaki állapota miatt a forgalomból kizárva.;track_structure_error
+Geometria miatt. R=350m, m=80mm, v=60km/ó;small_curve_radius
+Híd állapot. hídgerendák avulása;worn_bridge_beams
+Geometria miatt. R=400-300-300m, m=70-42-42mm, v=40km/ó;small_curve_radius
+Pályaállapot. Szennyezett ágyazat, korhadt fabetétek, lehajlott sínvégek, visszatérő fekszint és irányhibák.;dirty_trackbed, rotten_wooden_sleepers, bent_rail_end, track_level_error, direction_error
+Pályahiba. Irény, fekszint;direction_error, track_level_error
+Híd állapot. Híd műszaki állapota miatt.;state_of_bridge
+Pályahiba. aljak és kapcsolószerek állapota;faulty_sleepers, faulty_rail_fasteners
+Pályahiba. Forgalomból kizárva. Aljak, sínek, kapcsolószerek állapota.;faulty_sleepers, faulty_rail_fasteners, rail_material_error
+Pályahiba. Meleg;superstructure_error
+Pályaállapot. Sáros ágyazat, korhadt fabetétek, lehajlott sínvégek, visszatérő fekszint és irányhibák.;trackbed_muddying, rotten_wooden_sleepers, bent_rail_end, track_level_error, direction_error
+Pályahiba. Mérővonati mérés alapján fekszint hiba.;track_level_error
+Útátjáró állapota. As17. Rossz állapotú STRAIL elemek, sínek, vb.aljak. 2024-ben csere.;state_of_crossing, rail_material_error, broken_concrete_sleepers
+Pályaállapot. Sáros ágyazat, korhadt aljak, fabetétek, lehajlott sínvégek, visszatérő fekszint és irányhibák.;trackbed_muddying, rotten_wooden_sleepers, rotten_wooden_inlay, bent_rail_end, track_level_error, direction_error
+Rálátási háromszög hiánya. Balesetveszély csökkentés a 84+05 sz. útátjáróban.;reduced_triangle_of_vision
+Pályahiba. UH-s sínhiba;broken_rail
+Pályahiba. fekszint és nyomtáv hiba;track_level_error, gauge_error
+Egyéb ok. AS139 útátjáró behatási pont távolsága.;entry_point_too_close_to_crossing
+Egyéb ok. AS149 útátjáró behatási pont távolsága.;entry_point_too_close_to_crossing
+Egyéb ok. AS186 útátjáró behatási pont távolsága.;entry_point_too_close_to_crossing
+Hatósági határozat. Közl.Hat. EM/KA/NS/A/1925/6/2010.;usage_permit
+Pályaállapot. aljak állapota, sínvég elverődés, ismétlődő fekszint hibák;faulty_sleepers, bent_rail_end, track_level_error
+Pályahiba. irány, fekszint meleg időjárás miatt;direction_error, track_level_error
+Egyéb ok. AS436, AS445 útátjáró behatási pont távolsága.;entry_point_too_close_to_crossing
+Pályahiba. időjárás okozta alépítmény romlás;substructure_error
+Pályaállapot. menetrendi alpsebesség;track_structure_error
+Pályahiba. Sárosodás további romlása.;trackbed_muddying
+Pályahiba. A fekszinthiba tovább romlott.;track_level_error
+Két közeli sebességkorlátozás közti pályaszakaszokra (műszaki). 16159/2022/MAV PLO vonalbeutazási megállapítás alapján.;joint_srs
+Pályahiba. ívben féloldalas süppedés;distorted_track_plane
+Pályahiba. Kitérőben sáros ágyazat és fekszinthiba.;trackbed_muddying, track_level_error

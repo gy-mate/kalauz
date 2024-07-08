@@ -120,6 +120,7 @@ markmap:
                         - broken_expansion_joint
                 - rail_welding_problem
                     - broken_rail_welding
+                    - missing_rail_welding
             - worn_parts
                 - worn_switch_lock
         - state_of_crossing
