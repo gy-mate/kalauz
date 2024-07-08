@@ -66,18 +66,19 @@ markmap:
                 - thinned_embankment_slope
                 - collapsed_embankment_slope
         - bridge_problem
-            - worn_bridge_beams
-            - worn_bridge_timbers
-                - broken_screws_in_bridge_timbers
-            - worn_bridge_wall
-                - worn_bridge_edge
-            - water_stream_pipe_collapse
-            - moving_bridge_bearing
-                - vertically_moving_bridge_bearing
-                - horizontally_moving_bridge_bearing
-            - moving_bridge_structure
-                - vertically_moving_bridge_structure
-                - horizontally_moving_bridge_structure
+            - state_of_bridge
+              - worn_bridge_beams
+              - worn_bridge_timbers
+                  - broken_screws_in_bridge_timbers
+              - worn_bridge_wall
+                  - worn_bridge_edge
+              - water_stream_pipe_collapse
+              - moving_bridge_bearing
+                  - vertically_moving_bridge_bearing
+                  - horizontally_moving_bridge_bearing
+              - moving_bridge_structure
+                  - vertically_moving_bridge_structure
+                  - horizontally_moving_bridge_structure
             - temporary_bridge
         - inspection_pit_problem
         - turntable_problem

@@ -227,7 +227,7 @@ Pályaállapot. rakodó és tároló csonka;track_structure_error
 Pályaállapot. Pálya állapota;track_structure_error
 Pályaállapot. védőcsonka csonka a 7. váltótól;track_structure_error
 Pályaállapot. védőcsonka csonka az 1-es sz.kit.től;track_structure_error
-Híd állapot. völgyhidak műszaki állapota miatt;bridge_problem
+Híd állapot. völgyhidak műszaki állapota miatt;state_of_bridge
 Rálátási háromszög hiánya. A 674+15 szelvényben lévő útátjáró kp.oldalán rálátási háromszög hiánya miatt a közúti forgalom biztonsága érdekében.;reduced_triangle_of_vision
 Rálátási háromszög hiánya. A 721+42 szelvényben lévő útátjáró vp.oldalán rálátási háromszög hiánya miatt a közúti forgalom biztonsága érdekében.;reduced_triangle_of_vision
 Pályaállapot. *;track_structure_error
@@ -242,7 +242,7 @@ Pályahiba. Pálya állapot;track_structure_error
 Rálátási háromszög hiánya. 44+43. sz. a gyalogos útátjáróban Oroszlány irányából nincs meg a rálátási távolság.;reduced_triangle_of_vision
 Hatósági határozat. határozat:;usage_permit
 "Pályaállapot. avult felépítmény; elsáros ágyazat, fekszínthibás ütközök (hagyományos)";superstructure_error, trackbed_muddying, buffer_stop_level_error
-Pályahiba. 97+50 áteresz beszakadt és 3 aljközből az ágyazat teljesen eltűnt.;water_stream_pipe_collapse
+Pályahiba. 97+50 áteresz beszakadt és 3 aljközből az ágyazat teljesen eltűnt.;water_stream_pipe_collapse, missing_trackbed
 Pályahiba. Forgalomból kizárva.;track_structure_error
 Geometria miatt. Nem megszüntethető. Pápa felől 50 m.;given_geometry
 Pályahiba. Mérővonati C3 hibák miatt.;track_structure_error
@@ -251,7 +251,7 @@ Pályaállapot. Műszaki állapot, avult felépítmény;temporary_bridge
 Pályaállapot. sáros ágyazat, avul felépítmény, korhadt talpfák;trackbed_muddying, superstructure_error, rotten_wooden_sleepers
 Pályaállapot. pályahiba, provizórium;temporary_bridge
 Pályahiba. Alépítményi hiányosságok miatt kialakult irány és fekszint hibák miatt.;direction_error, track_level_error
-Híd állapot. Hidak állapota;bridge_problem
+Híd állapot. Hidak állapota;state_of_bridge
 Pályaállapot. irány és fekszinthiba;direction_error, track_level_error
 Pályahiba. Irány és fekszinthibák, meleg időjárás miatt a pálya műszaki állapotának további romlása miatt;direction_error, track_level_error
 Geometria miatt. Nem megszüntethető;given_geometry
@@ -306,7 +306,7 @@ Geometria miatt. Geometriai hibák miatt , /alépítményi hibára visszavezethe
 Pályaállapot. védőcsonka a 8. váltótól;track_structure_error
 Pályaállapot. védőcsonka a 7. váltótól;track_structure_error
 Pályahiba. Síktorzuás hiba miatt.;distorted_track_plane
-Híd állapot. hidszerkezet javitás utáni sebességemelés;bridge_problem
+Híd állapot. hidszerkezet javitás utáni sebességemelés;state_of_bridge
 Pályahiba. .;track_structure_error
 Pályahiba. Padkahiány vadátjárás miatt.;missing_trackbed_kerb_due_to_wildlife_crossing
 Geometria miatt. Nem megoldható;given_geometry
@@ -929,7 +929,7 @@ Pályahiba. aljak állapota , fekszinthiba;faulty_sleepers, track_level_error
 Kitérő állapota. Aljak állapota.;faulty_sleepers
 Pályaállapot. alj, kapcsolószer állapota miatt;faulty_sleepers, faulty_rail_fasteners
 Egyéb ok. vágány záró kőfal;unknown
-Pályaállapot. Aljak, ágyazat állapota.;faulty_sleepers, substructure_error
+Pályaállapot. Aljak, ágyazat állapota.;faulty_sleepers, trackbed_error
 Pályaállapot. Talpfák állapota.;rotten_wooden_sleepers
 Pályaállapot. Bz. 40 km/h. Aljak állapota.;faulty_sleepers
 Egyéb ok. Aljak állapota.;faulty_sleepers
@@ -965,3 +965,20 @@ Pályahiba. sáros ágyazat, fekszint- irányhiba;trackbed_muddying, track_level
 Egyéb ok miatt. kapcsolószer lopás;stolen_rail_fasteners
 Pályahiba. 1 sz. kitérő, kitérő iránya.;superstructure_error
 Alépítmény állapota. Ismétlődő fekszint és irány hibák alépítményi problémák miatt, amelyek FKG szabályozással rövid időre szüntethetők meg.;direction_error, track_level_error, skipped_track_works
+Pályaállapot. Hullámosan kopott sínek, visszatérő fekszint hibák, szennyezett ágyazat.;dirty_trackbed, track_level_error, rail_wawy_wear
+Pályaállapot. Ismétlődő fekszint és irány hibák, amelyek FKG szabályozással rövid időre szüntethetők meg.;track_level_error, direction_error, skipped_track_works
+Pályahiba. 2 sz. kitérő, kitérő iránya.;superstructure_error
+Pályahiba. örvényáramos sinhiba;broken_rail
+Pályahiba. örvényáramos sínhiba;broken_rail
+Pályaállapot. Ismétlődő fekszint és irány hibák alépítményi problémák miatt, amelyek FKG szabályozással rövid időre szüntethetők meg.;direction_error, track_level_error, skipped_track_works
+Pályahiba. 6 sz. kitérő, kitérő iránya.;superstructure_error
+Híd állapot. acélhíd állapota;state_of_bridge
+Pályahiba. vasanyag kopás;rail_wear
+Pályahiba. x;track_structure_error
+Pályaállapot. Kitérőfák, vasanyag állapota,;rotten_wooden_sleepers, rail_material_error
+Pályahiba. nyomtáv, irányhiba;gauge_error, direction_error
+Pályahiba. Vágány átszelés alkatrészeinek a kopása.;worn_parts
+Pályaállapot. Korhadt aljak, fabetétek. Sáros ágyazat, lehajlott illesztések.;rotten_wooden_sleepers, rotten_wooden_inlay, bent_rail_end, trackbed_muddying
+Pályahiba. állapot romlás, síktorzulás;distorted_track_plane, track_structure_error
+Pályaállapot. A vonatok sebességének 80 km/h-ra történő csökkentésével a dinamikus hatások valamelyes mérsékelhetők, amelytől azt várjuk, hogy a koros felépítményű vonalszakaszokon a romlási folyamatok hosszabb távon mérsékelhetők maradjanak.;superstructure_error
+Pályaállapot. aljak, kapcsolószerek, ágyazat állapota;faulty_sleepers, faulty_rail_fasteners, trackbed_error
