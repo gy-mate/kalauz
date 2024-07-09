@@ -60,7 +60,7 @@ class CategoryPredictor(DataProcessor):
         self.CATEGORIES_MARKDOWN = Markdown(categories_markdown)
         self.MINIMUM_NUMBER_OF_TRAINING_SAMPLES = 25
         self.SEED = 146
-        self.TEXT_SIMILARITY_THRESHOLD = 0.9
+        self.TEXT_SIMILARITY_THRESHOLD = 0.7
         self.HIGH_CONFIDENCE_THRESHOLD = 0.8
 
         self.label_binarizer = MultiLabelBinarizer()
@@ -85,13 +85,18 @@ class CategoryPredictor(DataProcessor):
             ) as file:
                 reader = csv.reader(file, delimiter=";")
                 for row in reader:
+                    text: str
+                    all_categories: str
                     text, all_categories = row
-                    categories = all_categories.split(", ")
+                    categories = [
+                        category.lower() for category in all_categories.split(", ")
+                    ]
                     if self.all_categories_are_valid(categories):
                         self.training_data.append(TrainingData(text, categories))
                     else:
                         raise ValueError(
-                            "At least one category is invalid among the existing data!"
+                            f"Categories {[category if category not in self.CATEGORIES else None for category in categories]} "
+                            f"are invalid among the existing data!"
                         )
             self.check_hamming_loss()
             self.fit_all_data()
@@ -138,33 +143,34 @@ class CategoryPredictor(DataProcessor):
             f"That's {current_hamming_loss_quality}!"
         )
 
-    def predict_category(self, text: str) -> list[str]:
+    def predict_category(self, text: str) -> str:
         match self.text_similarity(text):
             case TextSimilarity.Same:
                 for pair in self.training_data:
                     if pair.text == text:
-                        return pair.categories
+                        return str(pair.categories)
                 raise ValueError(
                     "The same text somehow isn't in the training data! This is unexpected."
                 )
             case TextSimilarity.Different:
-                return self.user_input_for_category(text)
+                self.logger.warn(
+                    f"The text '{text}' is greatly different from all texts in the training data."
+                )
+                return str(self.user_input_for_category(text))
             case TextSimilarity.Similar:
-                return self.get_predictions_or_input(text)
+                return str(self.get_predictions_or_input(text))
 
     def get_predictions_or_input(self, text: str) -> list[str]:
         probabilities: np.ndarray = self.pipeline.predict_proba([text])
         for probability in probabilities:
             if max(probability.tolist()[0]) < self.HIGH_CONFIDENCE_THRESHOLD:
                 self.logger.warn(
-                    f"The prediction for '{text}' is not confident enough. Asking for user input..."
+                    f"The prediction for '{text}' is not confident enough."
                 )
                 return self.user_input_for_category(text)
         predictions: np.ndarray = self.pipeline.predict([text])
         if not predictions.any():
-            self.logger.warn(
-                f"The prediction for '{text}' returned no categories. Asking for user input..."
-            )
+            self.logger.warn(f"The prediction for '{text}' returned no categories.")
             return self.user_input_for_category(text)
         original_categories: list[tuple] = self.label_binarizer.inverse_transform(
             predictions
@@ -188,27 +194,33 @@ class CategoryPredictor(DataProcessor):
                 return TextSimilarity.Different
 
     def user_input_for_category(self, text: str) -> list[str]:
-        # TODO: uncomment the line below in production
+        self.logger.info("Asking for user input...")
+        # TODO: uncomment the lines below in production
         # clear_terminal()
-        print(f"\nThe possible categories are:\n")
-        self.markdown_console.print(self.CATEGORIES_MARKDOWN)
+        # print(f"\nThe possible categories are:\n")
+        # self.markdown_console.print(self.CATEGORIES_MARKDOWN)
         print(
             f"\nPlease mark the following text with one or more of the categories above:\n"
             f"'{text}'"
         )
         while True:
-            category_id_input = input(
-                "\nEnter one or more categories separated by ', ': "
-            )
-            input_categories = [
-                category.lower() for category in category_id_input.split(", ")
-            ]
-            if self.all_categories_are_valid(input_categories):
-                self.train_with_new_data(text, input_categories)
-                return input_categories
-            elif not input_categories:
-                self.logger.warn("No categories were provided!")
-            else:
+            try:
+                category_id_input = input(
+                    "\nEnter one or more categories separated by ', ': "
+                )
+                input_categories = [
+                    category.strip().lower()
+                    for category in category_id_input.split(", ")
+                ]
+                if self.all_categories_are_valid(input_categories):
+                    print()
+                    self.train_with_new_data(text, input_categories)
+                    return input_categories
+                elif not input_categories:
+                    self.logger.warn("No categories were provided!")
+                else:
+                    raise ValueError
+            except (UnicodeDecodeError, ValueError):
                 self.logger.warn("At least one input category is invalid!")
 
     def all_categories_are_valid(self, input_categories: list[str]) -> bool:
@@ -275,4 +287,4 @@ class CategoryPredictor(DataProcessor):
             ):
                 if text and categories:
                     writer.writerow([text, ", ".join(categories)])
-        self.logger.info("Knowledge saved successfully!")
+        self.logger.info("Cause text categorization knowledge saved successfully!")
