@@ -3,18 +3,29 @@ from collections import defaultdict
 
 import pandas as pd
 
+# future: use plotly.graph_objects instead of Flourish
+
 
 def parse_markdown_list(markdown):
     lines = markdown.strip().split("\n")
     stack = []
     root = defaultdict(lambda: {"count": 0, "children": defaultdict()})
-    
+
+    # Skip frontmatter
+    if lines[0].startswith("---"):
+        end_index = 0
+        for i, line in enumerate(lines):
+            if line.startswith("---") and i != 0:
+                end_index = i + 1
+                break
+        lines = lines[end_index:]
+
     for line in lines:
         indent_level = (len(line) - len(line.lstrip())) // 4
         item = line.strip("- ").strip()
         while len(stack) > indent_level:
             stack.pop()
-            
+
         if stack:
             current = stack[-1]["children"]
         else:
@@ -27,15 +38,23 @@ def parse_markdown_list(markdown):
     return root
 
 
+def update_counts(category, structure, path):
+    if category in structure:
+        structure[category]["count"] += 1
+        for parent in path:
+            parent["count"] += 1
+        return True
+    for key, value in structure.items():
+        if update_counts(category, value["children"], path + [value]):
+            return True
+    return False
+
+
 def update_values_from_csv(structure, csv_data):
     for categories in csv_data.iterrows():
         category_list = literal_eval(categories[1][0])
-        value = 1 / len(category_list) if len(category_list) > 1 else 1
         for category in category_list:
-            # Navigate the structure to find the corresponding category
-            for parent, parent_data in structure.items():
-                if category in parent_data["children"]:
-                    parent_data["children"][category]["count"] += value
+            update_counts(category, structure, [])
 
 
 def generate_sankey_data(structure, step=0, parent=None):
@@ -56,22 +75,30 @@ def generate_sankey_data(structure, step=0, parent=None):
     return data
 
 
-def main() -> None:
-    with open(
-        "/Users/gymate1/Desktop/drop/python/kalauz/mindmap/SR_cause_categories.md", "r"
-    ) as file:
+def prune_sankey_data(data: list, max_depth: int) -> list:
+    return [row for row in data if row["Step to"] <= max_depth]
+
+
+def main(markdown_file_path: str, csv_file_path: str, max_depth: int) -> None:
+    with open(markdown_file_path, "r") as file:
         markdown_list = file.read()
     parsed_structure = parse_markdown_list(markdown_list)
 
-    csv_df = pd.read_csv("/Users/gymate1/Downloads/kalauz_speed_restrictions.csv", header=None)
+    csv_df = pd.read_csv(csv_file_path, header=None)
     update_values_from_csv(parsed_structure, csv_df)
     sankey_data = generate_sankey_data(parsed_structure)
+    pruned_sankey_data = prune_sankey_data(sankey_data, max_depth)
     df = pd.DataFrame(
-        sankey_data, columns=["Source", "Dest", "Value", "Step from", "Step to"]
+        pruned_sankey_data, columns=["Source", "Dest", "Value", "Step from", "Step to"]
     )
     csv_output = df.to_csv(index=False)
-    print(csv_output)
+    with open("/Users/gymate1/Downloads/sankey_data.csv", "w") as file:
+        file.write(csv_output)
 
 
 if __name__ == "__main__":
-    main()
+    main(
+        markdown_file_path="/Users/gymate1/Desktop/drop/python/kalauz/mindmap/SR_cause_categories.md",
+        csv_file_path="/Users/gymate1/Downloads/kalauz_speed_restrictions.csv",
+        max_depth=4,
+    )
