@@ -49,7 +49,7 @@ transition: slide-left
 
 ---
 layout: iframe
-url: https://gy-mate.github.io/kalauz/data/04_exported/map_pydeck_2024-03-26.html
+url: https://gy-mate.github.io/kalauz/
 
 transition: slide-up
 ---

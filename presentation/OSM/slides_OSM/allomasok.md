@@ -130,7 +130,7 @@ transition: slide-up
 
 <!--suppress HtmlUnknownTag, HtmlUnknownTarget -->
 <SlidevVideo controls=true autoPlay=true autoPause="slide" autoReset="slide">
-  <source src="/OSM_forum-discussion.mp4" type="video/mp4"/>
+  <source src="/OSM/OSM_forum-discussion.mp4" type="video/mp4"/>
   <p>
     Your browser does not support videos.
   </p>
