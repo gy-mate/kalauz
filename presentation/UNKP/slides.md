@@ -1,5 +1,6 @@
 ---
-title: Sebességkorlátozások jellemzőinek elemzése a magyarországi vasúthálózaton – ÚNKP-konferencia
+title: Sebességkorlátozások jellemzőinek elemzése a magyarországi vasúthálózaton
+  – ÚNKP-konferencia
 author: Gyöngyösi Máté
 exportFilename: UNKP_eloadas_Gyongyosi-Mate_lassujelek
 
@@ -8,6 +9,7 @@ lineNumbers: true
 
 layout: intro-image
 image: /SRs_Hegyeshalom.jpeg
+contextMenu: false
 ---
 
 <!--suppress HtmlUnknownTag -->
