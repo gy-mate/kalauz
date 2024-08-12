@@ -1,25 +1,18 @@
 from ast import literal_eval
 from collections import defaultdict
+from typing import Any
 
 import pandas as pd
 
 # future: use plotly.graph_objects instead of Flourish
 
 
-def parse_markdown_list(markdown):
+def parse_markdown_list(markdown: str) -> defaultdict[Any, dict[str, int | defaultdict]]:
     lines = markdown.strip().split("\n")
-    stack = []
-    root = defaultdict(lambda: {"count": 0, "children": defaultdict()})
-
-    # Skip frontmatter
-    if lines[0].startswith("---"):
-        end_index = 0
-        for i, line in enumerate(lines):
-            if line.startswith("---") and i != 0:
-                end_index = i + 1
-                break
-        lines = lines[end_index:]
-
+    stack: list[dict[str, int] | defaultdict] = []
+    root: defaultdict[Any, dict[str, int | defaultdict]] = defaultdict(lambda: {"count": 0, "children": defaultdict()})
+    lines = skip_frontmatter(lines)
+    
     for line in lines:
         indent_level = (len(line) - len(line.lstrip())) // 4
         item = line.strip("- ").strip()
@@ -38,7 +31,18 @@ def parse_markdown_list(markdown):
     return root
 
 
-def update_counts(category, structure, path):
+def skip_frontmatter(lines: list[str]) -> list[str]:
+    if lines[0].startswith("---"):
+        end_index = 0
+        for i, line in enumerate(lines):
+            if line.startswith("---") and i != 0:
+                end_index = i + 1
+                break
+        lines = lines[end_index:]
+    return lines
+
+
+def update_counts(category: str, structure: dict, path: list) -> bool:
     if category in structure:
         structure[category]["count"] += 1
         for parent in path:
@@ -50,14 +54,14 @@ def update_counts(category, structure, path):
     return False
 
 
-def update_values_from_csv(structure, csv_data):
+def update_values_from_csv(structure: dict, csv_data: pd.DataFrame) -> None:
     for categories in csv_data.iterrows():
         category_list = literal_eval(categories[1][0])
         for category in category_list:
             update_counts(category, structure, [])
 
 
-def generate_sankey_data(structure, step=0, parent=None):
+def generate_sankey_data(structure: dict, step: int = 0, parent: str | None = None) -> list:
     data = []
     for key, value in structure.items():
         if parent is not None:

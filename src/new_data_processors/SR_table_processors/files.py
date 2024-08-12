@@ -1,7 +1,8 @@
-from datetime import datetime
+from datetime import date, datetime
 import json
 import os
 import shutil
+from typing import BinaryIO
 
 from pypdf import PdfReader
 import requests
@@ -10,7 +11,7 @@ from requests import HTTPError
 from src.new_data_processors.common import DataProcessor
 
 
-def get_pdf_date(pdf_file):
+def get_pdf_date(pdf_file: BinaryIO) -> date:
     pdf_reader = PdfReader(pdf_file)
     first_page = pdf_reader.pages[0]
     text = first_page.extract_text()
@@ -19,7 +20,7 @@ def get_pdf_date(pdf_file):
 
 
 class NewFilesRegistrar(DataProcessor):
-    def run(self):
+    def run(self) -> None:
         self.process_received_files()
         self.logger.info("All new files registered!")
 
@@ -29,34 +30,32 @@ class NewFilesRegistrar(DataProcessor):
         with os.scandir(folder_received) as folder:
             for file in folder:
                 if file.name.endswith(".pdf"):
-                    company_name = file.name.split("_")[0]
-                    with open(file, "rb") as pdf_file:
-                        file_date = get_pdf_date(pdf_file)
-                        extension = os.path.splitext(file)[1]
-                        new_file_name_pdf = (
-                            f"{company_name}_{str(file_date)}_ASR{extension}"
-                        )
-                        new_file_name_xlsx = f"{company_name}_{str(file_date)}_ASR.xlsx"
-                        new_file_path_pdf = os.path.join(
-                            folder_received, new_file_name_pdf
-                        )
-                        new_file_path_xlsx = os.path.join(
-                            folder_converted, new_file_name_xlsx
-                        )
-                        os.rename(
-                            src=file.path,
-                            dst=new_file_path_pdf,
-                        )
-                        with open(new_file_path_xlsx, "wb") as xlsx_file:
-                            xlsx_data = self.convert_pdf_to_xlsx(new_file_name_pdf)
-                            xlsx_file.write(xlsx_data)
+                    self.process_received_file(file, folder_converted, folder_received)
 
-                    shutil.move(
-                        src=new_file_path_pdf,
-                        dst=folder_converted,
-                    )
+    def process_received_file(
+        self, file: os.DirEntry, folder_converted: str, folder_received: str
+    ) -> None:
+        company_name = file.name.split("_")[0]
+        with open(file, "rb") as pdf_file:
+            file_date = get_pdf_date(pdf_file)
+            extension = os.path.splitext(file)[1]
+            new_file_name_pdf = f"{company_name}_{str(file_date)}_ASR{extension}"
+            new_file_name_xlsx = f"{company_name}_{str(file_date)}_ASR.xlsx"
+            new_file_path_pdf = os.path.join(folder_received, new_file_name_pdf)
+            new_file_path_xlsx = os.path.join(folder_converted, new_file_name_xlsx)
+            os.rename(
+                src=file.path,
+                dst=new_file_path_pdf,
+            )
+            with open(new_file_path_xlsx, "wb") as xlsx_file:
+                xlsx_data = self.convert_pdf_to_xlsx(new_file_name_pdf)
+                xlsx_file.write(xlsx_data)
+        shutil.move(
+            src=new_file_path_pdf,
+            dst=folder_converted,
+        )
 
-    def convert_pdf_to_xlsx(self, file_name) -> bytes:
+    def convert_pdf_to_xlsx(self, file_name: str) -> bytes:
         try:
             api_url = "https://eu-v2.convertapi.com/convert/pdf/to/xlsx"
             parameters = {
