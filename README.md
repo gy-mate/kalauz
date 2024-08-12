@@ -2,7 +2,7 @@
 
 ![Lines of code](https://img.shields.io/badge/lines_of_code-2k+-blue)
 [![Build status](https://scrutinizer-ci.com/g/gy-mate/kalauz/badges/build.png?b=master)](https://scrutinizer-ci.com/g/gy-mate/kalauz/build-status/master)
-[![Code quality](https://img.shields.io/scrutinizer/quality/g/gy-mate/kalauz/master)](https://scrutinizer-ci.com/g/gy-mate/kalauz/)
+[![Code quality](https://img.shields.io/scrutinizer/quality/g/gy-mate/kalauz/main)](https://scrutinizer-ci.com/g/gy-mate/kalauz/)
 [![Type hinting used](https://img.shields.io/badge/type_hinting-used-brightgreen)](https://docs.python.org/3/library/typing.html)
 [![Code style: Black](https://img.shields.io/badge/code_style-black-black.svg)](https://github.com/psf/black)
 
@@ -42,7 +42,7 @@ A program for...
 ### 📋 Features
 
 - Processes the following companies' spreadsheets of SRs in the following formats:
-  - [MÁV Magyar Államvasutak Zrt.](https://www.mavcsoport.hu/mav/bemutatkozas) ([`.pdf`](data/01_received/MÁV_kje4v43hacb32.pdf) converted to `.xlsx`)
+  - [MÁV Magyar Államvasutak Zrt.](https://www.mavcsoport.hu/mav/bemutatkozas) ([`.pdf`](data/01_received/MÁV_cwledhksbsdjhsb.pdf) converted to `.xlsx`)
   - [GYSEV Zrt.](https://www2.gysev.hu/palyavasuti-uzletag) ([`.xlsx`](data/02_converted/GYSEV_2022-05-13_ASR.xlsx))
 - Stores them in a MySQL database with the following schema:
   <!--- TODO: report images below not rendering correctly in the Preview panel to JetBrains developers --->
