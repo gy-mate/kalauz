@@ -6,11 +6,11 @@ labels: enhancement
 assignees: gy-mate
 ---
 
-# What should be improved?
-E.g. _I'm always frustrated when [...]_
+## What should be improved?
+E.g. I'm always frustrated when [...]
 
-## Preferred solution
+### Preferred solution
 A clear and concise description of what you would like to happen in these cases.
 
-## Considered alternatives
+### Considered alternatives
 A clear and concise description of any alternative solutions or features you've considered.
