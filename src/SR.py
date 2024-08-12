@@ -28,7 +28,7 @@ class SR:
         not_signalled_from_start_point: bool | None,
         not_signalled_from_end_point: bool | None,
         cause_source_text: str | None,
-        cause_categories: list[str] | None,
+        cause_categories: str | None,
         time_from: datetime,
         work_to_be_done: str | None,
         time_to: datetime | None,
