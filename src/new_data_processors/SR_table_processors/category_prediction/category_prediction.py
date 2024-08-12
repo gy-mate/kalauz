@@ -2,6 +2,7 @@ import csv
 from difflib import SequenceMatcher
 import os
 import re
+from typing import Final
 
 import numpy as np
 from rich.console import Console
@@ -43,29 +44,33 @@ def clear_terminal():
     os.system("clear||cls")
 
 
-class CategoryPredictor(DataProcessor):
-    def __init__(self) -> None:
-        super().__init__()
-
-        self.CATEGORIES = get_categories()
-        with open(
+def import_markdown_file():
+    with open(
             os.path.join(
                 os.getcwd(),
                 "mindmap",
                 "SR_cause_categories.md",
             ),
             "r",
-        ) as file:
-            categories_markdown = file.read()
-        self.CATEGORIES_MARKDOWN = Markdown(categories_markdown)
-        self.MINIMUM_NUMBER_OF_TRAINING_SAMPLES = 25
-        self.SEED = 146
-        self.TEXT_SIMILARITY_THRESHOLD = 0.7
-        self.HIGH_CONFIDENCE_THRESHOLD = 0.8
+    ) as file:
+        categories_markdown = file.read()
+    return Markdown(categories_markdown)
+
+
+class CategoryPredictor(DataProcessor):
+    def __init__(self) -> None:
+        super().__init__()
+
+        self.CATEGORIES: Final = get_categories()
+        self.CATEGORIES_MARKDOWN: Final = import_markdown_file()
+        self.MINIMUM_NUMBER_OF_TRAINING_SAMPLES: Final = 25
+        self.SEED: Final = 146
+        self.TEXT_SIMILARITY_THRESHOLD: Final = 0.7
+        self.HIGH_CONFIDENCE_THRESHOLD: Final = 0.8
 
         self.label_binarizer = MultiLabelBinarizer()
         self.markdown_console = Console()
-
+    
     def __enter__(self) -> "CategoryPredictor":
         self.pipeline = create_pipeline()
         self.training_data: list[TrainingData] = []
