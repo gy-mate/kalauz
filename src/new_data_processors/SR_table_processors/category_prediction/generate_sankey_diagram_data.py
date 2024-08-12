@@ -7,28 +7,38 @@ import pandas as pd
 # future: use plotly.graph_objects instead of Flourish
 
 
-def parse_markdown_list(markdown: str) -> defaultdict[Any, dict[str, int | defaultdict]]:
+def parse_markdown_list(
+    markdown: str,
+) -> defaultdict[Any, dict[str, int | defaultdict]]:
     lines = markdown.strip().split("\n")
     stack: list[dict[str, int] | defaultdict] = []
-    root: defaultdict[Any, dict[str, int | defaultdict]] = defaultdict(lambda: {"count": 0, "children": defaultdict()})
+    root: defaultdict[Any, dict[str, int | defaultdict]] = defaultdict(
+        lambda: {"count": 0, "children": defaultdict()}
+    )
     lines = skip_frontmatter(lines)
-    
+
     for line in lines:
-        indent_level = (len(line) - len(line.lstrip())) // 4
-        item = line.strip("- ").strip()
-        while len(stack) > indent_level:
-            stack.pop()
-
-        if stack:
-            current = stack[-1]["children"]
-        else:
-            current = root
-
-        if item not in current:
-            current[item] = {"count": 0, "children": defaultdict()}
-        current[item]["count"] += 1
-        stack.append(current[item])
+        parse_line(line, root, stack)
     return root
+
+
+def parse_line(
+    line: str,
+    root: defaultdict[Any, dict[str, int | defaultdict]],
+    stack: list[dict[str, int] | defaultdict],
+) -> None:
+    indent_level = (len(line) - len(line.lstrip())) // 4
+    item = line.strip("- ").strip()
+    while len(stack) > indent_level:
+        stack.pop()
+    if stack:
+        current = stack[-1]["children"]
+    else:
+        current = root
+    if item not in current:
+        current[item] = {"count": 0, "children": defaultdict()}
+    current[item]["count"] += 1
+    stack.append(current[item])
 
 
 def skip_frontmatter(lines: list[str]) -> list[str]:
@@ -61,7 +71,9 @@ def update_values_from_csv(structure: dict, csv_data: pd.DataFrame) -> None:
             update_counts(category, structure, [])
 
 
-def generate_sankey_data(structure: dict, step: int = 0, parent: str | None = None) -> list:
+def generate_sankey_data(
+    structure: dict, step: int = 0, parent: str | None = None
+) -> list:
     data = []
     for key, value in structure.items():
         if parent is not None:
