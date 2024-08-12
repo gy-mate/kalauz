@@ -1,0 +1,80 @@
+name: 🐛 Bug report
+description: Create a bug report to help us improve this software
+labels: ["bug"]
+projects: ["gy-mate/2"]
+assignees:
+  - gy-mate
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+  - type: input
+    id: app_version
+    attributes:
+      label: Version
+      description: Which version of `kalauz` are you using?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: To reproduce
+      description: Steps to reproduce the behavior.
+      placeholder: |
+        1. Run '...'
+        2. See the error
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: A clear and concise description of what you expected to happen.
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: A clear and concise description of what is actually happening. If applicable, include screenshot(s) to help explain your problem.
+  - type: textarea
+    id: log
+    attributes:
+      label: Stack trace
+      description: The program should print a stack trace when an error occurs. Please paste it here, if applicable.
+      placeholder: |
+        Traceback (most recent call last):
+          File "main.py", line 1, in <module>
+            raise Exception("This is an exception")
+        Exception: This is an exception
+      render: python
+  - type: dropdown
+    id: os
+    attributes:
+      label: OS
+      description: |
+        *If the bug is about the CLI:*
+        Which operating system do you use?
+      options:
+        - Linux
+        - macOS
+        - Windows
+        - iOS
+        - Android
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser
+      description: |
+        *If the bug is about the generated HTML file:*
+        Which browser do you use?
+      options:
+        - Google Chrome
+        - Firefox
+        - Safari
+        - Microsoft Edge
+  - type: input
+    id: env_version
+    attributes:
+      label: Version
+      description: What version of the OS or browser are you using?
