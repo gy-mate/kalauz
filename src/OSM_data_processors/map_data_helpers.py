@@ -12,8 +12,7 @@ from pyproj import Geod
 import shapely
 from shapely import distance
 
-# future: remove the comment below when stubs for the library below are available
-from shapely.ops import split, substring  # type: ignore
+from shapely.ops import split, substring
 
 from src.SR import SR
 

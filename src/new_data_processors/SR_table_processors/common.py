@@ -21,7 +21,9 @@ from sqlalchemy import (
 )
 
 from src.SR import SR
-from src.new_data_processors.SR_table_processors.category_prediction.category_prediction import CategoryPredictor
+from src.new_data_processors.SR_table_processors.category_prediction.category_prediction import (
+    CategoryPredictor,
+)
 from src.new_data_processors.common_excel_processors import ExcelProcessor
 from src.new_data_processors.helper_table_updaters.companies import CompaniesUpdater
 from src.new_data_processors.helper_table_updaters.countries import CountriesUpdater
@@ -71,7 +73,7 @@ class SRUpdater(ExcelProcessor, ABC):
     TABLE_NAME: ClassVar[str] = "speed_restrictions"
     database_metadata: ClassVar[MetaData] = MetaData()
 
-    # TODO: estabilish one-to-many relationships between SRs and switches
+    # TODO: estabilish one-to-many relationships between SRs and switches + other objects
     table: ClassVar[Table] = Table(
         TABLE_NAME,
         database_metadata,
@@ -118,7 +120,9 @@ class SRUpdater(ExcelProcessor, ABC):
         Column(name="comment", type_=String(255)),
     )
 
-    def __init__(self, company: str, source_extension: str, category_predictor: CategoryPredictor) -> None:
+    def __init__(
+        self, company: str, source_extension: str, category_predictor: CategoryPredictor
+    ) -> None:
         super().__init__()
 
         self.COMPANY = company

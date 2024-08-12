@@ -129,6 +129,7 @@ class GysevUpdater(SRUpdater):
             assert isinstance(row.operating_speed, int)
 
             bounding_stations = get_bounding_stations(str(row.stations_between))
+            # future: would .rstrip() be better?
             reduced_speed = int(str(row.reduced_speed).replace(" km/h", ""))
 
             with contextlib.suppress(AssertionError):
@@ -137,7 +138,7 @@ class GysevUpdater(SRUpdater):
                     if row.station_track_switch_source_text
                     else None
                 )
-            
+
             cause_categories = (
                 self.CATEGORY_PREDICTOR.predict_category(str(row.cause_source_text))
                 if str(row.cause_source_text) != ""
@@ -315,6 +316,7 @@ class GysevUpdater(SRUpdater):
             self.logger.critical("Line not found!")
             raise
 
+    # future: improve this to handle '2024 - 2035' as well
     def get_time_to(self, exact_time: str, estimated_time: str) -> datetime | None:
         if exact_time:
             return self.get_utc_time(exact_time)
