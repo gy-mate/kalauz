@@ -375,6 +375,7 @@ class Mapper(DataProcessor):
         for j, sr_metre_post_boundary in enumerate(
             (sr.metre_post_from, sr.metre_post_to)
         ):
+            # TODO: somehow an already used milestone is added to the list below once more
             milestones_of_line_copy = milestones_of_line.copy()
             nearest_milestones = get_nearest_milestones(
                 milestones=milestones_of_line_copy,
@@ -621,7 +622,7 @@ class Mapper(DataProcessor):
         view_state = ViewState(
             latitude=47.180833,
             longitude=19.503056,
-            zoom=6,
+            zoom=7,
         )
         deck = Deck(
             layers=[geojson_layer],
