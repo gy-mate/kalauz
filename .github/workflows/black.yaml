@@ -1,0 +1,19 @@
+name: Run checks on pull requests and pushes
+
+on: [ push, pull_request ]
+
+jobs:
+  check-style:
+    name: Check code style with Black
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Check code style
+        uses: psf/black@stable
+        with:
+          options: "--check --verbose"
+          src: "./src"
