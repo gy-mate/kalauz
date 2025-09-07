@@ -15,15 +15,24 @@ body:
   - type: input
     id: app_version
     attributes:
-      label: Version
+      label: App version
       description: Which version of `kalauz` are you using?
+    validations:
+      required: true
+  - type: input
+    id: python_version
+    attributes:
+      label: Python version
+      description: |
+        Which Python version do you have installed?
+        *You can check this by running `python3 --version` in the terminal.*
     validations:
       required: true
   - type: textarea
     id: reproduce
     attributes:
       label: To reproduce
-      description: Steps to reproduce the behavior.
+      description: Steps to reproduce the behavior. If applicable, please include screenshot(s) and/or source files.
       placeholder: |
         1. Run '...'
         2. See the error
@@ -36,7 +45,7 @@ body:
     id: actual
     attributes:
       label: Actual behavior
-      description: A clear and concise description of what is actually happening. If applicable, include screenshot(s) to help explain your problem.
+      description: A clear and concise description of what is actually happening.
   - type: textarea
     id: log
     attributes:
