@@ -1,7 +1,7 @@
 name: 🐛 Bug report
 description: Create a bug report to help us improve this software
-labels: ["bug"]
-projects: ["gy-mate/2"]
+labels: [ "bug" ]
+projects: [ "gy-mate/2" ]
 assignees:
   - gy-mate
 body:

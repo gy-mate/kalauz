@@ -1,7 +1,7 @@
 name: ✨ Feature request
 description: Suggest an idea for this software
-labels: ["enhancement"]
-projects: ["gy-mate/2"]
+labels: [ "enhancement" ]
+projects: [ "gy-mate/2" ]
 assignees:
   - gy-mate
 body:
