@@ -11,7 +11,7 @@ from sqlalchemy import MetaData, Table
 # future: remove the comment below when stubs for the library below are available
 import xlrd  # type: ignore
 
-from src.new_data_processors.database_connection import Database
+from src.kalauz.new_data_processors.database_connection import Database
 
 
 class DataProcessor(ABC):

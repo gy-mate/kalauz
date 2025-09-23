@@ -12,12 +12,12 @@ from sqlalchemy import text
 # future: remove the comment below when stubs for the library below are available
 import roman  # type: ignore
 
-from src.SR import SR
-from src.new_data_processors.SR_table_processors.category_prediction.category_prediction import (
+from src.kalauz.SR import SR
+from src.kalauz.new_data_processors.SR_table_processors.category_prediction.category_prediction import (
     CategoryPredictor,
 )
-from src.new_data_processors.SR_table_processors.common import SRUpdater
-from src.new_data_processors.common_excel_processors import ExcelProcessorWithFormatting
+from src.kalauz.new_data_processors.SR_table_processors.common import SRUpdater
+from src.kalauz.new_data_processors.common_excel_processors import ExcelProcessorWithFormatting
 
 
 def is_tsr(cell: Cell) -> bool:

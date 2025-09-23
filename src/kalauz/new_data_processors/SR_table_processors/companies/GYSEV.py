@@ -12,11 +12,11 @@ import pandas as pd
 import regex_spm  # type: ignore
 from sqlalchemy import text
 
-from src.SR import SR
-from src.new_data_processors.SR_table_processors.category_prediction.category_prediction import (
+from src.kalauz.SR import SR
+from src.kalauz.new_data_processors.SR_table_processors.category_prediction.category_prediction import (
     CategoryPredictor,
 )
-from src.new_data_processors.SR_table_processors.common import (
+from src.kalauz.new_data_processors.SR_table_processors.common import (
     SRUpdater,
     datetime_format_is_dmy,
 )

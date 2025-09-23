@@ -8,7 +8,7 @@ from pypdf import PdfReader
 import requests
 from requests import HTTPError
 
-from src.new_data_processors.common import DataProcessor
+from src.kalauz.new_data_processors.common import DataProcessor
 
 
 def get_pdf_date(pdf_file: BinaryIO) -> date:

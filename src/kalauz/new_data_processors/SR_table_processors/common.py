@@ -20,13 +20,13 @@ from sqlalchemy import (
     text,
 )
 
-from src.SR import SR
-from src.new_data_processors.SR_table_processors.category_prediction.category_prediction import (
+from src.kalauz.SR import SR
+from src.kalauz.new_data_processors.SR_table_processors.category_prediction.category_prediction import (
     CategoryPredictor,
 )
-from src.new_data_processors.common_excel_processors import ExcelProcessor
-from src.new_data_processors.helper_table_updaters.companies import CompaniesUpdater
-from src.new_data_processors.helper_table_updaters.countries import CountriesUpdater
+from src.kalauz.new_data_processors.common_excel_processors import ExcelProcessor
+from src.kalauz.new_data_processors.helper_table_updaters.companies import CompaniesUpdater
+from src.kalauz.new_data_processors.helper_table_updaters.countries import CountriesUpdater
 
 
 def get_end_time(text_to_search: str) -> str:

@@ -3,16 +3,7 @@ import sys
 
 from dotenv import load_dotenv
 
-from src.new_data_processors.SR_table_processors.category_prediction.category_prediction import CategoryPredictor
-from src.new_data_processors.SR_table_processors.files import NewFilesRegistrar
-from src.new_data_processors.helper_table_updaters.countries import CountriesUpdater
-from src.new_data_processors.helper_table_updaters.companies import CompaniesUpdater
-from src.new_data_processors.helper_table_updaters.operating_sites import (
-    OperatingSitesUpdater,
-)
-from src.new_data_processors.SR_table_processors.companies.MÁV import MavUpdater
-from src.new_data_processors.SR_table_processors.companies.GYSEV import GysevUpdater
-from src.OSM_data_processors.mapper import Mapper
+from src.kalauz.OSM_data_processors.mapper import Mapper
 
 
 # future: mark all packages as namespace packages in the IDE when https://youtrack.jetbrains.com/issue/PY-55212/ is fixed
@@ -33,11 +24,11 @@ def main(
 
     # NewFilesRegistrar().run()
     
-    with CategoryPredictor() as category_predictor:
-        MavUpdater(category_predictor).run()
-        GysevUpdater(category_predictor).run()
+    # with CategoryPredictor() as category_predictor:
+        # MavUpdater(category_predictor).run()
+        # GysevUpdater(category_predictor).run()
 
-    # Mapper(show_lines_with_no_data).run()
+    Mapper(show_lines_with_no_data).run()
 
     logging.getLogger(__name__).info("...program finished!")
 

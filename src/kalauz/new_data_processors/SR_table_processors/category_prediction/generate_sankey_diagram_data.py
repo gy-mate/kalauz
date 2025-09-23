@@ -114,7 +114,7 @@ def main(markdown_file_path: str, csv_file_path: str, max_depth: int) -> None:
 
 if __name__ == "__main__":
     main(
-        markdown_file_path="/Users/gymate1/Desktop/drop/python/kalauz/mindmap/SR_cause_categories.md",
+        markdown_file_path="/mindmap/SR_cause_categories.md",
         csv_file_path="/Users/gymate1/Downloads/kalauz_speed_restrictions.csv",
         max_depth=4,
     )

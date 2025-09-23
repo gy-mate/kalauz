@@ -15,13 +15,13 @@ from sklearn.multioutput import MultiOutputClassifier  # type: ignore
 from sklearn.pipeline import Pipeline, make_pipeline  # type: ignore
 from sklearn.preprocessing import MultiLabelBinarizer  # type: ignore
 
-from src.new_data_processors.SR_table_processors.category_prediction.text_similarities import (
+from src.kalauz.new_data_processors.SR_table_processors.category_prediction.text_similarities import (
     TextSimilarity,
 )
-from src.new_data_processors.SR_table_processors.category_prediction.training_data import (
+from src.kalauz.new_data_processors.SR_table_processors.category_prediction.training_data import (
     TrainingData,
 )
-from src.new_data_processors.common import DataProcessor
+from src.kalauz.new_data_processors.common import DataProcessor
 
 
 def get_categories() -> list[str]:

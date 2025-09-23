@@ -2,10 +2,10 @@ import logging
 import os
 from typing import Final
 
-from sqlalchemy import Engine, create_engine, URL, inspect, text
+from sqlalchemy import Engine, create_engine, URL, inspect
 from sqlalchemy.sql.ddl import CreateSchema
 
-from src.singleton import Singleton
+from src.kalauz.singleton import Singleton
 
 # future: swith to SQLAlchemy ORM when https://youtrack.jetbrains.com/issue/PY-4536 is fixed
 

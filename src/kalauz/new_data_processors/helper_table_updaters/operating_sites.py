@@ -13,10 +13,10 @@ from sqlalchemy import (
     text,
 )
 
-from src.new_data_processors.common import (
+from src.kalauz.new_data_processors.common import (
     DataDownloader,
 )
-from src.new_data_processors.common_excel_processors import ExcelProcessorSimple
+from src.kalauz.new_data_processors.common_excel_processors import ExcelProcessorSimple
 
 
 def _translate_operating_site_type(operating_site_type: str) -> str:

@@ -14,7 +14,7 @@ from requests import HTTPError
 from sqlalchemy import Column, MetaData, SmallInteger, String, Table, text
 from zipfile import ZipFile
 
-from src.new_data_processors.common import UICTableUpdater
+from src.kalauz.new_data_processors.common import UICTableUpdater
 
 
 def _uic_code_not_assigned(values: tuple[str, str, str]) -> bool:

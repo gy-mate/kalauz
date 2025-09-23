@@ -20,11 +20,11 @@ from tenacity import (
     wait_exponential,
 )
 
-from src.OSM_data_processors.Overpass_queries import *
-from src.OSM_data_processors.map_data_helpers import *
-from src.SR import SR
-from src.logging_helpers import *
-from src.new_data_processors.common import DataProcessor
+from src.kalauz.OSM_data_processors.Overpass_queries import *
+from src.kalauz.OSM_data_processors.map_data_helpers import *
+from src.kalauz.SR import SR
+from src.kalauz.logging_helpers import *
+from src.kalauz.new_data_processors.common import DataProcessor
 
 
 # future: remove the comment below when stubs for the library below are available
@@ -88,7 +88,7 @@ class Mapper(DataProcessor):
 
     @retry(
         retry=retry_if_exception_type(ConnectionResetError),
-        wait=wait_exponential(multiplier=1, min=4, max=10),
+        wait=wait_exponential(min=4, max=10),
         stop=stop_after_attempt(2),
     )
     def download_osm_data(self) -> None:

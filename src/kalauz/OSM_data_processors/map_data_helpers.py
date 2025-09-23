@@ -14,7 +14,7 @@ from shapely import distance
 
 from shapely.ops import split, substring
 
-from src.SR import SR
+from src.kalauz.SR import SR
 
 
 def extract_operating_site_polygons(

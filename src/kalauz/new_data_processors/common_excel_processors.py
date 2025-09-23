@@ -11,7 +11,7 @@ import pandas as pd
 # future: remove the comment below when stubs for the library below are available
 import xlrd  # type: ignore
 
-from src.new_data_processors.common import TableUpdater
+from src.kalauz.new_data_processors.common import TableUpdater
 
 
 class ExcelProcessor(TableUpdater, ABC):
