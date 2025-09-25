@@ -14,6 +14,7 @@ from shapely import distance
 
 from shapely.ops import split, substring
 
+from src.kalauz.OSM_data_processors.hashable_node_snapshot import HashableNodeSnapshot
 from src.kalauz.SR import SR
 
 
@@ -47,7 +48,14 @@ def get_ids_of_layers(element: Element) -> dict[str, int | None]:
     }
 
 
-def get_milestones(nodes: list[Node]) -> list[Node]:
+def get_nodes_of_line(ways_of_line: list[Way]) -> set[Node]:
+    nodes_of_line = set(
+        HashableNodeSnapshot(node) for way in ways_of_line for node in way.nodes
+    )
+    return nodes_of_line
+
+
+def get_milestones(nodes: set[Node]) -> list[Node]:
     milestones = [
         node
         for node in nodes

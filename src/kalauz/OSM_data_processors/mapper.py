@@ -6,8 +6,10 @@ from typing import Any, Final, List
 
 # future: remove the comment below when stubs for the library below are available
 import geojson  # type: ignore
+
 # future: remove the comment below when stubs for the library below are available
 from overpy import Area, Element, Node, Overpass, Relation, Result, Way  # type: ignore
+
 # future: remove the comment below when stubs for the library below are available
 from pydeck import Deck, Layer, ViewState  # type: ignore
 from requests import HTTPError, Session
@@ -322,7 +324,7 @@ class Mapper(DataProcessor):
         for sr_index, sr in enumerate(self.srs):
             try:
                 ways_of_line = self.get_ways_of_corresponding_line(sr)
-                nodes_of_line = [node for way in ways_of_line for node in way.nodes]
+                nodes_of_line = get_nodes_of_line(ways_of_line)
                 milestones_of_line = get_milestones(nodes_of_line)
 
                 self.get_coordinates_of_sr(milestones_of_line, sr, ways_of_line)
@@ -375,7 +377,6 @@ class Mapper(DataProcessor):
         for j, sr_metre_post_boundary in enumerate(
             (sr.metre_post_from, sr.metre_post_to)
         ):
-            # TODO: somehow an already used milestone is added to the list below once more
             milestones_of_line_copy = milestones_of_line.copy()
             nearest_milestones = get_nearest_milestones(
                 milestones=milestones_of_line_copy,
