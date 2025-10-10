@@ -72,7 +72,7 @@ def get_milestone_location(milestone: Node) -> float:
     except ValueError:
         raise ValueError(
             f"Milestone position ('{milestone.tags["railway:position"]}') couldn't be converted to float! "
-            f"Edit it here: https://www.openstreetmap.org/edit?node={milestone.id}"
+            f"Edit it here: https://osm.org/edit?node={milestone.id}"
         )
 
 
