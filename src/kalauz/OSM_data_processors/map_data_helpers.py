@@ -120,7 +120,9 @@ def get_nearest_milestone(
                     return milestone
     assert sr.id
     raise ValueError(
-        f"Nearest milestone not found for metre post {exact_location} of SR #{sr.id[-8:]} on line {sr.line}!"
+        f"Nearest milestone not found for metre post {exact_location}!\n"
+        f"This might be due to a missing milestone near the end of the line "
+        f"or the way(s) of an existing milestone not being part of the corresponding route=railway relation."
     )
 
 
@@ -188,8 +190,11 @@ def get_distance_percentage_between_milestones(
         )
         return distance_percentage_between_milestones
     except ZeroDivisionError:
+        urls_of_nodes = [f"https://osm.org/node/{milestone.id}" for milestone in nearest_milestones]
         raise ZeroDivisionError(
-            f"Distance between closest milestones found near metre post {metre_post_boundary} is zero!"
+            f"Distance between closest milestones found near metre post {metre_post_boundary} is zero!\n"
+            f"It's possible that multiple railway=rail sides have the same railway:track_side value. "
+            f"Might be worth checking the ways of {" and ".join(urls_of_nodes)}."
         )
 
 
