@@ -58,7 +58,7 @@ class CountriesUpdater(UICTableUpdater):
             self.xsd_to_process: Final = self.get_data(self.XSD_URL)
             self._xsd: Final[etree.XMLSchema] = self.process_xsd()
         except (HTTPError, IndexError) as exception:
-            self.logger.warning(exception)
+            self.logger.warn(exception)
 
         self.logger.info(f"{self.__class__.__name__} initialized!")
 
