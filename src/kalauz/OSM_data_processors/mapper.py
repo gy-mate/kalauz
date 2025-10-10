@@ -379,7 +379,7 @@ class Mapper(DataProcessor):
                 else:
                     assert sr.id
                     self.logger.critical(
-                        f"Fatal error with SR #{sr.id[-8:]}: {exception}"
+                        f"Fatal error with {sr}: {exception}"
                     )
                     raise
             if sr_index in notify_at_indexes:
