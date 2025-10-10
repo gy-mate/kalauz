@@ -385,7 +385,7 @@ class Mapper(DataProcessor):
             if sr_index in notify_at_indexes:
                 percentage = int(sr_index / len(self.srs) * 100)
                 self.logger.info(
-                    f"{"⏳" if percentage < 50 else "⌛️"} {percentage}% done..."
+                    f"{"⏳ " if percentage < 50 else "⌛️"} {percentage}% done..."
                 )
         self.logger.info(f"✅ 100% done! Finished visualising speed restrictions.")
 
