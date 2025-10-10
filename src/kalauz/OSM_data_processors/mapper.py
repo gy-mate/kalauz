@@ -1,7 +1,8 @@
 import contextlib
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 import re
+from time import sleep
 from typing import Any, Final, List
 
 # future: remove the comment below when stubs for the library below are available
@@ -9,6 +10,7 @@ import geojson  # type: ignore
 
 # future: remove the comment below when stubs for the library below are available
 from overpy import Area, Element, Node, Overpass, Relation, Result, Way  # type: ignore
+from overpy.exception import OverpassGatewayTimeout
 
 # future: remove the comment below when stubs for the library below are available
 from pydeck import Deck, Layer, ViewState  # type: ignore
@@ -39,6 +41,7 @@ class Mapper(DataProcessor):
         self.TODAY_SIMULATED: Final = datetime(2024, 1, 18, 21, 59, 59)
         self.COLOR_TAG: Final = "line_color"
         self.QUERY_MAIN_PARAMETERS: Final = get_area_boundary()
+        self.WAIT_BETWEEN_RETRIES: Final = timedelta(seconds=10)
         self.OPERATORS: Final = ["MÁV", "GYSEV"]
         self.OPERATING_SITE_TAG_VALUES: Final = [  # type: ignore
             # TODO: uncomment lines below when implementing stations
@@ -116,28 +119,43 @@ class Mapper(DataProcessor):
         )
 
     def run_query(self, api: Overpass, query_text: str) -> Result:
-        self.logger.debug(f"Short query started...")
-        result = api.query(query_text)
-        self.logger.debug(f"...finished!")
-        return result
+        try:
+            self.logger.debug(f"Short query started...")
+            while True:
+                try:
+                    return api.query(query_text)
+                except OverpassGatewayTimeout:
+                    self.logger.warn(
+                        f"The Overpass API gateway timed out as it's probably too busy. "
+                        f"Retrying in {self.WAIT_BETWEEN_RETRIES}…"
+                    )
+                    sleep(self.WAIT_BETWEEN_RETRIES.seconds)
+        finally:
+            self.logger.debug(f"...finished!")
 
     def run_query_raw(self, api: Overpass, query_text: str) -> bytes:
         url = api.url
         try:
-            response = self._dowload_session.get(
-                url=url,
-                headers={
-                    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                    "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1.2 Safari/605.1.15"
-                },
-                data=query_text,
-            )
-            response.raise_for_status()
+            while True:
+                try:
+                    response = self._dowload_session.get(
+                        url=url,
+                        headers={
+                            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                            "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1.2 Safari/605.1.15"
+                        },
+                        data=query_text,
+                    )
+                    response.raise_for_status()
+                    return bytes(response.content)
+                except HTTPError:
+                    self.logger.warn(
+                        f"Failed to download file from {url}! The server is probably too busy. "
+                        f"Retrying in {self.WAIT_BETWEEN_RETRIES}…"
+                    )
+                    sleep(self.WAIT_BETWEEN_RETRIES.seconds)
+        finally:
             self.logger.debug(f"File successfully downloaded from {url}!")
-            return bytes(response.content)
-        except HTTPError:
-            self.logger.critical(f"Failed to download file from {url}!")
-            raise
 
     def download_final(
         self,
