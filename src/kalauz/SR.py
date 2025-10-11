@@ -70,13 +70,15 @@ class SR:
         self.work_to_be_done = work_to_be_done
         self.time_to = time_to
         self.comment = comment
-        
+
     def __str__(self) -> str:
-        return (f"{self.operating_speed} → {self.reduced_speed} km/h speed restriction (#{self.id[-8:]}) "
-                f"on {'the ' + self.main_track_side + ' track of ' if self.main_track_side else ''} line {self.line} "
-                f"between metre posts {self.metre_post_from} and {self.metre_post_to} "
-                f"({'track ' + self.station_track_from + ' at ' if self.station_track_from else ''}"
-                f"{self.station_from}{' and ' + self.station_to if self.station_to else ''}) "
-                f"{'due to «' + self.cause_source_text + '»' if self.cause_source_text else ''} "
-                f"since {self.time_from.isoformat()}{' until ' + self.time_to.isoformat() if self.time_to else ''}"
-                f"{'; comment: ' + self.comment if self.comment else ''}")
+        return (
+            f"{self.operating_speed} → {self.reduced_speed} km/h speed restriction {'(#' + self.id[-8:] + ') ' if self.id else ''}"
+            f"on {'the ' + self.main_track_side + ' track of ' if self.main_track_side else ''} line {self.line} "
+            f"between metre posts {self.metre_post_from} and {self.metre_post_to} "
+            f"({'track ' + self.station_track_from + ' at ' if self.station_track_from else ''}"
+            f"{self.station_from}{' and ' + self.station_to if self.station_to else ''}) "
+            f"{'due to «' + self.cause_source_text + '»' if self.cause_source_text else ''} "
+            f"since {self.time_from.isoformat()}{' until ' + self.time_to.isoformat() if self.time_to else ''}"
+            f"{'; comment: ' + self.comment if self.comment else ''}"
+        )

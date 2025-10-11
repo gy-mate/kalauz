@@ -25,8 +25,12 @@ from src.kalauz.new_data_processors.SR_table_processors.category_prediction.cate
     CategoryPredictor,
 )
 from src.kalauz.new_data_processors.common_excel_processors import ExcelProcessor
-from src.kalauz.new_data_processors.helper_table_updaters.companies import CompaniesUpdater
-from src.kalauz.new_data_processors.helper_table_updaters.countries import CountriesUpdater
+from src.kalauz.new_data_processors.helper_table_updaters.companies import (
+    CompaniesUpdater,
+)
+from src.kalauz.new_data_processors.helper_table_updaters.countries import (
+    CountriesUpdater,
+)
 
 
 def get_end_time(text_to_search: str) -> str:

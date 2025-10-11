@@ -2,15 +2,11 @@ import contextlib
 from datetime import datetime, timedelta
 import json
 import re
-from time import sleep
 from typing import Any, Final, List
 
 # future: remove the comment below when stubs for the library below are available
-import geojson  # type: ignore
-
-# future: remove the comment below when stubs for the library below are available
-from overpy import Area, Element, Node, Overpass, Relation, Result, Way  # type: ignore
-from overpy.exception import OverpassGatewayTimeout
+from overpy import Overpass, Result  # type: ignore
+from overpy.exception import OverpassGatewayTimeout  # type: ignore
 
 # future: remove the comment below when stubs for the library below are available
 from pydeck import Deck, Layer, ViewState  # type: ignore
@@ -82,7 +78,9 @@ class Mapper(DataProcessor):
             out;
         """
 
-        self.query_final: str = self.query_operating_site_elements + get_route_relations()
+        self.query_final: str = (
+            self.query_operating_site_elements + get_route_relations()
+        )
 
         self.osm_data_raw: dict = NotImplemented
         self.osm_data: Result = NotImplemented
@@ -93,7 +91,7 @@ class Mapper(DataProcessor):
         self.download_osm_data()
         self.process_srs()
         self.visualise_srs()
-    
+
     def download_osm_data(self) -> None:
         self.osm_data = self.run_query(
             api=self._api,
@@ -110,7 +108,7 @@ class Mapper(DataProcessor):
         result = api.query(query_text)
         self.logger.debug(f"...finished!")
         return result
-    
+
     @retry(
         retry=retry_if_exception_type(HTTPError),
         wait=wait_exponential(min=4, max=10),
@@ -129,7 +127,7 @@ class Mapper(DataProcessor):
         response.raise_for_status()
         self.logger.debug(f"File successfully downloaded from {url}!")
         return bytes(response.content)
-    
+
     def download_final(self) -> None:
         self.logger.debug(f"Long query started...")
         self.osm_data_raw = json.loads(
@@ -324,9 +322,7 @@ class Mapper(DataProcessor):
                     pass
                 else:
                     assert sr.id
-                    self.logger.critical(
-                        f"Fatal error with {sr}: {exception}"
-                    )
+                    self.logger.critical(f"Fatal error with {sr}: {exception}")
                     raise
             if sr_index in notify_at_indexes:
                 percentage = int(sr_index / len(self.srs) * 100)

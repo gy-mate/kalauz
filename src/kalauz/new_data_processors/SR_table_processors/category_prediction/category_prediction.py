@@ -46,12 +46,12 @@ def clear_terminal():
 
 def import_markdown_file():
     with open(
-            os.path.join(
-                os.getcwd(),
-                "mindmap",
-                "SR_cause_categories.md",
-            ),
-            "r",
+        os.path.join(
+            os.getcwd(),
+            "mindmap",
+            "SR_cause_categories.md",
+        ),
+        "r",
     ) as file:
         categories_markdown = file.read()
     return Markdown(categories_markdown)
@@ -70,7 +70,7 @@ class CategoryPredictor(DataProcessor):
 
         self.label_binarizer = MultiLabelBinarizer()
         self.markdown_console = Console()
-    
+
     def __enter__(self) -> "CategoryPredictor":
         self.pipeline = create_pipeline()
         self.training_data: list[TrainingData] = []

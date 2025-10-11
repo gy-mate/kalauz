@@ -172,7 +172,9 @@ def get_distance_percentage_between_milestones(
         )
         return distance_percentage_between_milestones
     except ZeroDivisionError:
-        urls_of_nodes = [f"https://osm.org/node/{milestone.id}" for milestone in nearest_milestones]
+        urls_of_nodes = [
+            f"https://osm.org/node/{milestone.id}" for milestone in nearest_milestones
+        ]
         raise ZeroDivisionError(
             f"Distance between closest milestones found near metre post {metre_post_boundary} is zero!\n"
             f"It's possible that multiple railway=rail sides have the same railway:track_side value. "
