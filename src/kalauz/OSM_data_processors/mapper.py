@@ -43,16 +43,15 @@ class Mapper(DataProcessor):
         self.QUERY_MAIN_PARAMETERS: Final = get_area_boundary()
         self.WAIT_BETWEEN_RETRIES: Final = timedelta(seconds=10)
         self.OPERATORS: Final = ["MÁV", "GYSEV"]
-        self.OPERATING_SITE_TAG_VALUES: Final = [  # type: ignore
-            # TODO: uncomment lines below when implementing stations
-            # "station",
-            # "halt",
-            # "yard",
-            # "service_station",
-            # "junction",
-            # "crossover",
-            # "spur_junction",
-            # "site",
+        self.OPERATING_SITE_TAG_VALUES: Final = [
+            "station",
+            "halt",
+            "yard",
+            "service_station",
+            "junction",
+            "crossover",
+            "spur_junction",
+            "site",
         ]
 
         self._api: Final = Overpass()
@@ -67,19 +66,23 @@ class Mapper(DataProcessor):
         """
         )
         for value in self.OPERATING_SITE_TAG_VALUES:
-            for operator in self.OPERATORS:
-                self.query_operating_site_elements += f"""
-                    node["operator"="{operator}"]["railway"="{value}"]["name"](area.country);
-                    area["operator"="{operator}"]["railway"="{value}"]["name"](area.country);
-                    relation["type"="multipolygon"]["operator"="{operator}"]["railway"="{value}"]["name"](area.country);
-                """
-            self.query_operating_site_elements += "\n"
+            self.query_operating_site_elements += f"""
+                area["area:railway"="{value}"][~"^(name|wikidata)$"~".*"](area.country);
+                relation["type"="multipolygon"]["area:railway"="{value}"][~"^(name|wikidata)$"~".*"](area.country);
+            """
         self.query_operating_site_elements += """
+            ) -> .stations;
+            
+            (
+                way[~"^(railway|disused:|abandoned:).*"~".*"](area.stations);
+                node[~"^(railway|disused:|abandoned:).*"~".*"](area.stations);
             );
+            (._;>;);
+            
             out;
         """
 
-        self.query_final: str = self.QUERY_MAIN_PARAMETERS + get_route_relations()
+        self.query_final: str = self.query_operating_site_elements + get_route_relations()
 
         self.osm_data_raw: dict = NotImplemented
         self.osm_data: Result = NotImplemented
@@ -90,101 +93,44 @@ class Mapper(DataProcessor):
         self.download_osm_data()
         self.process_srs()
         self.visualise_srs()
+    
+    def download_osm_data(self) -> None:
+        self.osm_data = self.run_query(
+            api=self._api,
+            query_text=self.query_final,
+        )
 
     @retry(
-        retry=retry_if_exception_type(ConnectionResetError),
+        retry=retry_if_exception_type(OverpassGatewayTimeout),
         wait=wait_exponential(min=4, max=10),
-        stop=stop_after_attempt(2),
+        stop=stop_after_attempt(5),
     )
-    def download_osm_data(self) -> None:
-        operating_site_elements = self.run_query(
-            api=self._api,
-            query_text=self.query_operating_site_elements,
-        )
-
-        node_polygons_query = self.QUERY_MAIN_PARAMETERS
-        for node in operating_site_elements.nodes:
-            node_polygons_query += get_operating_site_area(node.id)
-        operating_site_node_polygons = geojson.loads(
-            self.run_query_raw(
-                api=self._api,
-                query_text=node_polygons_query,
-            )
-        )
-
-        self.download_final(
-            node_polygons=operating_site_node_polygons,
-            areas=operating_site_elements.areas,
-            multipolygons=operating_site_elements.relations,
-        )
-
     def run_query(self, api: Overpass, query_text: str) -> Result:
-        try:
-            self.logger.debug(f"Short query started...")
-            while True:
-                try:
-                    return api.query(query_text)
-                except OverpassGatewayTimeout:
-                    self.logger.warn(
-                        f"The Overpass API gateway timed out as it's probably too busy. "
-                        f"Retrying in {self.WAIT_BETWEEN_RETRIES}…"
-                    )
-                    sleep(self.WAIT_BETWEEN_RETRIES.seconds)
-        finally:
-            self.logger.debug(f"...finished!")
-
+        self.logger.debug(f"Short query started...")
+        result = api.query(query_text)
+        self.logger.debug(f"...finished!")
+        return result
+    
+    @retry(
+        retry=retry_if_exception_type(HTTPError),
+        wait=wait_exponential(min=4, max=10),
+        stop=stop_after_attempt(5),
+    )
     def run_query_raw(self, api: Overpass, query_text: str) -> bytes:
         url = api.url
-        try:
-            while True:
-                try:
-                    response = self._dowload_session.get(
-                        url=url,
-                        headers={
-                            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                            "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1.2 Safari/605.1.15"
-                        },
-                        data=query_text,
-                    )
-                    response.raise_for_status()
-                    return bytes(response.content)
-                except HTTPError:
-                    self.logger.warn(
-                        f"Failed to download file from {url}! The server is probably too busy. "
-                        f"Retrying in {self.WAIT_BETWEEN_RETRIES}…"
-                    )
-                    sleep(self.WAIT_BETWEEN_RETRIES.seconds)
-        finally:
-            self.logger.debug(f"File successfully downloaded from {url}!")
-
-    def download_final(
-        self,
-        node_polygons: Any,
-        areas: list[Area],
-        multipolygons: list[Relation],
-    ) -> None:
-        self.add_node_poly_elements(node_polygons)
-
-        operating_site_areas, operating_site_mp_relations = (
-            extract_operating_site_polygons(
-                areas=areas,
-                multipolygons=multipolygons,
-            )
+        response = self._dowload_session.get(
+            url=url,
+            headers={
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1.2 Safari/605.1.15"
+            },
+            data=query_text,
         )
-
-        for operating_site_area in operating_site_areas:
-            self.query_final += f"""
-            way({operating_site_area["element_id"]}) -> .operatingSite;
-            """
-            self.add_area_or_mp_relation_elements(operating_site_area)
-
-        for operating_site_relation in operating_site_mp_relations:
-            self.query_final += f"""
-            relation({operating_site_relation["element_id"]});
-            map_to_area -> .operatingSite;
-            """
-            self.add_area_or_mp_relation_elements(operating_site_relation)
-
+        response.raise_for_status()
+        self.logger.debug(f"File successfully downloaded from {url}!")
+        return bytes(response.content)
+    
+    def download_final(self) -> None:
         self.logger.debug(f"Long query started...")
         self.osm_data_raw = json.loads(
             self.run_query_raw(

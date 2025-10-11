@@ -30,24 +30,6 @@ def extract_operating_site_polygons(
     return operating_site_areas, operating_site_relations
 
 
-def get_ids_of_layers(element: Element) -> dict[str, int | None]:
-    # future: report bug (false positive) to JetBrains developers
-    # noinspection PyUnresolvedReferences
-    element_id = element.id
-    element_layer = element.tags.get("layer", None)
-    if element_layer is None:
-        return {
-            "element_id": element_id,
-            "layer": None,
-        }
-    # future: report bug (false positive) to JetBrains developers
-    # noinspection PyTypeChecker
-    return {
-        "element_id": element_id,
-        "layer": int(element_layer),
-    }
-
-
 def get_nodes_of_line(ways_of_line: list[Way]) -> set[Node]:
     nodes_of_line = set(
         HashableNodeSnapshot(node) for way in ways_of_line for node in way.nodes
