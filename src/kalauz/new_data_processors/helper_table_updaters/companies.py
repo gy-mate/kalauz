@@ -18,7 +18,9 @@ from src.kalauz.new_data_processors.common import (
     UICTableUpdater,
 )
 from src.kalauz.new_data_processors.common_excel_processors import ExcelProcessorSimple
-from src.kalauz.new_data_processors.helper_table_updaters.countries import CountriesUpdater
+from src.kalauz.new_data_processors.helper_table_updaters.countries import (
+    CountriesUpdater,
+)
 
 
 @final

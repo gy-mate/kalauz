@@ -1,4 +1,4 @@
-from overpy import Node
+from overpy import Node  # type: ignore
 
 
 # future: embed this into overpy.Node
@@ -24,5 +24,5 @@ class HashableNodeSnapshot(Node):
                 other.lon,
                 other.tags.items(),
             )
-        
+
         return NotImplemented

@@ -17,7 +17,9 @@ from src.kalauz.new_data_processors.SR_table_processors.category_prediction.cate
     CategoryPredictor,
 )
 from src.kalauz.new_data_processors.SR_table_processors.common import SRUpdater
-from src.kalauz.new_data_processors.common_excel_processors import ExcelProcessorWithFormatting
+from src.kalauz.new_data_processors.common_excel_processors import (
+    ExcelProcessorWithFormatting,
+)
 
 
 def is_tsr(cell: Cell) -> bool:

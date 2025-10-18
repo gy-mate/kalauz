@@ -105,7 +105,9 @@ class OperatingSitesUpdater(ExcelProcessorSimple, DataDownloader):
                 attrs={"name": "infra_id"},
             )
             if not select_tag:
-                self.logger.critical(f"No `select` tag found on the splash page at {url}!")
+                self.logger.critical(
+                    f"No `select` tag found on the splash page at {url}!"
+                )
                 raise ValueError
         except ValueError as exception:
             self.logger.critical(exception)
@@ -181,7 +183,7 @@ class OperatingSitesUpdater(ExcelProcessorSimple, DataDownloader):
                 self.logger.critical(exception)
                 raise
             return str(result[0])
-    
+
     def correct_boolean_values(self) -> None:
         boolean_columns = [
             "traffic_passenger",

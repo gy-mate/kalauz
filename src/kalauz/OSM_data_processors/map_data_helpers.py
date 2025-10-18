@@ -30,24 +30,6 @@ def extract_operating_site_polygons(
     return operating_site_areas, operating_site_relations
 
 
-def get_ids_of_layers(element: Element) -> dict[str, int | None]:
-    # future: report bug (false positive) to JetBrains developers
-    # noinspection PyUnresolvedReferences
-    element_id = element.id
-    element_layer = element.tags.get("layer", None)
-    if element_layer is None:
-        return {
-            "element_id": element_id,
-            "layer": None,
-        }
-    # future: report bug (false positive) to JetBrains developers
-    # noinspection PyTypeChecker
-    return {
-        "element_id": element_id,
-        "layer": int(element_layer),
-    }
-
-
 def get_nodes_of_line(ways_of_line: list[Way]) -> set[Node]:
     nodes_of_line = set(
         HashableNodeSnapshot(node) for way in ways_of_line for node in way.nodes
@@ -190,7 +172,9 @@ def get_distance_percentage_between_milestones(
         )
         return distance_percentage_between_milestones
     except ZeroDivisionError:
-        urls_of_nodes = [f"https://osm.org/node/{milestone.id}" for milestone in nearest_milestones]
+        urls_of_nodes = [
+            f"https://osm.org/node/{milestone.id}" for milestone in nearest_milestones
+        ]
         raise ZeroDivisionError(
             f"Distance between closest milestones found near metre post {metre_post_boundary} is zero!\n"
             f"It's possible that multiple railway=rail sides have the same railway:track_side value. "
