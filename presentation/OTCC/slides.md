@@ -1,6 +1,8 @@
 ---
 title: Mapping railway speed restrictions
 author: Máté Gyöngyösi
+
+download: true
 exportFilename: railway-speed-restrictions_mapping_OTCC_Mate-Gyongyosi
 
 theme: apple-basic
@@ -71,7 +73,7 @@ transition: slide-up
 transition: slide-left
 ---
 
-<SlidevVideo controls autoplay>
+<SlidevVideo controls autoplay printTimestamp=4.6>
   <source src="/snail-run.mp4" type="video/mp4"/>
   <p>
     Your browser does not support videos. You may download it
@@ -291,7 +293,7 @@ url: https://openrailwaymap.app/#view=13.63/52.51796/13.39503&date=1888
 
 ---
 layout: image
-image: /megallj-jelzo.jpg
+image: /Lazar.png
 
 transition: slide-left
 ---
@@ -336,20 +338,4 @@ transition: slide-up
 
 <!--
 - https://telex.hu/belfold/2025/09/13/mav-a-daru-nem-kisiklott-csak-kerekei-rovid-idore-leugrottak-a-sinrol
--->
-
----
-layout: image
-image: /MAV_typo_emails.png
-
-transition: slide-up
----
-
-<!--
-- 12 állomáson 29 hiba a végrehajtási utasításokban
-  - a kutatásom mellékhatásaként jeleztem az állomásfőnököknek, szakértőknek...
-- ...akik ezt megköszönték, és jelezték, hogy javítani fogják őket
-- a VPE torzított állomási helyszínrajzain pedig 35 állomáson 119 hibát találtam
-  - nekik is jeleztem a pontatlanságokat
-- így, hogy készen vannak a térképadatok, le lehet tölteni őket...
 -->
