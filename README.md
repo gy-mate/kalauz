@@ -13,16 +13,18 @@
 ## 📥 Installation
 
 1. [Clone the repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository)
-1. Run the following command in the terminal:
+1. Install [uv](https://docs.astral.sh/uv/getting-started/installation/)
+1. Run the following command in the terminal to create the virtual environment
+   and install all dependencies:
 
   ```bash
-  cd kalauz && make install
+  cd kalauz && uv sync --extra dev
   ```
 
 
 ### 📦 Dependencies
 
-- [Python](https://www.python.org/downloads/) `3.10+`
+- [Python](https://www.python.org/downloads/) `3.14+`
 - [MySQL](https://dev.mysql.com/downloads/mysql/) `5.6+`
   - Store your database password in a `DATABASE_PASSWORD` variable 
     in a `.env` file in the root of the repository.
