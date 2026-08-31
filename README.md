@@ -98,4 +98,4 @@ of the [Hungarian Ministry for Culture and Innovation](https://kormany.hu/kultur
 ## 📜 License
 
 This project is licensed under the _GNU General Public License v3.0_.
-See the [license](copying.txt) file (or the _GPL-3.0 license_ tab on GitHub) for its full text.
+See the [license file](license.txt) (or the _GPL-3.0 license_ tab on GitHub) for its full text.
