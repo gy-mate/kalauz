@@ -18,18 +18,6 @@ from src.kalauz.OSM_data_processors.hashable_node_snapshot import HashableNodeSn
 from src.kalauz.SR import SR
 
 
-def extract_operating_site_polygons(
-    areas: list[Area], multipolygons: list[Relation]
-) -> tuple[list[dict[str, int | None]], list[dict[str, int | None]]]:
-    operating_site_areas = [
-        get_ids_of_layers(operating_site) for operating_site in areas
-    ]
-    operating_site_relations = [
-        get_ids_of_layers(operating_site) for operating_site in multipolygons
-    ]
-    return operating_site_areas, operating_site_relations
-
-
 def get_nodes_of_line(ways_of_line: list[Way]) -> set[Node]:
     nodes_of_line = set(
         HashableNodeSnapshot(node) for way in ways_of_line for node in way.nodes

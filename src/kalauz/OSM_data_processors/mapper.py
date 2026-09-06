@@ -140,60 +140,6 @@ class Mapper(DataProcessor):
         self.logger.debug(f"...finished!")
         pass
 
-    def add_node_poly_elements(self, node_polygons: Any) -> None:
-        for i, element in enumerate(node_polygons["elements"]):
-            try:
-                assert element["geometry"]
-                operating_site_polygon_array = get_coordinates(
-                    from_geojson(str(element["geometry"]))
-                )
-                operating_site_polygon = ""
-                for coordinate in operating_site_polygon_array:
-                    operating_site_polygon += f"{coordinate[1]} {coordinate[0]} "
-                operating_site_polygon = operating_site_polygon.strip()
-                try:
-                    layer = node_polygons["elements"][i - 1]["tags"]["layer"]
-                    self.query_final += f"""
-                        (
-                            way["railway"="rail"]["layer"="{layer}"](poly:"{operating_site_polygon}");
-                            way["disused:railway"="rail"]["layer"="{layer}"](poly:"{operating_site_polygon}");
-                            way["abandoned:railway"="rail"]["layer"="{layer}"](poly:"{operating_site_polygon}");
-                        );"""
-                except KeyError:
-                    self.query_final += f"""
-                        (
-                            way["railway"="rail"][!"layer"](poly:"{operating_site_polygon}");
-                            way["disused:railway"="rail"][!"layer"](poly:"{operating_site_polygon}");
-                            way["abandoned:railway"="rail"][!"layer"](poly:"{operating_site_polygon}");
-                            
-                            way["railway"="rail"]["layer"="0"](poly:"{operating_site_polygon}");
-                            way["disused:railway"="rail"]["layer"="0"](poly:"{operating_site_polygon}");
-                            way["abandoned:railway"="rail"]["layer"="0"](poly:"{operating_site_polygon}");
-                        );"""
-                self.query_final += f"""
-                    (._;>;);
-                    out;
-                    node(1);
-                    out ids;
-                """
-            except KeyError:
-                pass
-
-    def add_area_or_mp_relation_elements(
-        self, operating_site_area: dict[str, int | None]
-    ) -> None:
-        if operating_site_area["layer"]:
-            self.query_final += f"""
-                (
-                    way["railway"="rail"]["layer"="{operating_site_area["layer"]}"](area.operatingSite);
-                    way["disused:railway"="rail"]["layer"="{operating_site_area["layer"]}"](area.operatingSite);
-                    way["abandoned:railway"="rail"]["layer"="{operating_site_area["layer"]}"](area.operatingSite);
-                );
-                """
-        else:
-            self.query_final += get_ground_floor_tracks()
-        self.query_final += get_operating_site_separator()
-
     def process_srs(self) -> None:
         self.get_all_srs_from_database()
 
